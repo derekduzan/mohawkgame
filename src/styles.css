@@ -24,6 +24,27 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   touch-action: none;
 }
 
+/* Adaptive desktop performance profile. Gameplay animations stay intact while
+   costly full-screen filters and continuously composited decoration are shed. */
+.game-shell.is-performance .grain { display:none; }
+.game-shell.is-performance .crowd i,
+.game-shell.is-performance .crowd.is-chanting i,
+.game-shell.is-performance .crowd.is-chanting i::after { animation:none; }
+.game-shell.is-performance .crowd.is-chanting { filter:none; }
+.game-shell.is-performance .crowd.is-chanting .crowd-chant { animation:none; opacity:1; }
+.game-shell.is-performance .ceiling-lights i { box-shadow:0 0 14px rgba(255,246,217,.45); }
+.game-shell.is-performance .fight-hud { filter:none; }
+.game-shell.is-performance .opponent-pose-art,
+.game-shell.is-performance .player-pose-art,
+.game-shell.is-performance .enemy-fist-art,
+.game-shell.is-performance .player-fist-art { filter:none !important; }
+.game-shell.is-performance .rage-aura,
+.game-shell.is-performance .opponent-shadow { filter:none; }
+.game-shell.is-performance .controls button { backdrop-filter:none; }
+.game-shell.is-performance .vision-damage::before,
+.game-shell.is-performance .vision-damage::after,
+.game-shell.is-performance .vision-damage b { filter:none; }
+
 .arena {
   position: relative;
   width: min(100vw, 177.78svh);

@@ -81,6 +81,7 @@ export default function Home() {
   const [enemyKnockdowns, setEnemyKnockdowns] = useState(0);
   const [enemyCount, setEnemyCount] = useState(1);
   const [enemyRiseAt, setEnemyRiseAt] = useState<number | null>(null);
+  const [performanceMode, setPerformanceMode] = useState(false);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -114,6 +115,52 @@ export default function Home() {
   useEffect(() => void (blockingRef.current = blocking), [blocking]);
   useEffect(() => void (dodgeRef.current = dodgeDirection), [dodgeDirection]);
   useEffect(() => void (poseRef.current = enemyPose), [enemyPose]);
+
+  useEffect(() => {
+    if (!assetsReady) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("performance") === "1") {
+      setPerformanceMode(true);
+      return;
+    }
+
+    // The mobile layout already has a lightweight rendering profile. Benchmark
+    // only full desktop layouts and automatically shed cosmetic GPU effects if
+    // Chrome cannot hold a responsive frame cadence.
+    if (!window.matchMedia("(min-width: 821px) and (min-height: 621px)").matches) return;
+
+    let animationFrame = 0;
+    let startedAt = 0;
+    let previousFrame = 0;
+    let sampledFrames = 0;
+    let slowFrames = 0;
+
+    const sample = (now: number) => {
+      if (!startedAt) {
+        startedAt = now;
+        previousFrame = now;
+      } else {
+        const frameTime = now - previousFrame;
+        previousFrame = now;
+        if (frameTime < 200) {
+          sampledFrames += 1;
+          if (frameTime > 24) slowFrames += 1;
+        }
+      }
+
+      if (now - startedAt < 2400) {
+        animationFrame = requestAnimationFrame(sample);
+        return;
+      }
+
+      const slowRatio = sampledFrames ? slowFrames / sampledFrames : 1;
+      if (sampledFrames < 105 || slowRatio > 0.18) setPerformanceMode(true);
+    };
+
+    animationFrame = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [assetsReady]);
 
   useEffect(() => {
     if (preloadStartedRef.current) return;
@@ -815,7 +862,7 @@ export default function Home() {
             : asset("/player-guard.webp");
 
   return (
-    <main className={`game-shell ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
+    <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
       <section className={`arena ${matchState === "fighting" ? "is-live" : ""}`} aria-label="Bare knuckle boxing ring">
         <div className="grain" aria-hidden="true" />
         <div className="vision-damage" aria-hidden="true"><i /><b /></div>
