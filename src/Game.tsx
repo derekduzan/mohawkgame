@@ -37,6 +37,14 @@ type ResultReason = "knockout" | "time";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
+const TAUNT_LINES = [
+  "That's what I'm talking about!",
+  "I live for this!",
+  "Let's go!",
+  "Bring it on!",
+  "Train hard to fight easy!",
+  "Unrelenting pressure!",
+];
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -86,6 +94,7 @@ export default function Home() {
   const [enemyRiseAt, setEnemyRiseAt] = useState<number | null>(null);
   const [performanceMode, setPerformanceMode] = useState(false);
   const [resultReason, setResultReason] = useState<ResultReason>("knockout");
+  const [tauntLineIndex, setTauntLineIndex] = useState(-1);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -323,6 +332,7 @@ export default function Home() {
     guardRef.current = 100;
     setTimer(ROUND_TIME);
     setResultReason("knockout");
+    setTauntLineIndex(-1);
     setEnemyPoseSafe("idle");
     setPlayerPose("idle");
     setDodgeDirection(null);
@@ -545,6 +555,7 @@ export default function Home() {
     const doTaunt = () => {
       if (cancelled || matchRef.current !== "fighting") return;
       setEnemyPoseSafe("taunt");
+      setTauntLineIndex((index) => (index + 1) % TAUNT_LINES.length);
       setCallout("MOHAWK GRINS");
       later(() => {
         if (matchRef.current !== "fighting") return;
@@ -555,7 +566,7 @@ export default function Home() {
           setEnemyPoseSafe("idle");
         }
         queueAttack();
-      }, 780);
+      }, 1350);
     };
 
     const throwStrike = (combination: EnemyMove[], index: number, style: AttackStyle = "normal") => {
@@ -947,6 +958,12 @@ export default function Home() {
           <div className="facial-damage" aria-hidden="true"><i /><b /><em /></div>
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>
+
+        {matchState === "fighting" && enemyPose === "taunt" && tauntLineIndex >= 0 && (
+          <div className="match-taunt-bubble" role="status" aria-live="polite">
+            {TAUNT_LINES[tauntLineIndex]}
+          </div>
+        )}
 
         {impact && impact !== "player" && (
           <div className={`impact impact-${impact}`} aria-hidden="true">
