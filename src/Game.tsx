@@ -33,6 +33,7 @@ type PlayerPose =
   | "block"
   | "hit";
 type DodgeDirection = "left" | "right" | null;
+type ResultReason = "knockout" | "time";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
@@ -46,6 +47,8 @@ const POSE_ASSETS = [
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
+  asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
+  asset("/championship-belt.webp"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -82,6 +85,7 @@ export default function Home() {
   const [enemyCount, setEnemyCount] = useState(1);
   const [enemyRiseAt, setEnemyRiseAt] = useState<number | null>(null);
   const [performanceMode, setPerformanceMode] = useState(false);
+  const [resultReason, setResultReason] = useState<ResultReason>("knockout");
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -274,8 +278,9 @@ export default function Home() {
     osc.stop(now + (kind === "ko" ? 0.9 : 0.15));
   }, []);
 
-  const finishMatch = useCallback((result: "won" | "lost") => {
+  const finishMatch = useCallback((result: "won" | "lost", reason: ResultReason = "knockout") => {
     const resultActionId = ++playerActionRef.current;
+    setResultReason(reason);
     matchRef.current = result;
     setMatchState(result);
     setShowRematch(false);
@@ -287,6 +292,10 @@ export default function Home() {
       setEnemyPoseSafe("knockout");
       setCallout("KNOCKOUT!");
       playSound("ko");
+    } else if (reason === "time") {
+      setPlayerPose("idle");
+      setCallout("TIME'S UP!");
+      playSound("bell");
     } else {
       setPlayerPose("hit");
       setCallout("YOU'RE DOWN");
@@ -313,6 +322,7 @@ export default function Home() {
     setGuard(100);
     guardRef.current = 100;
     setTimer(ROUND_TIME);
+    setResultReason("knockout");
     setEnemyPoseSafe("idle");
     setPlayerPose("idle");
     setDodgeDirection(null);
@@ -471,7 +481,7 @@ export default function Home() {
       setTimer((value) => {
         if (value <= 1) {
           const result = enemyHealthRef.current < playerHealthRef.current ? "won" : "lost";
-          finishMatch(result);
+          finishMatch(result, "time");
           return 0;
         }
         return value - 1;
@@ -1034,12 +1044,20 @@ export default function Home() {
             {matchState === "lost" ? (
               <>
                 <div className="defeat-scene" aria-hidden="true">
-                  <img className="victory-mohawk" src={asset("/opponent-victory.webp")} alt="" draggable={false} />
-                  <img className="defeated-player" src={asset("/player-hit.webp")} alt="" draggable={false} />
+                  <div className="victory-mohawk-stage">
+                    <img className="victory-mohawk victory-both" src={asset("/opponent-victory.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-left" src={asset("/opponent-victory-left.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-right" src={asset("/opponent-victory-right.webp")} alt="" draggable={false} />
+                  </div>
+                  {resultReason === "knockout" && <img className="defeated-player" src={asset("/player-hit.webp")} alt="" draggable={false} />}
                 </div>
-                <div className="defeat-copy">
-                  <p>OFFICIAL RESULT · KNOCKOUT</p>
-                  <h2>THE MOHAWK WINS</h2>
+                <div className={`defeat-copy ${resultReason === "time" ? "time-result" : ""}`}>
+                  <p>{resultReason === "time" ? "OFFICIAL RESULT · TIME LIMIT" : "OFFICIAL RESULT · KNOCKOUT"}</p>
+                  {resultReason === "time" ? (
+                    <h2><span>TIME'S UP!</span><small>MOHAWK WINS</small></h2>
+                  ) : (
+                    <h2>THE MOHAWK WINS</h2>
+                  )}
                   <div className="result-stats">
                     <span><em>SCORE</em><strong>{score.toLocaleString()}</strong></span>
                     <span><em>KNOCKDOWNS</em><strong>{playerKnockdowns}</strong></span>
@@ -1055,10 +1073,9 @@ export default function Home() {
             ) : (
               <div className="champion-screen">
                 <div className="gold-confetti" aria-hidden="true">
-                  {Array.from({ length: 18 }).map((_, index) => <i key={index} />)}
+                  {Array.from({ length: 32 }).map((_, index) => <i key={index} />)}
                 </div>
-                <img className="fallen-mohawk" src={asset("/opponent-guard.webp")} alt="" draggable={false} />
-                <img className="champion-arms" src={asset("/player-block.webp")} alt="" draggable={false} />
+                <img className="championship-belt" src={asset("/championship-belt.webp")} alt="Gold championship belt with black leather" draggable={false} />
                 <div className="champion-copy">
                   <p>FOUR KNOCKDOWNS · TEN COUNT</p>
                   <h2>YOU DEFEATED<br /><span>THE MOHAWK</span></h2>

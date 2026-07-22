@@ -260,7 +260,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-jab-left .player-main-art { animation:jabPose 145ms cubic-bezier(.12,.78,.18,1) both; transform-origin:38% 86%; }
 .player-cross-right .player-main-art { animation:crossPose 175ms cubic-bezier(.08,.72,.16,1) both; transform-origin:68% 88%; }
 .player-body-hook .player-main-art { animation:bodyHookPose 175ms cubic-bezier(.12,.74,.2,1) both; transform-origin:32% 88%; }
-.player-block .player-pose-art { width:78%; height:78%; bottom:-4%; }
+.player-block .player-pose-art { width:78%; height:78%; bottom:8%; }
 .arm { position:absolute; bottom:-9%; width:13.5%; height:38%; border-radius:45% 45% 17% 17%; background:linear-gradient(90deg,#5a2719,#ad5735 35%,#d48355 63%,#71301d); box-shadow:inset -10px -3px 15px rgba(49,15,8,.45),0 10px 20px #000; transform-origin:50% 100%; transition:transform .13s cubic-bezier(.2,.8,.2,1); }
 .arm-left { left:19%; transform:rotate(14deg); }
 .arm-right { right:19%; transform:rotate(-14deg); }
@@ -348,20 +348,31 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .result-overlay .fight-button { width:min(360px,70vw); }
 .result-overlay.lost { overflow:hidden; background:radial-gradient(circle at 50% 43%,rgba(66,34,19,.42),rgba(3,4,3,.94) 76%); }
 .defeat-scene { position:absolute; z-index:1; inset:0; overflow:hidden; pointer-events:none; }
-.victory-mohawk { position:absolute; left:50%; bottom:3%; width:min(66%,820px); height:88%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 14px 16px #000); animation:victoryRise .7s cubic-bezier(.15,.8,.2,1) both; }
+.victory-mohawk-stage { position:absolute; left:50%; bottom:3%; width:min(66%,820px); height:88%; transform:translateX(-50%); animation:victoryRise .7s cubic-bezier(.15,.8,.2,1) both; }
+.victory-mohawk { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 14px 16px #000); opacity:0; }
+.victory-both { animation:victoryBothCycle 8s steps(1,end) infinite; }
+.victory-left { animation:victoryLeftCycle 8s steps(1,end) infinite; }
+.victory-right { animation:victoryRightCycle 8s steps(1,end) infinite; }
 .defeated-player { position:absolute; z-index:2; left:50%; bottom:-30%; width:min(92%,1100px); height:68%; object-fit:contain; object-position:center bottom; transform:translateX(-50%) rotate(5deg); opacity:.78; filter:brightness(.48) saturate(.7) drop-shadow(0 -8px 12px #000); }
 .defeat-copy { position:absolute; z-index:4; inset:3% 4% 4%; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none; }
 .defeat-copy>p { margin:0; color:var(--gold); font:900 clamp(.56rem,1vw,.9rem)/1 Arial,sans-serif; letter-spacing:.2em; }
 .defeat-copy h2 { margin:.25rem 0 .6rem; color:#f3ecdf; font-size:clamp(2.4rem,6vw,6rem); line-height:.86; text-shadow:5px 6px var(--blood),9px 10px #000; }
+.defeat-copy.time-result h2 { display:flex; flex-direction:column; gap:.14em; margin:.35rem 0 .7rem; }
+.defeat-copy.time-result h2 span { color:var(--gold); font-size:1.08em; letter-spacing:.01em; }
+.defeat-copy.time-result h2 small { color:#f3ecdf; font:1000 .52em/.9 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; letter-spacing:.075em; text-shadow:4px 5px var(--blood),8px 9px #000; }
 .defeat-copy .result-stats { margin:0; }
 .defeat-copy .rematch-button { margin-top:auto; pointer-events:auto; animation:rematchReveal .38s ease-out both; }
 .victory-delay { margin-top:auto; width:min(360px,70vw); padding:1rem; color:var(--gold); background:#080908bb; border:1px solid #6d5941; font:900 clamp(.7rem,1vw,.9rem)/1 Arial,sans-serif; letter-spacing:.14em; animation:victoryPulse .6s ease-in-out infinite alternate; }
 @keyframes victoryRise { from{transform:translateX(-50%) translateY(8%) scale(.92);opacity:0} to{transform:translateX(-50%);opacity:1} }
+@keyframes victoryBothCycle { 0%,24.99%,75%,100%{opacity:1}25%,74.99%{opacity:0} }
+@keyframes victoryLeftCycle { 0%,24.99%,50%,100%{opacity:0}25%,49.99%{opacity:1} }
+@keyframes victoryRightCycle { 0%,49.99%,75%,100%{opacity:0}50%,74.99%{opacity:1} }
 @keyframes rematchReveal { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
 @keyframes victoryPulse { to{color:#fff;border-color:var(--gold)} }
 
 .result-overlay.won { overflow:hidden; background:radial-gradient(circle at 50% 38%,rgba(92,57,16,.45),rgba(3,4,3,.93) 75%); }
 .champion-screen { position:absolute; inset:0; overflow:hidden; }
+.championship-belt { position:absolute; z-index:3; left:50%; top:52%; width:min(74%,980px); height:auto; transform:translate(-50%,-50%); object-fit:contain; filter:drop-shadow(0 18px 22px #000) brightness(1.03); animation:beltVictory 1.05s cubic-bezier(.12,.82,.18,1) both,beltShimmer 1.8s ease-in-out 1.05s infinite alternate; }
 .fallen-mohawk { position:absolute; z-index:1; left:50%; bottom:-32%; width:min(58%,700px); height:70%; object-fit:contain; transform:translateX(-50%) rotate(78deg); filter:brightness(.38) saturate(.55); opacity:.78; }
 .champion-arms { position:absolute; z-index:3; left:50%; bottom:-17%; width:min(82%,1050px); height:72%; object-fit:contain; transform:translateX(-50%) scale(1.12); filter:drop-shadow(0 -8px 12px #000); animation:championArmsRise .72s cubic-bezier(.12,.82,.18,1) both; }
 .champion-copy { position:absolute; z-index:5; inset:4% 4% 4%; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none; }
@@ -372,9 +383,14 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .champion-copy .result-stats { margin:0; }
 .champion-copy .rematch-button { margin-top:auto; pointer-events:auto; animation:rematchReveal .38s ease-out both; }
 .gold-confetti { position:absolute; z-index:4; inset:0; pointer-events:none; }
-.gold-confetti i { position:absolute; top:-8%; left:calc((var(--n, 1) * 5.25%)); width:8px; height:18px; background:var(--gold); box-shadow:0 0 5px #000; animation:confettiFall 2.2s linear infinite; animation-delay:calc(var(--n, 1) * -.13s); transform:rotate(calc(var(--n, 1) * 19deg)); }
+.gold-confetti i { position:absolute; top:-10%; left:calc((var(--n, 1) * 3.05%)); width:10px; height:20px; border-radius:2px; background:linear-gradient(90deg,#8c5510,#ffe783 45%,#d49019 72%,#6d3e09); box-shadow:0 0 8px rgba(255,198,55,.65),0 2px 4px #000; animation:confettiFall 2.35s linear infinite; animation-delay:calc(var(--n, 1) * -.11s); transform:rotate(calc(var(--n, 1) * 19deg)); }
+.gold-confetti i:nth-child(3n) { width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff0a0,#e2a325 48%,#7a450b 78%); }
+.gold-confetti i:nth-child(4n) { width:7px; height:25px; }
 .gold-confetti i:nth-child(1){--n:1}.gold-confetti i:nth-child(2){--n:2}.gold-confetti i:nth-child(3){--n:3}.gold-confetti i:nth-child(4){--n:4}.gold-confetti i:nth-child(5){--n:5}.gold-confetti i:nth-child(6){--n:6}.gold-confetti i:nth-child(7){--n:7}.gold-confetti i:nth-child(8){--n:8}.gold-confetti i:nth-child(9){--n:9}.gold-confetti i:nth-child(10){--n:10}.gold-confetti i:nth-child(11){--n:11}.gold-confetti i:nth-child(12){--n:12}.gold-confetti i:nth-child(13){--n:13}.gold-confetti i:nth-child(14){--n:14}.gold-confetti i:nth-child(15){--n:15}.gold-confetti i:nth-child(16){--n:16}.gold-confetti i:nth-child(17){--n:17}.gold-confetti i:nth-child(18){--n:18}
+.gold-confetti i:nth-child(19){--n:19}.gold-confetti i:nth-child(20){--n:20}.gold-confetti i:nth-child(21){--n:21}.gold-confetti i:nth-child(22){--n:22}.gold-confetti i:nth-child(23){--n:23}.gold-confetti i:nth-child(24){--n:24}.gold-confetti i:nth-child(25){--n:25}.gold-confetti i:nth-child(26){--n:26}.gold-confetti i:nth-child(27){--n:27}.gold-confetti i:nth-child(28){--n:28}.gold-confetti i:nth-child(29){--n:29}.gold-confetti i:nth-child(30){--n:30}.gold-confetti i:nth-child(31){--n:31}.gold-confetti i:nth-child(32){--n:32}
 @keyframes confettiFall { to{translate:calc((var(--n, 1) - 9) * 2px) 115vh;rotate:540deg} }
+@keyframes beltVictory { from{transform:translate(-50%,-42%) scale(.72);opacity:0;filter:drop-shadow(0 8px 10px #000) brightness(.7)} to{transform:translate(-50%,-50%) scale(1);opacity:1} }
+@keyframes beltShimmer { from{filter:drop-shadow(0 18px 22px #000) brightness(.96) saturate(.96)} to{filter:drop-shadow(0 18px 25px #000) brightness(1.18) saturate(1.12)} }
 @keyframes championArmsRise { from{transform:translateX(-50%) translateY(24%) scale(.9);opacity:0} to{transform:translateX(-50%) scale(1.12);opacity:1} }
 
 .knockdown-overlay { z-index:72; display:flex; flex-direction:column; justify-content:center; gap:.35rem; padding:5%; color:#f4ecdf; text-align:center; background:radial-gradient(circle,rgba(91,20,13,.42),rgba(3,4,3,.92) 68%); }
@@ -419,13 +435,13 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes playerHit { 30%{transform:translateY(5%) rotate(3deg) scale(1.06)} }
 @keyframes jabPose {
   0% { transform:translateX(-50%) translate(-5%,7%) scale(.86); filter:drop-shadow(0 9px 10px #120605aa) blur(.7px); }
-  52% { transform:translateX(-50%) translate(1%,-2%) scale(1.025); }
+  52% { transform:translateX(-50%) translate(7%,-3%) scale(1.025); }
   100% { transform:translateX(-50%) scale(1); filter:drop-shadow(0 9px 10px #120605aa); }
 }
 @keyframes crossPose {
   0% { transform:translateX(-50%) translate(9%,9%) rotate(7deg) scale(.82); filter:drop-shadow(0 9px 10px #120605aa) blur(.8px); }
-  56% { transform:translateX(-50%) translate(-3%,-4%) rotate(-4deg) scale(1.07); }
-  100% { transform:translateX(-50%) translate(-1%,-1%) rotate(-2deg) scale(1.025); filter:drop-shadow(0 11px 12px #120605cc); }
+  56% { transform:translateX(-50%) translate(-11%,-5%) rotate(-3deg) scale(1.07); }
+  100% { transform:translateX(-50%) translate(-2%,-1%) rotate(-1deg) scale(1.025); filter:drop-shadow(0 11px 12px #120605cc); }
 }
 @keyframes bodyHookPose {
   0% { transform:translateX(-50%) translate(-13%,12%) rotate(-12deg) scale(.82); filter:drop-shadow(0 9px 10px #120605aa) blur(.8px); }
@@ -488,7 +504,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .preload-overlay { display:grid; padding:10vh 7vw 12vh; gap:3rem; }
   .preload-lockup h1 { font-size:17vw; }
   .preload-status { width:86vw; }
-  .victory-mohawk { width:105%; height:80%; bottom:9%; }
+  .victory-mohawk-stage { width:105%; height:80%; bottom:9%; }
   .defeated-player { width:125%; height:58%; bottom:-23%; }
   .defeat-copy { inset:4% 3% max(3%,env(safe-area-inset-bottom)); }
   .defeat-copy h2 { font-size:10vw; }
@@ -496,8 +512,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .enemy-count-overlay strong { font-size:30vw; }
   .champion-copy { inset:4% 3% max(3%,env(safe-area-inset-bottom)); }
   .champion-copy h2 { font-size:11vw; }
-  .champion-arms { width:128%; height:62%; bottom:-10%; }
-  .fallen-mohawk { width:105%; height:54%; bottom:-18%; }
+  .championship-belt { top:50%; width:96%; }
 }
 
 @media (pointer:coarse) {
