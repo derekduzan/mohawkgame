@@ -391,6 +391,9 @@ export default function Home() {
       bufferedPunchRef.current = null;
       blockingRef.current = false;
       setBlocking(false);
+      // The knockout strike has finished. Do not leave Mohawk frozen on its
+      // fully extended contact frame while the referee counts.
+      setEnemyPoseSafe("idle");
       const knockdowns = playerKnockdownsRef.current + 1;
       playerKnockdownsRef.current = knockdowns;
       // The first recovery is demanding, and every later knockdown requires
@@ -405,7 +408,7 @@ export default function Home() {
       matchRef.current = "player-down";
       setMatchState("player-down");
     }
-  }, [playSound]);
+  }, [playSound, setEnemyPoseSafe]);
 
   const attemptGetUp = useCallback(() => {
     if (matchRef.current !== "player-down") return;
@@ -422,13 +425,14 @@ export default function Home() {
     setStamina(100);
     setGuard(70);
     setPlayerPose("idle");
+    setEnemyPoseSafe("idle");
     setImpact(null);
     setScreenShake(false);
     matchRef.current = "fighting";
     setMatchState("fighting");
     setCallout("BACK ON YOUR FEET!");
     playSound("bell");
-  }, [playSound]);
+  }, [playSound, setEnemyPoseSafe]);
 
   useEffect(() => {
     if (matchState !== "player-down") return;
@@ -554,22 +558,6 @@ export default function Home() {
       return ["left", "right", "left"];
     };
 
-    const doTaunt = () => {
-      if (cancelled || matchRef.current !== "fighting") return;
-      setEnemyPoseSafe("taunt");
-      setCallout("MOHAWK GRINS");
-      later(() => {
-        if (matchRef.current !== "fighting") return;
-        if (poseRef.current === "taunt") {
-          const recovered = clamp(enemyHealthRef.current + 1.5);
-          enemyHealthRef.current = recovered;
-          setEnemyHealth(recovered);
-          setEnemyPoseSafe("idle");
-        }
-        queueAttack();
-      }, 780);
-    };
-
     const throwStrike = (combination: EnemyMove[], index: number, style: AttackStyle = "normal") => {
       if (cancelled || matchRef.current !== "fighting") return;
       const move = combination[index];
@@ -649,7 +637,7 @@ export default function Home() {
             later(() => {
               if (matchRef.current === "fighting") {
                 setEnemyPoseSafe("idle");
-                if (Math.random() < .16) doTaunt(); else queueAttack();
+                queueAttack();
               }
             }, rage ? 230 : 360);
           }
@@ -672,10 +660,9 @@ export default function Home() {
         return;
       }
       const pattern = Math.random();
-      if (pattern < .16) throwStrike(["right"], 0, "heavy");
-      else if (pattern < .32) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
-      else if (pattern < .46) throwStrike(["uppercut"], 0, "uppercut");
-      else if (pattern < .56) doTaunt();
+      if (pattern < .18) throwStrike(["right"], 0, "heavy");
+      else if (pattern < .36) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
+      else if (pattern < .52) throwStrike(["uppercut"], 0, "uppercut");
       else throwStrike(chooseCombination(), 0);
     };
 
@@ -728,7 +715,10 @@ export default function Home() {
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
       const base = kind === "left" ? 4 : kind === "right" ? 7 : kind === "body" ? 6 : 43;
       const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (kind === "haymaker" ? 1.25 : 2.1)) : base;
-      const damage = fullDamage / 6;
+      // Mohawk remains durable across four health bars, but the addition of
+      // active guarding made the former one-sixth scaling too restrictive.
+      // One-quarter scaling restores a realistic 90-second knockout path.
+      const damage = fullDamage / 4;
       const nextHealth = clamp(enemyHealthRef.current - damage);
 
       if (slipCounter) counterReadyUntilRef.current = 0;
