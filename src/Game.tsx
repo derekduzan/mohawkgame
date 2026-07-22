@@ -120,25 +120,44 @@ export default function Home() {
     if (!assetsReady) return;
 
     const params = new URLSearchParams(window.location.search);
+    if (params.get("performance") === "0") {
+      window.localStorage.removeItem("mohawk-performance-mode");
+    }
     if (params.get("performance") === "1") {
+      setPerformanceMode(true);
+      window.localStorage.setItem("mohawk-performance-mode", "1");
+      return;
+    }
+    if (window.localStorage.getItem("mohawk-performance-mode") === "1") {
       setPerformanceMode(true);
       return;
     }
 
-    // The mobile layout already has a lightweight rendering profile. Benchmark
-    // only full desktop layouts and automatically shed cosmetic GPU effects if
-    // Chrome cannot hold a responsive frame cadence.
+    // The mobile layout already has a lightweight rendering profile. Monitor
+    // full desktop layouts continuously because corporate laptops can begin
+    // smoothly, then throttle after several seconds of full-screen effects.
     if (!window.matchMedia("(min-width: 821px) and (min-height: 621px)").matches) return;
 
     let animationFrame = 0;
-    let startedAt = 0;
+    let windowStartedAt = 0;
     let previousFrame = 0;
     let sampledFrames = 0;
     let slowFrames = 0;
+    let consecutiveSlowWindows = 0;
+    let activated = false;
 
     const sample = (now: number) => {
-      if (!startedAt) {
-        startedAt = now;
+      if (document.hidden) {
+        windowStartedAt = now;
+        previousFrame = now;
+        sampledFrames = 0;
+        slowFrames = 0;
+        animationFrame = requestAnimationFrame(sample);
+        return;
+      }
+
+      if (!windowStartedAt) {
+        windowStartedAt = now;
         previousFrame = now;
       } else {
         const frameTime = now - previousFrame;
@@ -149,13 +168,24 @@ export default function Home() {
         }
       }
 
-      if (now - startedAt < 2400) {
-        animationFrame = requestAnimationFrame(sample);
-        return;
+      if (now - windowStartedAt >= 2500) {
+        const slowRatio = sampledFrames ? slowFrames / sampledFrames : 1;
+        const windowIsSlow = sampledFrames < 110 || slowRatio > 0.2;
+        consecutiveSlowWindows = windowIsSlow ? consecutiveSlowWindows + 1 : 0;
+
+        if (consecutiveSlowWindows >= 2) {
+          activated = true;
+          setPerformanceMode(true);
+          window.localStorage.setItem("mohawk-performance-mode", "1");
+        }
+
+        windowStartedAt = now;
+        previousFrame = now;
+        sampledFrames = 0;
+        slowFrames = 0;
       }
 
-      const slowRatio = sampledFrames ? slowFrames / sampledFrames : 1;
-      if (sampledFrames < 105 || slowRatio > 0.18) setPerformanceMode(true);
+      if (!activated) animationFrame = requestAnimationFrame(sample);
     };
 
     animationFrame = requestAnimationFrame(sample);
