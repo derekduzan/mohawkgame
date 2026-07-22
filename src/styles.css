@@ -317,13 +317,30 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .preload-track { height:clamp(12px,1.4vw,18px); margin:.65rem 0 .7rem; overflow:hidden; border:2px solid #d8d0c2; background:#090a09; box-shadow:4px 5px #000; }
 .preload-track i { display:block; height:100%; background:linear-gradient(90deg,#a70f0b,var(--blood) 65%,#ffb52c); transition:width .16s ease-out; }
 .preload-status>p { margin:0; color:#918b80; text-align:center; font:800 clamp(.52rem,.8vw,.7rem)/1 Arial,sans-serif; letter-spacing:.18em; }
-.intro-overlay { grid-template-columns:1.05fr .95fr; gap:5%; padding:8%; }
-.title-lockup { transform:rotate(-3deg); text-shadow:6px 7px #000; }
-.title-lockup p { position:relative; z-index:2; margin:0 0 .6rem .35rem; color:var(--gold); font:900 clamp(.58rem,1vw,1.1rem)/1 Arial,sans-serif; letter-spacing:.32em; transform:translateY(-2.5em); }
-.title-lockup h1 { margin:0; font-size:clamp(4rem,10vw,10rem); line-height:.68; letter-spacing:-.055em; color:#f1eadc; -webkit-text-stroke:2px #090a09; }
-.title-lockup h1 > i { display:inline-block; font-style:normal; transform:translateY(-.14em); }
-.title-lockup h1 span { color:var(--blood); }
-.slash { display:inline-block; margin:1.2rem 0 0 14%; padding:.05em .35em; background:var(--gold); color:#fff3d2; font-weight:1000; font-size:clamp(1.8rem,4vw,4rem); letter-spacing:.11em; -webkit-text-stroke:2px #090a09; text-shadow:3px 4px #000; transform:skewX(-12deg) rotate(-2deg); box-shadow:7px 7px #000; }
+.intro-overlay { display:block; overflow:hidden; padding:0; background:radial-gradient(ellipse at 72% 32%,rgba(184,86,27,.38),transparent 34%),linear-gradient(105deg,rgba(5,6,5,.98) 0 35%,rgba(17,10,8,.78) 58%,rgba(2,3,2,.96) 100%); }
+.intro-overlay::before { content:""; position:absolute; inset:-10% 0 0; z-index:0; background:linear-gradient(112deg,transparent 35%,rgba(255,218,143,.18) 49%,transparent 62%),repeating-linear-gradient(0deg,transparent 0 4px,rgba(255,255,255,.018) 5px); pointer-events:none; }
+.intro-overlay::after { content:""; position:absolute; z-index:1; inset:0; background:linear-gradient(90deg,#000b 0,transparent 32% 76%,#000b),linear-gradient(transparent 65%,#000c); pointer-events:none; }
+.intro-marquee { position:absolute; z-index:6; top:4%; left:50%; min-width:54%; padding:.55rem 2rem; transform:translateX(-50%) skewX(-8deg); color:#1a1208; background:linear-gradient(#ffd55d,#e89519); border:3px solid #ffe89b; box-shadow:0 0 0 5px #4b210b,0 0 24px rgba(244,173,47,.55); text-align:center; font:1000 clamp(.58rem,1.05vw,1rem)/1 Arial,sans-serif; letter-spacing:.26em; }
+.intro-mohawk { position:absolute; z-index:2; right:-2%; bottom:-7%; width:58%; height:94%; object-fit:contain; object-position:center bottom; filter:drop-shadow(-18px 12px 22px #000) saturate(1.06) contrast(1.08); animation:introFighterBreathe 1.4s ease-in-out infinite alternate; }
+.intro-overlay .title-lockup { position:absolute; z-index:5; left:5%; top:18%; width:58%; transform:rotate(-3deg); text-shadow:6px 7px #000; }
+.intro-overlay .title-lockup p { position:relative; z-index:2; margin:0 0 .7rem .35rem; color:var(--gold); font:900 clamp(.52rem,.9vw,.9rem)/1 Arial,sans-serif; letter-spacing:.28em; }
+.intro-overlay .title-lockup h1 { margin:0; font-size:clamp(4rem,9.2vw,9rem); line-height:.68; letter-spacing:-.055em; color:#f1eadc; -webkit-text-stroke:2px #090a09; }
+.intro-overlay .title-lockup h1 > i { display:inline-block; font-style:normal; transform:translateY(-.14em); }
+.intro-overlay .title-lockup h1 span { color:var(--blood); text-shadow:6px 7px #000,0 0 24px rgba(225,40,30,.35); }
+.intro-overlay .slash { display:inline-block; margin:1.05rem 0 0 14%; padding:.05em .35em; background:var(--gold); color:#fff3d2; font-weight:1000; font-size:clamp(1.8rem,3.8vw,3.8rem); letter-spacing:.11em; -webkit-text-stroke:2px #090a09; text-shadow:3px 4px #000; transform:skewX(-12deg) rotate(-2deg); box-shadow:7px 7px #000; }
+.intro-versus-card { position:absolute; z-index:7; right:4%; bottom:5%; width:min(44%,610px); padding:clamp(.85rem,1.6vw,1.4rem); color:#eee7da; background:linear-gradient(135deg,rgba(18,18,16,.94),rgba(8,8,8,.94)); border:2px solid #70634e; border-left:7px solid var(--blood); box-shadow:10px 12px 0 #0009,0 0 22px rgba(244,173,47,.12); }
+.versus-row { display:grid; grid-template-columns:1fr auto 1.45fr; align-items:center; gap:.65rem; }
+.versus-row strong { font-size:clamp(1.05rem,2.2vw,2.2rem); line-height:.9; letter-spacing:.035em; }
+.versus-row strong:last-child { color:var(--gold); text-align:right; }
+.versus-row b { display:grid; place-items:center; width:clamp(35px,4vw,54px); aspect-ratio:1; color:#fff; background:var(--blood); border:2px solid #ffb23c; border-radius:50%; font:1000 clamp(.65rem,1vw,.9rem)/1 Arial,sans-serif; box-shadow:3px 4px #000; }
+.intro-versus-card>p { margin:.65rem 0 0; color:#9b958a; font:800 clamp(.48rem,.7vw,.66rem)/1 Arial,sans-serif; letter-spacing:.14em; text-align:center; }
+.intro-versus-card .how-to { margin:.75rem 0; padding:.65rem 0; border-color:#423e36; }
+.intro-versus-card .how-to kbd { color:var(--gold); background:#10110f; border-color:#777064; }
+.intro-versus-card .how-to span { color:#bbb3a5; }
+.intro-fight-button { border:2px solid #ff9a35; box-shadow:0 6px 0 #72100b,0 0 18px rgba(225,40,30,.45); animation:startButtonPulse .85s ease-in-out infinite alternate; }
+.intro-versus-card>small { display:block; margin-top:.7rem; color:#77736b; text-align:center; font:800 clamp(.44rem,.62vw,.58rem)/1 Arial,sans-serif; letter-spacing:.16em; }
+@keyframes introFighterBreathe { from{transform:translateY(0) scale(1)} to{transform:translateY(-.7%) scale(1.008)} }
+@keyframes startButtonPulse { to{background:#ff3d30;box-shadow:0 6px 0 #72100b,0 0 28px rgba(255,62,39,.72)} }
 .tale-card { max-width:520px; padding:clamp(1.4rem,3vw,3rem); background:#ded7c9; color:#111311; transform:rotate(1deg); box-shadow:15px 16px 0 rgba(0,0,0,.8); border-top:9px solid var(--blood); }
 .tale-card>span,.result-overlay>p { display:block; color:#8e1d17; font:900 clamp(.52rem,.78vw,.8rem)/1 Arial,sans-serif; letter-spacing:.14em; }
 .tale-card h2 { margin:.45rem 0 .65rem; font-size:clamp(2.2rem,4.7vw,5rem); letter-spacing:-.03em; line-height:.85; }
@@ -360,6 +377,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .defeat-copy.time-result h2 { display:flex; flex-direction:column; gap:.14em; margin:.35rem 0 .7rem; }
 .defeat-copy.time-result h2 span { color:var(--gold); font-size:1.08em; letter-spacing:.01em; }
 .defeat-copy.time-result h2 small { color:#f3ecdf; font:1000 .52em/.9 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; letter-spacing:.075em; text-shadow:4px 5px var(--blood),8px 9px #000; }
+.timeout-mohawk-speech { position:absolute; z-index:7; right:5%; top:38%; width:min(29%,390px); padding:clamp(.8rem,1.5vw,1.35rem); color:#15130f; background:#f7efe2; border:4px solid #11120f; border-radius:48% 45% 50% 44%; box-shadow:7px 8px #0009; transform:rotate(2deg); pointer-events:none; text-align:center; font:1000 clamp(.75rem,1.25vw,1.15rem)/1.2 Arial,sans-serif; animation:speechPop .42s .72s cubic-bezier(.15,.9,.2,1.2) both; }
+.timeout-mohawk-speech::after { content:""; position:absolute; left:-19px; bottom:10%; width:39px; height:29px; background:#f7efe2; border-left:4px solid #11120f; border-bottom:4px solid #11120f; transform:skewX(-27deg) rotate(18deg); }
 .defeat-copy .result-stats { margin:0; }
 .defeat-copy .rematch-button { margin-top:auto; pointer-events:auto; animation:rematchReveal .38s ease-out both; }
 .victory-delay { margin-top:auto; width:min(360px,70vw); padding:1rem; color:var(--gold); background:#080908bb; border:1px solid #6d5941; font:900 clamp(.7rem,1vw,.9rem)/1 Arial,sans-serif; letter-spacing:.14em; animation:victoryPulse .6s ease-in-out infinite alternate; }
@@ -372,7 +391,12 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 
 .result-overlay.won { overflow:hidden; background:radial-gradient(circle at 50% 38%,rgba(92,57,16,.45),rgba(3,4,3,.93) 75%); }
 .champion-screen { position:absolute; inset:0; overflow:hidden; }
-.championship-belt { position:absolute; z-index:3; left:50%; top:52%; width:min(74%,980px); height:auto; transform:translate(-50%,-50%); object-fit:contain; filter:drop-shadow(0 18px 22px #000) brightness(1.03); animation:beltVictory 1.05s cubic-bezier(.12,.82,.18,1) both,beltShimmer 1.8s ease-in-out 1.05s infinite alternate; }
+.sportsmanship-mohawk { position:absolute; z-index:2; left:50%; bottom:3%; width:min(52%,680px); height:82%; transform:translateX(-50%); object-fit:contain; object-position:center bottom; filter:drop-shadow(0 14px 18px #000); animation:sportsmanshipRise .8s cubic-bezier(.15,.8,.2,1) both; }
+.player-holds-belt { position:absolute; z-index:5; left:0; right:0; bottom:-12%; width:100%; height:78%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 18px 22px #000) brightness(1.03); animation:heldBeltRise 1.05s cubic-bezier(.12,.82,.18,1) both,heldBeltShimmer 1.8s ease-in-out 1.05s infinite alternate; }
+.mohawk-speech { position:absolute; z-index:7; right:5%; top:27%; width:min(28%,390px); padding:clamp(.75rem,1.5vw,1.35rem); color:#15130f; background:#f6efe2; border:4px solid #12120f; border-radius:48% 46% 45% 50%; box-shadow:7px 8px #0009; transform:rotate(2deg); font-family:Arial,sans-serif; text-align:center; animation:speechPop .45s .85s cubic-bezier(.15,.9,.2,1.2) both; }
+.mohawk-speech::after { content:""; position:absolute; left:-18px; bottom:8%; width:38px; height:28px; background:#f6efe2; border-left:4px solid #12120f; border-bottom:4px solid #12120f; transform:skewX(-27deg) rotate(18deg); }
+.mohawk-speech strong { display:block; margin-bottom:.35rem; color:var(--blood); font:1000 clamp(.58rem,.9vw,.82rem)/1 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; letter-spacing:.16em; }
+.mohawk-speech p { margin:0; font:900 clamp(.7rem,1.15vw,1.05rem)/1.2 Arial,sans-serif; }
 .fallen-mohawk { position:absolute; z-index:1; left:50%; bottom:-32%; width:min(58%,700px); height:70%; object-fit:contain; transform:translateX(-50%) rotate(78deg); filter:brightness(.38) saturate(.55); opacity:.78; }
 .champion-arms { position:absolute; z-index:3; left:50%; bottom:-17%; width:min(82%,1050px); height:72%; object-fit:contain; transform:translateX(-50%) scale(1.12); filter:drop-shadow(0 -8px 12px #000); animation:championArmsRise .72s cubic-bezier(.12,.82,.18,1) both; }
 .champion-copy { position:absolute; z-index:5; inset:4% 4% 4%; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none; }
@@ -391,6 +415,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes confettiFall { to{translate:calc((var(--n, 1) - 9) * 2px) 115vh;rotate:540deg} }
 @keyframes beltVictory { from{transform:translate(-50%,-42%) scale(.72);opacity:0;filter:drop-shadow(0 8px 10px #000) brightness(.7)} to{transform:translate(-50%,-50%) scale(1);opacity:1} }
 @keyframes beltShimmer { from{filter:drop-shadow(0 18px 22px #000) brightness(.96) saturate(.96)} to{filter:drop-shadow(0 18px 25px #000) brightness(1.18) saturate(1.12)} }
+@keyframes sportsmanshipRise { from{transform:translateX(-50%) translateY(7%) scale(.94);opacity:0} to{transform:translateX(-50%);opacity:1} }
+@keyframes heldBeltRise { from{transform:translateY(22%) scale(.9);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+@keyframes heldBeltShimmer { from{filter:drop-shadow(0 18px 22px #000) brightness(.96) saturate(.96)} to{filter:drop-shadow(0 18px 25px #000) brightness(1.14) saturate(1.1)} }
+@keyframes speechPop { from{transform:rotate(2deg) scale(.65);opacity:0} to{transform:rotate(2deg) scale(1);opacity:1} }
 @keyframes championArmsRise { from{transform:translateX(-50%) translateY(24%) scale(.9);opacity:0} to{transform:translateX(-50%) scale(1.12);opacity:1} }
 
 .knockdown-overlay { z-index:72; display:flex; flex-direction:column; justify-content:center; gap:.35rem; padding:5%; color:#f4ecdf; text-align:center; background:radial-gradient(circle,rgba(91,20,13,.42),rgba(3,4,3,.92) 68%); }
@@ -469,7 +497,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .rage-aura,.opponent-shadow { filter:none; }
   .controls button { backdrop-filter:none; }
   .vision-damage::before,.vision-damage::after,.vision-damage b { filter:none; }
-  .intro-overlay { grid-template-columns:.9fr 1.1fr; padding:4%; }
+  .intro-overlay { padding:0; }
   .tale-card { padding:1.1rem; }
   .how-to { margin:.7rem 0; padding:.7rem 0; gap:.55rem; }
   .controls { bottom:max(1.5%,env(safe-area-inset-bottom)); }
@@ -495,12 +523,18 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .move-controls,.punch-controls { gap:.25rem; }
   .controls button { min-width:53px;height:47px;padding:0 .25rem; }
   .controls .block-button { min-width:62px; }
-  .intro-overlay { display:flex; flex-direction:column; justify-content:center; align-items:center; padding:6%; gap:2rem; }
-  .title-lockup { text-align:center; }
-  .title-lockup h1 { font-size:19vw; }
-  .title-lockup p { font-size:.55rem; }
-  .slash { margin-top:.7rem; }
-  .tale-card { max-width:95%; }
+  .intro-overlay { display:block; padding:0; }
+  .intro-marquee { top:2.5%; width:88%; min-width:0; padding:.45rem .6rem; font-size:.48rem; letter-spacing:.16em; }
+  .intro-mohawk { right:-30%; bottom:10%; width:150%; height:76%; opacity:.72; }
+  .intro-overlay .title-lockup { left:5%; top:11%; width:92%; text-align:left; }
+  .intro-overlay .title-lockup h1 { font-size:19vw; }
+  .intro-overlay .title-lockup p { font-size:.48rem; letter-spacing:.2em; }
+  .intro-overlay .slash { margin-top:.65rem; }
+  .intro-versus-card { left:4%; right:4%; bottom:max(2.5%,env(safe-area-inset-bottom)); width:auto; padding:.7rem; }
+  .versus-row strong { font-size:1rem; }
+  .intro-versus-card .how-to { justify-content:center; gap:.45rem; margin:.55rem 0; padding:.5rem 0; }
+  .intro-versus-card>p { font-size:.42rem; }
+  .intro-versus-card>small { font-size:.39rem; }
   .preload-overlay { display:grid; padding:10vh 7vw 12vh; gap:3rem; }
   .preload-lockup h1 { font-size:17vw; }
   .preload-status { width:86vw; }
@@ -508,11 +542,14 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .defeated-player { width:125%; height:58%; bottom:-23%; }
   .defeat-copy { inset:4% 3% max(3%,env(safe-area-inset-bottom)); }
   .defeat-copy h2 { font-size:10vw; }
+  .timeout-mohawk-speech { top:32%; right:4%; width:70%; padding:.7rem 1rem; font-size:.75rem; }
   .enemy-count-overlay { inset:14% 0 auto; }
   .enemy-count-overlay strong { font-size:30vw; }
   .champion-copy { inset:4% 3% max(3%,env(safe-area-inset-bottom)); }
   .champion-copy h2 { font-size:11vw; }
-  .championship-belt { top:50%; width:96%; }
+  .sportsmanship-mohawk { width:92%; height:72%; bottom:10%; }
+  .player-holds-belt { height:66%; bottom:-5%; width:118%; left:-9%; right:auto; }
+  .mohawk-speech { top:25%; right:4%; width:78%; padding:.7rem 1rem; }
 }
 
 @media (pointer:coarse) {

@@ -48,7 +48,7 @@ const POSE_ASSETS = [
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
-  asset("/championship-belt.webp"),
+  asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -480,8 +480,10 @@ export default function Home() {
     const ticker = window.setInterval(() => {
       setTimer((value) => {
         if (value <= 1) {
-          const result = enemyHealthRef.current < playerHealthRef.current ? "won" : "lost";
-          finishMatch(result, "time");
+          // This is a championship challenge, not a judges' decision. The
+          // player must finish Mohawk before the bell; surviving with a health
+          // lead is still a successful title defense for Mohawk.
+          finishMatch("lost", "time");
           return 0;
         }
         return value - 1;
@@ -1020,21 +1022,23 @@ export default function Home() {
 
         {matchState === "intro" && assetsReady && (
           <div className="overlay intro-overlay">
+            <div className="intro-marquee">GRIT CITY FIGHT NIGHT · MAIN EVENT</div>
+            <img className="intro-mohawk" src={asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
             <div className="title-lockup">
-              <p>GRIT CITY FIGHT NIGHT</p>
+              <p>BARE-KNUCKLE ARCADE BOXING</p>
               <h1><i>BARE</i><br /><span>KNUCKLE</span></h1>
               <div className="slash">MOHAWK</div>
             </div>
-            <div className="tale-card">
-              <span>MAIN EVENT · 1 ROUND · 90 SECONDS</span>
-              <h2>THE MOHAWK</h2>
-              <p>He loads up before every bomb. Read the shoulder, slip away from the punch, then punish the opening.</p>
+            <div className="intro-versus-card">
+              <div className="versus-row"><strong>YOU</strong><b>VS</b><strong>THE MOHAWK</strong></div>
+              <p>IRON JAW · PRESSURE FIGHTER · RAPID FIRE</p>
               <div className="how-to">
                 <div><kbd>A</kbd><kbd>D</kbd><span>SLIP</span></div>
                 <div><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><span>STRIKE</span></div>
                 <div><kbd>SPACE</kbd><span>BLOCK</span></div>
               </div>
-              <button className="fight-button" onClick={startMatch}>ENTER THE RING <i>›</i></button>
+              <button className="fight-button intro-fight-button" onClick={startMatch}>ENTER THE RING <i>›</i></button>
+              <small>1 ROUND · 90 SECONDS · SURVIVE THE STORM</small>
             </div>
           </div>
         )}
@@ -1051,6 +1055,9 @@ export default function Home() {
                   </div>
                   {resultReason === "knockout" && <img className="defeated-player" src={asset("/player-hit.webp")} alt="" draggable={false} />}
                 </div>
+                {resultReason === "time" && (
+                  <div className="timeout-mohawk-speech">Wooo! That was fun. Wanna try again?</div>
+                )}
                 <div className={`defeat-copy ${resultReason === "time" ? "time-result" : ""}`}>
                   <p>{resultReason === "time" ? "OFFICIAL RESULT · TIME LIMIT" : "OFFICIAL RESULT · KNOCKOUT"}</p>
                   {resultReason === "time" ? (
@@ -1075,7 +1082,12 @@ export default function Home() {
                 <div className="gold-confetti" aria-hidden="true">
                   {Array.from({ length: 32 }).map((_, index) => <i key={index} />)}
                 </div>
-                <img className="championship-belt" src={asset("/championship-belt.webp")} alt="Gold championship belt with black leather" draggable={false} />
+                <img className="sportsmanship-mohawk" src={asset("/opponent-sportsmanship.webp")} alt="Mohawk smiling after a great fight despite a black eye and cuts" draggable={false} />
+                <div className="mohawk-speech">
+                  <strong>MOHAWK</strong>
+                  <p>Great fight! I&apos;ll be back for a rematch soon.</p>
+                </div>
+                <img className="player-holds-belt" src={asset("/player-holds-belt.webp")} alt="The player holding the gold championship belt" draggable={false} />
                 <div className="champion-copy">
                   <p>FOUR KNOCKDOWNS · TEN COUNT</p>
                   <h2>YOU DEFEATED<br /><span>THE MOHAWK</span></h2>
