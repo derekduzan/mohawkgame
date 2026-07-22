@@ -27,6 +27,8 @@ type PlayerPose =
   | "idle"
   | "jab-left"
   | "cross-right"
+  | "haymaker-charge"
+  | "haymaker"
   | "body-hook"
   | "dodge-left"
   | "dodge-right"
@@ -34,17 +36,10 @@ type PlayerPose =
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
+type PunchKind = "left" | "right" | "body" | "haymaker";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const TAUNT_LINES = [
-  "That's what I'm talking about!",
-  "I live for this!",
-  "Let's go!",
-  "Bring it on!",
-  "Train hard to fight easy!",
-  "Unrelenting pressure!",
-];
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -94,7 +89,7 @@ export default function Home() {
   const [enemyRiseAt, setEnemyRiseAt] = useState<number | null>(null);
   const [performanceMode, setPerformanceMode] = useState(false);
   const [resultReason, setResultReason] = useState<ResultReason>("knockout");
-  const [tauntLineIndex, setTauntLineIndex] = useState(-1);
+  const [haymakerCharging, setHaymakerCharging] = useState(false);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -106,7 +101,7 @@ export default function Home() {
   const poseRef = useRef<FighterPose>(enemyPose);
   const punchLockRef = useRef(false);
   const playerActionRef = useRef(0);
-  const bufferedPunchRef = useRef<"left" | "right" | "body" | null>(null);
+  const bufferedPunchRef = useRef<Exclude<PunchKind, "haymaker"> | null>(null);
   const blockStartedAtRef = useRef(0);
   const guardBrokenUntilRef = useRef(0);
   const enemyKnockdownsRef = useRef(0);
@@ -115,7 +110,11 @@ export default function Home() {
   const playerKnockdownsRef = useRef(0);
   const getUpTapsRef = useRef(0);
   const requiredGetUpTapsRef = useRef(15);
-  const punchRef = useRef<(kind: "left" | "right" | "body") => void>(() => undefined);
+  const counterReadyUntilRef = useRef(0);
+  const punchRef = useRef<(kind: PunchKind) => void>(() => undefined);
+  const crossChargeStartedRef = useRef(0);
+  const crossChargeTimerRef = useRef(0);
+  const crossChargingRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const preloadStartedRef = useRef(false);
@@ -332,7 +331,10 @@ export default function Home() {
     guardRef.current = 100;
     setTimer(ROUND_TIME);
     setResultReason("knockout");
-    setTauntLineIndex(-1);
+    counterReadyUntilRef.current = 0;
+    window.clearTimeout(crossChargeTimerRef.current);
+    crossChargingRef.current = false;
+    setHaymakerCharging(false);
     setEnemyPoseSafe("idle");
     setPlayerPose("idle");
     setDodgeDirection(null);
@@ -555,7 +557,6 @@ export default function Home() {
     const doTaunt = () => {
       if (cancelled || matchRef.current !== "fighting") return;
       setEnemyPoseSafe("taunt");
-      setTauntLineIndex((index) => (index + 1) % TAUNT_LINES.length);
       setCallout("MOHAWK GRINS");
       later(() => {
         if (matchRef.current !== "fighting") return;
@@ -566,7 +567,7 @@ export default function Home() {
           setEnemyPoseSafe("idle");
         }
         queueAttack();
-      }, 1350);
+      }, 780);
     };
 
     const throwStrike = (combination: EnemyMove[], index: number, style: AttackStyle = "normal") => {
@@ -586,7 +587,7 @@ export default function Home() {
         : style === "uppercut" ? "attack-uppercut"
         : `attack-${move}` as FighterPose;
       setEnemyPoseSafe(windupPose);
-      setCallout(style === "heavy" ? "HE'S LOADING UP" : style === "flurry" ? "VOLUME FLURRY" : style === "uppercut" ? "WATCH THE CENTER" : "PRESSURE");
+      setCallout(style === "heavy" ? "HAYMAKER — HE RETREATS!" : style === "flurry" ? "VOLUME FLURRY" : style === "uppercut" ? "WATCH THE CENTER" : "PRESSURE");
 
       later(() => {
         if (matchRef.current !== "fighting") return;
@@ -603,10 +604,11 @@ export default function Home() {
             return;
           }
           const dodged = dodgeRef.current !== null &&
-            (move === "body" || move === "uppercut" || (move === "left" && dodgeRef.current === "right") || (move === "right" && dodgeRef.current === "left"));
+            (style === "heavy" || move === "body" || move === "uppercut" || (move === "left" && dodgeRef.current === "right") || (move === "right" && dodgeRef.current === "left"));
 
           if (dodged) {
-            setCallout("PERFECT SLIP — COUNTER!");
+            counterReadyUntilRef.current = performance.now() + (style === "heavy" ? 980 : 720);
+            setCallout(style === "heavy" ? "HAYMAKER MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
             setEnemyPoseSafe("stunned");
             setScore((value) => value + 250);
             playSound("dodge");
@@ -629,16 +631,16 @@ export default function Home() {
             setGuard(nextGuard);
             const chip = style === "heavy" ? 9 : style === "uppercut" ? 7 : style === "flurry" ? 2 : move === "body" ? 5 : 3;
             takePlayerDamage(lateBlock ? chip + 4 : chip);
-            setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
+            setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : style === "heavy" ? "HAYMAKER CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
             if (nextGuard <= 0) {
               setBlocking(false);
               blockingRef.current = false;
               guardBrokenUntilRef.current = performance.now() + 700;
             }
           } else {
-            const damage = style === "heavy" ? 27 : style === "uppercut" ? 22 : style === "flurry" ? 7 : move === "body" ? 18 : rage ? 17 : 14;
+            const damage = style === "heavy" ? 36 : style === "uppercut" ? 22 : style === "flurry" ? 7 : move === "body" ? 18 : rage ? 17 : 14;
             takePlayerDamage(damage);
-            setCallout(style === "heavy" ? "HEAVY BOMB!" : style === "uppercut" ? "UPPERCUT!" : move === "body" ? "LIVER SHOT!" : "CLEAN HIT");
+            setCallout(style === "heavy" ? "MOHAWK HAYMAKER!" : style === "uppercut" ? "UPPERCUT!" : move === "body" ? "LIVER SHOT!" : "CLEAN HIT");
           }
 
           if (index + 1 < combination.length) {
@@ -684,13 +686,13 @@ export default function Home() {
     };
   }, [matchState, playSound, setEnemyPoseSafe, takePlayerDamage]);
 
-  const punch = useCallback((kind: "left" | "right" | "body"): void => {
+  const punch = useCallback((kind: PunchKind): void => {
     if (matchRef.current !== "fighting" || blockingRef.current) return;
     if (punchLockRef.current) {
-      bufferedPunchRef.current = kind;
+      if (kind !== "haymaker") bufferedPunchRef.current = kind;
       return;
     }
-    const cost = kind === "left" ? 6 : kind === "right" ? 9 : 11;
+    const cost = kind === "left" ? 6 : kind === "right" ? 9 : kind === "body" ? 11 : 19;
     if (staminaRef.current < cost) {
       setCallout("BREATHE — LOW STAMINA");
       return;
@@ -701,31 +703,72 @@ export default function Home() {
     const nextStamina = clamp(staminaRef.current - cost);
     staminaRef.current = nextStamina;
     setStamina(nextStamina);
-    setPlayerPose(kind === "left" ? "jab-left" : kind === "right" ? "cross-right" : "body-hook");
+    setPlayerPose(kind === "left" ? "jab-left" : kind === "right" ? "cross-right" : kind === "body" ? "body-hook" : "haymaker");
+
+    // Mohawk reads obvious offense and actively closes his guard. A charged
+    // haymaker is much easier for him to see coming unless he is stunned.
+    const canReadPunch = poseRef.current === "idle" || poseRef.current === "taunt";
+    if (canReadPunch && Math.random() < (kind === "haymaker" ? 0.58 : 0.2)) {
+      setEnemyPoseSafe("guard");
+    }
 
     // Resolve damage on the extension/contact frame, never on button-down.
     window.setTimeout(() => {
       if (matchRef.current !== "fighting" || playerActionRef.current !== actionId || blockingRef.current) return;
+      // Mohawk physically retreats during his haymaker load. The player may
+      // swing, but cannot damage or interrupt him until he lunges back in.
+      if (poseRef.current === "windup-heavy") {
+        setCombo(0);
+        setCallout("OUT OF RANGE!");
+        playSound("dodge");
+        return;
+      }
       const enemyIsOpen = poseRef.current === "stunned" || poseRef.current.startsWith("windup");
       const enemyIsGuarding = poseRef.current === "guard";
-      const base = kind === "left" ? 4 : kind === "right" ? 7 : 6;
-      const fullDamage = enemyIsGuarding ? 1 : enemyIsOpen ? Math.round(base * 2.1) : base;
+      const slipCounter = performance.now() <= counterReadyUntilRef.current;
+      const base = kind === "left" ? 4 : kind === "right" ? 7 : kind === "body" ? 6 : 43;
+      const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (kind === "haymaker" ? 1.25 : 2.1)) : base;
       const damage = fullDamage / 6;
       const nextHealth = clamp(enemyHealthRef.current - damage);
 
+      if (slipCounter) counterReadyUntilRef.current = 0;
+
       enemyHealthRef.current = nextHealth;
       setEnemyHealth(nextHealth);
-      setCombo((value) => value + 1);
-      setScore((value) => value + damage * 100 + (enemyIsOpen ? 350 : 0));
-      setImpact(kind);
+      setCombo((value) => enemyIsGuarding ? 0 : value + 1);
+      setScore((value) => value + damage * 100 + (slipCounter ? 900 : enemyIsOpen ? 350 : kind === "haymaker" && !enemyIsGuarding ? 1200 : 0));
+      setImpact(enemyIsGuarding ? null : kind === "haymaker" ? "right" : kind);
       setHitStop(true);
       setScreenShake(true);
-      setEnemyPoseSafe(kind === "left" ? "hit-right" : kind === "right" ? "hit-left" : "hit-body");
+      setEnemyPoseSafe(enemyIsGuarding ? "guard" : kind === "left" ? "hit-right" : kind === "right" || kind === "haymaker" ? "hit-left" : "hit-body");
       playSound("punch");
-      setCallout(enemyIsOpen ? `COUNTER +${damage}` : kind === "body" ? "BODY SHOT" : "CONNECTS");
-      window.setTimeout(() => setHitStop(false), 52);
-      window.setTimeout(() => setScreenShake(false), 82);
-      window.setTimeout(() => setImpact(null), 120);
+      setCallout(enemyIsGuarding ? kind === "haymaker" ? "HAYMAKER BLOCKED!" : "MOHAWK BLOCKS!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "haymaker" ? "HAYMAKER!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
+      const heavyImpact = slipCounter || kind === "haymaker";
+      window.setTimeout(() => setHitStop(false), heavyImpact ? 88 : 52);
+      window.setTimeout(() => setScreenShake(false), heavyImpact ? 135 : 82);
+      window.setTimeout(() => setImpact(null), heavyImpact ? 180 : 120);
+
+      if (enemyIsGuarding && kind === "haymaker") {
+        // The blocked haymaker leaves the player fully committed. Mohawk
+        // answers immediately with a damaging heavy counter animation.
+        window.setTimeout(() => {
+          if (matchRef.current !== "fighting") return;
+          setEnemyPoseSafe("attack-heavy");
+          window.setTimeout(() => {
+            if (matchRef.current !== "fighting" || poseRef.current !== "attack-heavy") return;
+            setImpact("player");
+            setScreenShake(true);
+            takePlayerDamage(29);
+            playSound("hurt");
+            setCallout("PUNISHED!");
+            window.setTimeout(() => setImpact(null), 160);
+            window.setTimeout(() => setScreenShake(false), 180);
+            window.setTimeout(() => {
+              if (matchRef.current === "fighting" && poseRef.current === "attack-heavy") setEnemyPoseSafe("idle");
+            }, 260);
+          }, 125);
+        }, 110);
+      }
 
       if (nextHealth <= 0) {
         const knockdowns = enemyKnockdownsRef.current + 1;
@@ -757,11 +800,11 @@ export default function Home() {
       window.setTimeout(() => {
         if (matchRef.current !== "fighting") return;
         const rage = enemyHealthRef.current <= 35;
-        if (Math.random() < (rage ? 0.32 : 0.18)) {
+        if (Math.random() < (rage ? 0.48 : 0.32)) {
           setEnemyPoseSafe("guard");
           window.setTimeout(() => {
             if (matchRef.current === "fighting" && poseRef.current === "guard") setEnemyPoseSafe("idle");
-          }, rage ? 260 : 400);
+          }, rage ? 380 : 560);
         } else if (poseRef.current.startsWith("hit")) {
           if (enemyIsOpen) {
             setEnemyPoseSafe("stunned");
@@ -775,8 +818,8 @@ export default function Home() {
             setEnemyPoseSafe("idle");
           }
         }
-      }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "right" ? 210 : 220);
-    }, kind === "left" ? 72 : kind === "right" ? 98 : 105);
+      }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "right" ? 210 : kind === "haymaker" ? 300 : 220);
+    }, kind === "left" ? 72 : kind === "right" ? 98 : kind === "haymaker" ? 155 : 105);
 
     // Retract before accepting the buffered strike. Keeping the lock active
     // during this short guard frame guarantees a full extension on every hit,
@@ -785,17 +828,56 @@ export default function Home() {
       if (matchRef.current === "fighting" && !blockingRef.current && playerActionRef.current === actionId) {
         setPlayerPose("idle");
       }
-    }, kind === "left" ? 145 : 175);
+    }, kind === "left" ? 145 : kind === "haymaker" ? 310 : 175);
 
     window.setTimeout(() => {
       punchLockRef.current = false;
       const buffered = bufferedPunchRef.current;
       bufferedPunchRef.current = null;
       if (buffered && matchRef.current === "fighting" && !blockingRef.current) punchRef.current(buffered);
-    }, kind === "left" ? 205 : 235);
-  }, [playSound, setEnemyPoseSafe]);
+    }, kind === "left" ? 205 : kind === "haymaker" ? 390 : 235);
+  }, [playSound, setEnemyPoseSafe, takePlayerDamage]);
 
   useEffect(() => void (punchRef.current = punch), [punch]);
+
+  const beginCrossCharge = useCallback(() => {
+    if (matchRef.current !== "fighting" || blockingRef.current || dodgeRef.current || crossChargingRef.current) return;
+    if (punchLockRef.current) {
+      bufferedPunchRef.current = "right";
+      return;
+    }
+    if (staminaRef.current < 19) {
+      setCallout("BREATHE — LOW STAMINA");
+      return;
+    }
+
+    punchLockRef.current = true;
+    crossChargingRef.current = true;
+    crossChargeStartedRef.current = performance.now();
+    ++playerActionRef.current;
+    setHaymakerCharging(true);
+    setPlayerPose("haymaker-charge");
+    setCallout("LOADING HAYMAKER...");
+    window.clearTimeout(crossChargeTimerRef.current);
+    crossChargeTimerRef.current = window.setTimeout(() => {
+      if (crossChargingRef.current && matchRef.current === "fighting") setCallout("HAYMAKER READY!");
+    }, 480);
+  }, []);
+
+  const releaseCrossCharge = useCallback(() => {
+    if (!crossChargingRef.current) return;
+    const heldFor = performance.now() - crossChargeStartedRef.current;
+    window.clearTimeout(crossChargeTimerRef.current);
+    crossChargingRef.current = false;
+    setHaymakerCharging(false);
+    punchLockRef.current = false;
+
+    if (matchRef.current !== "fighting" || blockingRef.current) return;
+    setPlayerPose("idle");
+    // A tap remains the familiar quick cross. Holding beyond the commitment
+    // threshold converts the same input into a risky charged haymaker.
+    punch(heldFor >= 430 ? "haymaker" : "right");
+  }, [punch]);
 
   const dodge = useCallback((direction: Exclude<DodgeDirection, null>) => {
     if (matchRef.current !== "fighting" || dodgeRef.current || blockingRef.current) return;
@@ -819,6 +901,9 @@ export default function Home() {
     // recovery immediately so no older animation can override the block pose.
     punchLockRef.current = false;
     bufferedPunchRef.current = null;
+    window.clearTimeout(crossChargeTimerRef.current);
+    crossChargingRef.current = false;
+    setHaymakerCharging(false);
     dodgeRef.current = null;
     ++playerActionRef.current;
     blockingRef.current = true;
@@ -852,7 +937,7 @@ export default function Home() {
       } else if (key === "a" || key === "arrowleft") dodge("left");
       else if (key === "d" || key === "arrowright") dodge("right");
       else if (key === "j") punch("left");
-      else if (key === "k") punch("right");
+      else if (key === "k") beginCrossCharge();
       else if (key === "l") punch("body");
       else if (key === " ") {
         event.preventDefault();
@@ -860,7 +945,9 @@ export default function Home() {
       }
     };
     const up = (event: KeyboardEvent) => {
-      if (event.key === " ") endBlock();
+      const key = event.key.toLowerCase();
+      if (key === " ") endBlock();
+      else if (key === "k") releaseCrossCharge();
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -868,7 +955,7 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, dodge, endBlock, punch, startMatch]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, dodge, endBlock, punch, releaseCrossCharge, startMatch]);
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
@@ -908,6 +995,8 @@ export default function Home() {
     ? asset("/player-jab-left.webp")
     : playerPose === "cross-right"
       ? asset("/player-cross-right.webp")
+      : playerPose === "haymaker"
+        ? asset("/player-cross-right.webp")
       : playerPose === "body-hook"
         ? asset("/player-body-hook.webp")
         : playerPose === "hit"
@@ -959,18 +1048,16 @@ export default function Home() {
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>
 
-        {matchState === "fighting" && enemyPose === "taunt" && tauntLineIndex >= 0 && (
-          <div className="match-taunt-bubble" role="status" aria-live="polite">
-            {TAUNT_LINES[tauntLineIndex]}
-          </div>
-        )}
-
         {impact && impact !== "player" && (
           <div className={`impact impact-${impact}`} aria-hidden="true">
             <i /><i /><i /><i /><b>POW!</b>
           </div>
         )}
         {impact === "player" && <div className="hurt-flash" aria-hidden="true" />}
+
+        {haymakerCharging && matchState === "fighting" && (
+          <div className="haymaker-charge-meter" aria-live="polite"><span /><b>HAYMAKER</b></div>
+        )}
 
         <div className={`first-person-body player-${playerPose}`} aria-hidden="true">
           <img className="player-pose-art player-main-art" src={playerAsset} alt="" draggable={false} />
@@ -986,7 +1073,14 @@ export default function Home() {
             <div className="punch-controls">
               <button onPointerDown={(event) => { event.preventDefault(); punch("left"); }} aria-label="Left jab"><kbd>J</kbd><span>JAB</span></button>
               <button onPointerDown={(event) => { event.preventDefault(); punch("body"); }} aria-label="Body hook"><kbd>L</kbd><span>BODY</span></button>
-              <button onPointerDown={(event) => { event.preventDefault(); punch("right"); }} aria-label="Right cross"><kbd>K</kbd><span>CROSS</span></button>
+              <button
+                className={haymakerCharging ? "cross-button is-charging" : "cross-button"}
+                onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); beginCrossCharge(); }}
+                onPointerUp={releaseCrossCharge}
+                onPointerLeave={releaseCrossCharge}
+                onPointerCancel={releaseCrossCharge}
+                aria-label="Tap for right cross, hold for haymaker"
+              ><kbd>K</kbd><span>CROSS / HOLD</span></button>
               <button
                 className="block-button"
                 onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); beginBlock(); }}
