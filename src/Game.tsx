@@ -26,17 +26,20 @@ type FighterPose =
 type PlayerPose =
   | "idle"
   | "jab-left"
+  | "power-jab-charge"
+  | "power-jab"
   | "cross-right"
   | "haymaker-charge"
   | "haymaker"
   | "body-hook"
+  | "special-uppercut"
   | "dodge-left"
   | "dodge-right"
   | "block"
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
-type PunchKind = "left" | "right" | "body" | "haymaker";
+type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "uppercut";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
@@ -49,6 +52,7 @@ const POSE_ASSETS = [
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
+  asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"),
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
   asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
@@ -90,6 +94,8 @@ export default function Home() {
   const [performanceMode, setPerformanceMode] = useState(false);
   const [resultReason, setResultReason] = useState<ResultReason>("knockout");
   const [haymakerCharging, setHaymakerCharging] = useState(false);
+  const [jabCharging, setJabCharging] = useState(false);
+  const [special, setSpecial] = useState(0);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -101,7 +107,7 @@ export default function Home() {
   const poseRef = useRef<FighterPose>(enemyPose);
   const punchLockRef = useRef(false);
   const playerActionRef = useRef(0);
-  const bufferedPunchRef = useRef<Exclude<PunchKind, "haymaker"> | null>(null);
+  const bufferedPunchRef = useRef<"left" | "right" | "body" | null>(null);
   const blockStartedAtRef = useRef(0);
   const guardBrokenUntilRef = useRef(0);
   const enemyKnockdownsRef = useRef(0);
@@ -115,6 +121,10 @@ export default function Home() {
   const crossChargeStartedRef = useRef(0);
   const crossChargeTimerRef = useRef(0);
   const crossChargingRef = useRef(false);
+  const jabChargeStartedRef = useRef(0);
+  const jabChargeTimerRef = useRef(0);
+  const jabChargingRef = useRef(false);
+  const specialRef = useRef(0);
   const audioContextRef = useRef<AudioContext | null>(null);
   const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const preloadStartedRef = useRef(false);
@@ -127,6 +137,7 @@ export default function Home() {
   useEffect(() => void (blockingRef.current = blocking), [blocking]);
   useEffect(() => void (dodgeRef.current = dodgeDirection), [dodgeDirection]);
   useEffect(() => void (poseRef.current = enemyPose), [enemyPose]);
+  useEffect(() => void (specialRef.current = special), [special]);
 
   useEffect(() => {
     if (!assetsReady) return;
@@ -335,6 +346,11 @@ export default function Home() {
     window.clearTimeout(crossChargeTimerRef.current);
     crossChargingRef.current = false;
     setHaymakerCharging(false);
+    window.clearTimeout(jabChargeTimerRef.current);
+    jabChargingRef.current = false;
+    setJabCharging(false);
+    specialRef.current = 0;
+    setSpecial(0);
     setEnemyPoseSafe("idle");
     setPlayerPose("idle");
     setDodgeDirection(null);
@@ -417,7 +433,8 @@ export default function Home() {
     setGetUpTaps(taps);
     if (taps < requiredGetUpTapsRef.current) return;
 
-    const recoveryHealth = Math.max(20, 40 - (playerKnockdownsRef.current - 1) * 10);
+    const recoveryLadder = [75, 50, 35, 24];
+    const recoveryHealth = recoveryLadder[playerKnockdownsRef.current - 1] ?? 24;
     playerHealthRef.current = recoveryHealth;
     staminaRef.current = 100;
     guardRef.current = 70;
@@ -675,11 +692,15 @@ export default function Home() {
 
   const punch = useCallback((kind: PunchKind): void => {
     if (matchRef.current !== "fighting" || blockingRef.current) return;
-    if (punchLockRef.current) {
-      if (kind !== "haymaker") bufferedPunchRef.current = kind;
+    if (kind === "uppercut" && specialRef.current < 100) {
+      setCallout("BUILD YOUR SPECIAL!");
       return;
     }
-    const cost = kind === "left" ? 6 : kind === "right" ? 9 : kind === "body" ? 11 : 19;
+    if (punchLockRef.current) {
+      if (kind === "left" || kind === "right" || kind === "body") bufferedPunchRef.current = kind;
+      return;
+    }
+    const cost = kind === "left" ? 6 : kind === "power-jab" ? 12 : kind === "right" ? 9 : kind === "body" ? 11 : kind === "uppercut" ? 18 : 19;
     if (staminaRef.current < cost) {
       setCallout("BREATHE — LOW STAMINA");
       return;
@@ -690,12 +711,16 @@ export default function Home() {
     const nextStamina = clamp(staminaRef.current - cost);
     staminaRef.current = nextStamina;
     setStamina(nextStamina);
-    setPlayerPose(kind === "left" ? "jab-left" : kind === "right" ? "cross-right" : kind === "body" ? "body-hook" : "haymaker");
+    if (kind === "uppercut") {
+      specialRef.current = 0;
+      setSpecial(0);
+    }
+    setPlayerPose(kind === "left" ? "jab-left" : kind === "power-jab" ? "power-jab" : kind === "right" ? "cross-right" : kind === "body" ? "body-hook" : kind === "uppercut" ? "special-uppercut" : "haymaker");
 
     // Mohawk reads obvious offense and actively closes his guard. A charged
     // haymaker is much easier for him to see coming unless he is stunned.
     const canReadPunch = poseRef.current === "idle" || poseRef.current === "taunt";
-    if (canReadPunch && Math.random() < (kind === "haymaker" ? 0.58 : 0.2)) {
+    if (canReadPunch && Math.random() < (kind === "haymaker" || kind === "uppercut" ? 0.58 : kind === "power-jab" ? 0.32 : 0.2)) {
       setEnemyPoseSafe("guard");
     }
 
@@ -713,7 +738,7 @@ export default function Home() {
       const enemyIsOpen = poseRef.current === "stunned" || poseRef.current.startsWith("windup");
       const enemyIsGuarding = poseRef.current === "guard";
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
-      const base = kind === "left" ? 4 : kind === "right" ? 7 : kind === "body" ? 6 : 43;
+      const base = kind === "left" ? 4 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "body" ? 6 : kind === "uppercut" ? 72 : 43;
       const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (kind === "haymaker" ? 1.25 : 2.1)) : base;
       // Mohawk remains durable across four health bars, but the addition of
       // active guarding made the former one-sixth scaling too restrictive.
@@ -726,14 +751,20 @@ export default function Home() {
       enemyHealthRef.current = nextHealth;
       setEnemyHealth(nextHealth);
       setCombo((value) => enemyIsGuarding ? 0 : value + 1);
+      if (!enemyIsGuarding) {
+        const specialGain = kind === "left" ? 9 : kind === "power-jab" ? 16 : kind === "right" ? 12 : kind === "body" ? 13 : kind === "haymaker" ? 18 : 0;
+        const nextSpecial = clamp(specialRef.current + specialGain + (slipCounter ? 8 : 0));
+        specialRef.current = nextSpecial;
+        setSpecial(nextSpecial);
+      }
       setScore((value) => value + damage * 100 + (slipCounter ? 900 : enemyIsOpen ? 350 : kind === "haymaker" && !enemyIsGuarding ? 1200 : 0));
-      setImpact(enemyIsGuarding ? null : kind === "haymaker" ? "right" : kind);
+      setImpact(enemyIsGuarding ? null : kind === "haymaker" || kind === "uppercut" || kind === "power-jab" ? "right" : kind);
       setHitStop(true);
       setScreenShake(true);
-      setEnemyPoseSafe(enemyIsGuarding ? "guard" : kind === "left" ? "hit-right" : kind === "right" || kind === "haymaker" ? "hit-left" : "hit-body");
+      setEnemyPoseSafe(enemyIsGuarding ? "guard" : kind === "left" || kind === "power-jab" ? "hit-right" : kind === "right" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
       playSound("punch");
-      setCallout(enemyIsGuarding ? kind === "haymaker" ? "HAYMAKER BLOCKED!" : "MOHAWK BLOCKS!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "haymaker" ? "HAYMAKER!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
-      const heavyImpact = slipCounter || kind === "haymaker";
+      setCallout(enemyIsGuarding ? kind === "haymaker" || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "haymaker" ? "HAYMAKER!" : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
+      const heavyImpact = slipCounter || kind === "haymaker" || kind === "uppercut" || kind === "power-jab";
       window.setTimeout(() => setHitStop(false), heavyImpact ? 88 : 52);
       window.setTimeout(() => setScreenShake(false), heavyImpact ? 135 : 82);
       window.setTimeout(() => setImpact(null), heavyImpact ? 180 : 120);
@@ -778,6 +809,7 @@ export default function Home() {
         ++playerActionRef.current;
         punchLockRef.current = false;
         bufferedPunchRef.current = null;
+        setPlayerPose("idle");
         setEnemyPoseSafe("knockout");
         setSecondWind(Boolean(plan));
         setCallout(plan ? "MOHAWK IS DOWN — THE COUNT STARTS!" : "STAY DOWN!");
@@ -808,8 +840,8 @@ export default function Home() {
             setEnemyPoseSafe("idle");
           }
         }
-      }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "right" ? 210 : kind === "haymaker" ? 300 : 220);
-    }, kind === "left" ? 72 : kind === "right" ? 98 : kind === "haymaker" ? 155 : 105);
+      }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "power-jab" ? 210 : kind === "right" ? 210 : kind === "haymaker" || kind === "uppercut" ? 300 : 220);
+    }, kind === "left" ? 72 : kind === "power-jab" ? 112 : kind === "right" ? 98 : kind === "haymaker" ? 155 : kind === "uppercut" ? 145 : 105);
 
     // Retract before accepting the buffered strike. Keeping the lock active
     // during this short guard frame guarantees a full extension on every hit,
@@ -818,17 +850,51 @@ export default function Home() {
       if (matchRef.current === "fighting" && !blockingRef.current && playerActionRef.current === actionId) {
         setPlayerPose("idle");
       }
-    }, kind === "left" ? 145 : kind === "haymaker" ? 310 : 175);
+    }, kind === "left" ? 145 : kind === "power-jab" ? 220 : kind === "haymaker" ? 310 : kind === "uppercut" ? 330 : 175);
 
     window.setTimeout(() => {
       punchLockRef.current = false;
       const buffered = bufferedPunchRef.current;
       bufferedPunchRef.current = null;
       if (buffered && matchRef.current === "fighting" && !blockingRef.current) punchRef.current(buffered);
-    }, kind === "left" ? 205 : kind === "haymaker" ? 390 : 235);
+    }, kind === "left" ? 205 : kind === "power-jab" ? 285 : kind === "haymaker" ? 390 : kind === "uppercut" ? 420 : 235);
   }, [playSound, setEnemyPoseSafe, takePlayerDamage]);
 
   useEffect(() => void (punchRef.current = punch), [punch]);
+
+  const beginJabCharge = useCallback(() => {
+    if (matchRef.current !== "fighting" || blockingRef.current || dodgeRef.current || jabChargingRef.current) return;
+    if (punchLockRef.current) {
+      bufferedPunchRef.current = "left";
+      return;
+    }
+    if (staminaRef.current < 12) {
+      setCallout("BREATHE — LOW STAMINA");
+      return;
+    }
+    punchLockRef.current = true;
+    jabChargingRef.current = true;
+    jabChargeStartedRef.current = performance.now();
+    ++playerActionRef.current;
+    setJabCharging(true);
+    setPlayerPose("power-jab-charge");
+    window.clearTimeout(jabChargeTimerRef.current);
+    jabChargeTimerRef.current = window.setTimeout(() => {
+      if (jabChargingRef.current && matchRef.current === "fighting") setCallout("POWER JAB READY!");
+    }, 410);
+  }, []);
+
+  const releaseJabCharge = useCallback(() => {
+    if (!jabChargingRef.current) return;
+    const heldFor = performance.now() - jabChargeStartedRef.current;
+    window.clearTimeout(jabChargeTimerRef.current);
+    jabChargingRef.current = false;
+    setJabCharging(false);
+    punchLockRef.current = false;
+    if (matchRef.current !== "fighting" || blockingRef.current) return;
+    setPlayerPose("idle");
+    punch(heldFor >= 380 ? "power-jab" : "left");
+  }, [punch]);
 
   const beginCrossCharge = useCallback(() => {
     if (matchRef.current !== "fighting" || blockingRef.current || dodgeRef.current || crossChargingRef.current) return;
@@ -860,6 +926,9 @@ export default function Home() {
     window.clearTimeout(crossChargeTimerRef.current);
     crossChargingRef.current = false;
     setHaymakerCharging(false);
+    window.clearTimeout(jabChargeTimerRef.current);
+    jabChargingRef.current = false;
+    setJabCharging(false);
     punchLockRef.current = false;
 
     if (matchRef.current !== "fighting" || blockingRef.current) return;
@@ -926,9 +995,10 @@ export default function Home() {
         startMatch();
       } else if (key === "a" || key === "arrowleft") dodge("left");
       else if (key === "d" || key === "arrowright") dodge("right");
-      else if (key === "j") punch("left");
+      else if (key === "j") beginJabCharge();
       else if (key === "k") beginCrossCharge();
       else if (key === "l") punch("body");
+      else if (key === "u") punch("uppercut");
       else if (key === " ") {
         event.preventDefault();
         beginBlock();
@@ -938,6 +1008,7 @@ export default function Home() {
       const key = event.key.toLowerCase();
       if (key === " ") endBlock();
       else if (key === "k") releaseCrossCharge();
+      else if (key === "j") releaseJabCharge();
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -945,7 +1016,7 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, beginCrossCharge, dodge, endBlock, punch, releaseCrossCharge, startMatch]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, dodge, endBlock, punch, releaseCrossCharge, releaseJabCharge, startMatch]);
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
@@ -982,13 +1053,17 @@ export default function Home() {
                               ? asset("/opponent-hit-body.webp")
               : asset("/opponent-guard.webp");
   const playerAsset = playerPose === "jab-left"
-    ? asset("/player-jab-left.webp")
+    ? asset("/player-power-jab.webp")
+    : playerPose === "power-jab"
+      ? asset("/player-power-jab.webp")
     : playerPose === "cross-right"
       ? asset("/player-cross-right.webp")
       : playerPose === "haymaker"
         ? asset("/player-cross-right.webp")
       : playerPose === "body-hook"
         ? asset("/player-body-hook.webp")
+        : playerPose === "special-uppercut"
+          ? asset("/player-special-uppercut.webp")
         : playerPose === "hit"
             ? asset("/player-hit.webp")
             : asset("/player-guard.webp");
@@ -1014,6 +1089,7 @@ export default function Home() {
             <div className="health-track"><span style={{ width: `${playerHealth}%` }} /></div>
             <div className="mini-meter"><em>STAMINA</em><i style={{ width: `${stamina}%` }} /></div>
             <div className="mini-meter guard-meter"><em>GUARD</em><i style={{ width: `${guard}%` }} /></div>
+            <div className={`mini-meter special-meter ${special >= 100 ? "is-ready" : ""}`}><em>{special >= 100 ? "SPECIAL READY" : "SPECIAL"}</em><i style={{ width: `${special}%` }} /></div>
           </div>
 
           <div className="round-clock">
@@ -1048,6 +1124,9 @@ export default function Home() {
         {haymakerCharging && matchState === "fighting" && (
           <div className="haymaker-charge-meter" aria-live="polite"><span /><b>HAYMAKER</b></div>
         )}
+        {jabCharging && matchState === "fighting" && (
+          <div className="jab-charge-meter" aria-live="polite"><span /><b>POWER JAB</b></div>
+        )}
 
         <div className={`first-person-body player-${playerPose}`} aria-hidden="true">
           <img className="player-pose-art player-main-art" src={playerAsset} alt="" draggable={false} />
@@ -1061,7 +1140,14 @@ export default function Home() {
               <button onPointerDown={(event) => { event.preventDefault(); dodge("right"); }} aria-label="Dodge right"><kbd>D</kbd><span>SLIP RIGHT</span></button>
             </div>
             <div className="punch-controls">
-              <button onPointerDown={(event) => { event.preventDefault(); punch("left"); }} aria-label="Left jab"><kbd>J</kbd><span>JAB</span></button>
+              <button
+                className={jabCharging ? "jab-button is-charging" : "jab-button"}
+                onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); beginJabCharge(); }}
+                onPointerUp={releaseJabCharge}
+                onPointerLeave={releaseJabCharge}
+                onPointerCancel={releaseJabCharge}
+                aria-label="Tap for left jab, hold for power jab"
+              ><kbd>J</kbd><span>JAB / HOLD</span></button>
               <button onPointerDown={(event) => { event.preventDefault(); punch("body"); }} aria-label="Body hook"><kbd>L</kbd><span>BODY</span></button>
               <button
                 className={haymakerCharging ? "cross-button is-charging" : "cross-button"}
@@ -1071,6 +1157,12 @@ export default function Home() {
                 onPointerCancel={releaseCrossCharge}
                 aria-label="Tap for right cross, hold for haymaker"
               ><kbd>K</kbd><span>CROSS / HOLD</span></button>
+              <button
+                className={`special-button ${special >= 100 ? "is-ready" : ""}`}
+                onPointerDown={(event) => { event.preventDefault(); punch("uppercut"); }}
+                disabled={special < 100}
+                aria-label="Finishing uppercut when special meter is full"
+              ><kbd>U</kbd><span>SPECIAL</span></button>
               <button
                 className="block-button"
                 onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); beginBlock(); }}

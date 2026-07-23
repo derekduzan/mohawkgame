@@ -162,6 +162,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mini-meter i { display:block; height:100%; background: var(--acid); transition: width .15s; }
 .guard-meter { margin-top: 11px; }
 .guard-meter i { background: #62b6ff; }
+.special-meter i { background:linear-gradient(90deg,#8b26d9,#e84eff 55%,#fff0a2); box-shadow:0 0 8px rgba(224,67,255,.7); }
+.special-meter.is-ready { color:#fff2a6; animation:specialReadyPulse .45s ease-in-out infinite alternate; }
 .round-clock { display: grid; grid-template-columns: auto auto; column-gap: .4rem; place-content: center; min-width: clamp(78px,8vw,120px); padding: .35rem .6rem .45rem; background: #ece5d6; color: #0a0b0a; border: 3px solid #0a0b0a; transform: skewX(-5deg); text-align: center; }
 .round-clock span { font: 900 clamp(.44rem,.6vw,.65rem)/1 Arial,sans-serif; letter-spacing:.14em; }
 .round-clock strong { font: 900 clamp(.75rem,1vw,1.1rem)/.8 Arial,sans-serif; color: var(--blood); }
@@ -256,10 +258,13 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-block-art { visibility:hidden; opacity:0; }
 .player-block .player-main-art { visibility:hidden; }
 .player-block .player-block-art { visibility:visible; opacity:1; transition:none; }
-.player-jab-left .player-pose-art,.player-cross-right .player-pose-art { width:84%; height:84%; bottom:-5%; }
+.player-jab-left .player-pose-art,.player-power-jab .player-pose-art,.player-special-uppercut .player-pose-art,.player-cross-right .player-pose-art { width:84%; height:84%; bottom:-5%; }
 .player-haymaker .player-pose-art { width:90%; height:90%; bottom:-7%; }
 .player-body-hook .player-pose-art { width:78%; height:78%; bottom:-4%; }
 .player-jab-left .player-main-art { animation:jabPose 145ms cubic-bezier(.12,.78,.18,1) both; transform-origin:38% 86%; }
+.player-power-jab-charge .player-main-art { animation:powerJabLoad 410ms cubic-bezier(.16,.72,.2,1) both,powerJabChargePulse .45s 410ms ease-in-out infinite alternate; transform-origin:38% 86%; }
+.player-power-jab .player-main-art { animation:powerJabPose 220ms cubic-bezier(.06,.72,.13,1) both; transform-origin:38% 86%; }
+.player-special-uppercut .player-main-art { animation:specialUppercutPose 330ms cubic-bezier(.05,.74,.1,1) both; transform-origin:66% 90%; }
 .player-cross-right .player-main-art { animation:crossPose 175ms cubic-bezier(.08,.72,.16,1) both; transform-origin:68% 88%; }
 .player-haymaker-charge .player-main-art { animation:haymakerLoad 480ms cubic-bezier(.16,.72,.2,1) both,haymakerChargePulse .5s 480ms ease-in-out infinite alternate; transform-origin:68% 88%; }
 .player-haymaker .player-main-art { animation:haymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:68% 88%; }
@@ -304,9 +309,15 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .controls button:hover { color:white; border-color:var(--gold); background:rgba(25,21,15,.9); transform:translateY(-2px); }
 .controls button:active { transform:translateY(2px); border-bottom-width:1px; }
 .controls .cross-button.is-charging { color:#fff4bb; border-color:var(--gold); background:linear-gradient(180deg,rgba(116,65,7,.95),rgba(45,20,3,.96)); box-shadow:0 0 18px rgba(255,177,31,.65),inset 0 0 12px rgba(255,216,102,.2); }
+.controls .jab-button.is-charging { color:#fff4bb; border-color:#ff9b31; background:linear-gradient(180deg,rgba(128,49,9,.95),rgba(50,17,3,.96)); box-shadow:0 0 18px rgba(255,112,28,.65); }
+.controls .special-button:disabled { opacity:.38; cursor:not-allowed; filter:grayscale(1); }
+.controls .special-button.is-ready { opacity:1; color:#fff5a9; border-color:#e95cff; background:linear-gradient(180deg,rgba(103,21,126,.96),rgba(39,5,49,.97)); box-shadow:0 0 18px rgba(226,73,255,.75); animation:specialButtonPulse .46s ease-in-out infinite alternate; }
 .haymaker-charge-meter { position:absolute; z-index:36; left:50%; bottom:15%; width:min(300px,52vw); height:19px; overflow:visible; transform:translateX(-50%); border:2px solid #f4ead5; background:#080908; box-shadow:4px 5px #000; pointer-events:none; }
 .haymaker-charge-meter span { display:block; width:0; height:100%; background:linear-gradient(90deg,#b51e12 0%,#ef7d16 55%,#ffe56d 100%); box-shadow:0 0 13px rgba(255,180,33,.9); animation:haymakerFill 480ms linear forwards; }
 .haymaker-charge-meter b { position:absolute; left:50%; bottom:calc(100% + 5px); transform:translateX(-50%); color:#ffd04b; font:1000 .62rem/1 Arial,sans-serif; letter-spacing:.18em; text-shadow:2px 2px #000; white-space:nowrap; }
+.jab-charge-meter { position:absolute; z-index:36; left:50%; bottom:15%; width:min(260px,48vw); height:17px; transform:translateX(-50%); border:2px solid #f4ead5; background:#080908; box-shadow:4px 5px #000; pointer-events:none; }
+.jab-charge-meter span { display:block; width:0; height:100%; background:linear-gradient(90deg,#c63a12,#ff9831 65%,#fff28a); box-shadow:0 0 12px rgba(255,113,27,.85); animation:powerJabFill 410ms linear forwards; }
+.jab-charge-meter b { position:absolute; left:50%; bottom:calc(100% + 5px); transform:translateX(-50%); color:#ffb04c; font:1000 .62rem/1 Arial,sans-serif; letter-spacing:.18em; text-shadow:2px 2px #000; white-space:nowrap; }
 .controls kbd { font:900 clamp(.55rem,.8vw,.8rem)/1 Arial,sans-serif; color:var(--gold); }
 .controls span { font:800 clamp(.42rem,.55vw,.58rem)/1 Arial,sans-serif; letter-spacing:.06em; }
 .controls .block-button { min-width:clamp(72px,7vw,110px); border-color:#477a9a; }
@@ -474,6 +485,24 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   52% { transform:translateX(-50%) translate(7%,-3%) scale(1.025); }
   100% { transform:translateX(-50%) scale(1); filter:drop-shadow(0 9px 10px #120605aa); }
 }
+@keyframes powerJabLoad {
+  from { transform:translateX(-50%) scale(1); filter:drop-shadow(0 9px 10px #120605aa); }
+  to { transform:translateX(-50%) translate(-8%,8%) rotate(-6deg) scale(.86); filter:drop-shadow(0 12px 15px #120605dd) brightness(.93); }
+}
+@keyframes powerJabChargePulse { from{filter:brightness(.92)} to{filter:brightness(1.13) drop-shadow(0 0 17px rgba(255,105,25,.8))} }
+@keyframes powerJabPose {
+  0% { transform:translateX(-50%) translate(-10%,10%) rotate(-7deg) scale(.8); filter:blur(.8px) drop-shadow(0 10px 13px #120605cc); }
+  57% { transform:translateX(-50%) translate(9%,-5%) rotate(2deg) scale(1.1); }
+  100% { transform:translateX(-50%) translate(1%,-1%) scale(1.03); filter:drop-shadow(0 12px 13px #120605cc); }
+}
+@keyframes specialUppercutPose {
+  0% { transform:translateX(-50%) translate(8%,18%) rotate(8deg) scale(.76); filter:blur(1px) brightness(.9); }
+  62% { transform:translateX(-50%) translate(-2%,-12%) rotate(-3deg) scale(1.17); filter:drop-shadow(0 0 22px rgba(231,72,255,.9)); }
+  100% { transform:translateX(-50%) translate(0,-5%) scale(1.08); filter:drop-shadow(0 12px 14px #120605dd); }
+}
+@keyframes powerJabFill { from{width:0} to{width:100%} }
+@keyframes specialReadyPulse { to{filter:brightness(1.7)} }
+@keyframes specialButtonPulse { to{box-shadow:0 0 27px rgba(235,88,255,.95)} }
 @keyframes crossPose {
   0% { transform:translateX(-50%) translate(9%,9%) rotate(7deg) scale(.82); filter:drop-shadow(0 9px 10px #120605aa) blur(.8px); }
   56% { transform:translateX(-50%) translate(-11%,-5%) rotate(-3deg) scale(1.07); }
@@ -538,16 +567,21 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
      rig so jabs/crosses meet the head and the body hook meets the torso. */
   .first-person-body { transform:translateY(-18dvh) scale(1.22); transform-origin:center bottom; }
   .first-person-body.player-jab-left,
+  .first-person-body.player-power-jab,
+  .first-person-body.player-special-uppercut,
   .first-person-body.player-cross-right,
   .first-person-body.player-haymaker { transform:translateY(-31dvh) scale(1.22); }
   .first-person-body.player-haymaker-charge { transform:translateY(-21dvh) scale(1.22); }
+  .first-person-body.player-power-jab-charge { transform:translateY(-22dvh) scale(1.22); }
   .first-person-body.player-body-hook { transform:translateY(-22dvh) scale(1.22); }
   .player-dodge-left { transform:translateX(-10%) translateY(-18dvh) scale(1.22); }
   .player-dodge-right { transform:translateX(10%) translateY(-18dvh) scale(1.22); }
   .controls { bottom:max(1.2%,env(safe-area-inset-bottom)); left:max(2%,env(safe-area-inset-left)); right:max(2%,env(safe-area-inset-right)); gap:.4rem; }
   .move-controls,.punch-controls { gap:.25rem; }
-  .controls button { min-width:53px;height:47px;padding:0 .25rem; }
-  .controls .block-button { min-width:62px; }
+  .controls button { min-width:43px;height:47px;padding:0 .15rem; }
+  .controls .block-button { min-width:55px; }
+  .controls .special-button { min-width:46px; }
+  .controls button span { font-size:.36rem; }
   .intro-overlay { display:block; padding:0; }
   .intro-marquee { top:2.5%; width:88%; min-width:0; padding:.45rem .6rem; font-size:.48rem; letter-spacing:.16em; }
   .intro-mohawk { right:-30%; bottom:10%; width:150%; height:76%; opacity:.72; }
@@ -576,6 +610,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .player-holds-belt { height:66%; bottom:-5%; width:118%; left:-9%; right:auto; }
   .mohawk-speech { top:25%; right:4%; width:78%; padding:.7rem 1rem; }
   .haymaker-charge-meter { bottom:12%; width:54vw; }
+  .jab-charge-meter { bottom:12%; width:52vw; }
 }
 
 @media (pointer:coarse) {
@@ -591,7 +626,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .round-clock time { font-size:1.1rem; }
   .opponent-stage { width:min(54%,470px); height:84%; bottom:8%; }
   .player-pose-art { width:62%; height:62%; bottom:-5%; }
-  .player-jab-left .player-pose-art,.player-cross-right .player-pose-art,.player-haymaker .player-pose-art { width:72%; height:72%; }
+  .player-jab-left .player-pose-art,.player-power-jab .player-pose-art,.player-special-uppercut .player-pose-art,.player-cross-right .player-pose-art,.player-haymaker .player-pose-art { width:72%; height:72%; }
   .player-body-hook .player-pose-art,.player-block .player-pose-art { width:70%; height:70%; }
   .controls { bottom:max(1%,env(safe-area-inset-bottom)); }
   .controls button { min-width:56px; height:50px; }
