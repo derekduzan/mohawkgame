@@ -594,17 +594,16 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .fight-hud { grid-template-columns:1fr 64px 1fr; gap:7px; }
   .name-row { font-size:.56rem; }
   .opponent-stage { width:108%; height:72%; bottom:16%; }
-  /* Portrait needs a higher first-person camera line. Lift the complete arm
-     rig so jabs/crosses meet the head and the body hook meets the torso. */
+  /* Keep the portrait camera rig fixed so the guarding hand never jumps with
+     the punching hand. Only the active arm rises toward Mohawk's chin. */
   .first-person-body { transform:translateY(-18dvh) scale(1.22); transform-origin:center bottom; }
-  .first-person-body.player-jab-left,
-  .first-person-body.player-power-jab,
-  .first-person-body.player-special-uppercut,
-  .first-person-body.player-cross-right,
-  .first-person-body.player-haymaker { transform:translateY(-31dvh) scale(1.22); }
-  .first-person-body.player-haymaker-charge { transform:translateY(-21dvh) scale(1.22); }
-  .first-person-body.player-power-jab-charge { transform:translateY(-22dvh) scale(1.22); }
-  .first-person-body.player-body-hook { transform:translateY(-22dvh) scale(1.22); }
+  .player-jab-left .player-left-art,
+  .player-power-jab .player-left-art { bottom:calc(-5% + 13dvh); }
+  .player-cross-right .player-right-art { bottom:calc(-5% + 13dvh); }
+  .player-haymaker .player-right-art { bottom:calc(-7% + 13dvh); }
+  .player-power-jab-charge .player-left-art { bottom:calc(-3% + 4dvh); }
+  .player-haymaker-charge .player-right-art { bottom:calc(-3% + 3dvh); }
+  .player-body-hook .player-left-art { bottom:calc(-4% + 4dvh); }
   .player-dodge-left { transform:translateX(-10%) translateY(-18dvh) scale(1.22); }
   .player-dodge-right { transform:translateX(10%) translateY(-18dvh) scale(1.22); }
   .controls { bottom:max(1.2%,env(safe-area-inset-bottom)); left:max(2%,env(safe-area-inset-left)); right:max(2%,env(safe-area-inset-right)); gap:.4rem; }
