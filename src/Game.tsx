@@ -28,6 +28,7 @@ type FighterPose =
   | "stunned"
   | "stumble-back"
   | "rising"
+  | "returning"
   | "knockdown-knee"
   | "knockout";
 type PlayerPose =
@@ -47,6 +48,7 @@ type PlayerPose =
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "uppercut";
+type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
@@ -109,6 +111,7 @@ export default function Home() {
   const [jabCharging, setJabCharging] = useState(false);
   const [special, setSpecial] = useState(0);
   const [overhandImpact, setOverhandImpact] = useState(false);
+  const [kneeDepth, setKneeDepth] = useState<KneeDepth>("near");
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -126,6 +129,7 @@ export default function Home() {
   const enemyKnockdownsRef = useRef(0);
   const enemyRiseAtRef = useRef<number | null>(null);
   const enemyRecoveryHealthRef = useRef(0);
+  const kneeDepthRef = useRef<KneeDepth>("near");
   const playerKnockdownsRef = useRef(0);
   const getUpTapsRef = useRef(0);
   const requiredGetUpTapsRef = useRef(15);
@@ -387,6 +391,8 @@ export default function Home() {
     setEnemyKnockdowns(0);
     setEnemyCount(1);
     setEnemyRiseAt(null);
+    kneeDepthRef.current = "near";
+    setKneeDepth("near");
     playerKnockdownsRef.current = 0;
     getUpTapsRef.current = 0;
     requiredGetUpTapsRef.current = 15;
@@ -549,12 +555,22 @@ export default function Home() {
           setCallout("MOHAWK PUSHES UP FROM HIS KNEE!");
           window.setTimeout(() => {
             if (matchRef.current !== "enemy-down") return;
-            matchRef.current = "fighting";
-            setMatchState("fighting");
-            setEnemyPoseSafe("idle");
-            setCallout(`MOHAWK RISES WITH ${recoveryHealth}%!`);
-            playSound("bell");
-            window.setTimeout(() => setSecondWind(false), 2600);
+            const resumeFight = () => {
+              if (matchRef.current !== "enemy-down") return;
+              matchRef.current = "fighting";
+              setMatchState("fighting");
+              setEnemyPoseSafe("idle");
+              setCallout(`MOHAWK RISES WITH ${recoveryHealth}%!`);
+              playSound("bell");
+              window.setTimeout(() => setSecondWind(false), 2600);
+            };
+            if (kneeDepthRef.current === "far") {
+              setEnemyPoseSafe("returning");
+              setCallout("MOHAWK STEPS BACK INTO RANGE!");
+              window.setTimeout(resumeFight, 480);
+            } else {
+              resumeFight();
+            }
           }, 620);
         }, 300);
       } else if (riseAt === null && nextCount >= 10) {
@@ -915,6 +931,12 @@ export default function Home() {
         const riseAt = plan ? plan.min + Math.floor(Math.random() * (plan.max - plan.min + 1)) : null;
         enemyRiseAtRef.current = riseAt;
         enemyRecoveryHealthRef.current = plan?.health ?? 0;
+        const nextKneeDepth: KneeDepth =
+          kind === "uppercut" || kind === "haymaker"
+            ? Math.random() < .68 ? "far" : "near"
+            : Math.random() < .3 ? "far" : "near";
+        kneeDepthRef.current = nextKneeDepth;
+        setKneeDepth(nextKneeDepth);
         setEnemyRiseAt(riseAt);
         setEnemyCount(1);
         ++playerActionRef.current;
@@ -1235,7 +1257,7 @@ export default function Home() {
         {matchState === "fighting" && <div className="score">SCORE {score.toLocaleString()}</div>}
         {matchState === "fighting" && <button className="pause-trigger" onClick={togglePause} aria-label="Pause fight">Ⅱ</button>}
 
-        <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
+        <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
           <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
           <div className="damage-glow" aria-hidden="true" />
