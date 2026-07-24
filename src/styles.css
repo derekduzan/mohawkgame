@@ -256,7 +256,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-windup-combo-right { transform:translateX(-57%) translateY(2%) rotate(-10deg) scale(.9); filter:brightness(.88); }
 .pose-attack-combo-left { animation:comboBombLeft .34s cubic-bezier(.06,.8,.12,1); }
 .pose-attack-combo-right { animation:comboBombRight .34s cubic-bezier(.06,.8,.12,1); }
-.pose-windup-uppercut { transform:translateX(-50%) translateY(7%) rotate(3deg) scale(.94); }
+.pose-windup-uppercut { transform:translateX(-50%) translateY(3%) rotate(3deg) scale(.97); }
 .pose-attack-uppercut { animation:uppercutDrive .4s cubic-bezier(.08,.76,.14,1); }
 .pose-taunt { animation:tauntBreathe .62s ease-in-out infinite alternate; filter:brightness(1.08) saturate(1.08); }
 .pose-hit-left { transform: translateX(-56%) rotate(-9deg) scale(1.03); }
@@ -541,10 +541,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes jabContact { from{transform:translateX(-53%) scale(.96)}to{transform:translateX(-50%) translateY(-1%) scale(1.07);filter:brightness(1.08)} }
 @keyframes crossContact { from{transform:translateX(-47%) rotate(-2deg) scale(.96)}to{transform:translateX(-50%) translateY(-1%) rotate(1deg) scale(1.1);filter:brightness(1.1)} }
 @keyframes bodyContact { from{transform:translateX(-50%) translateY(5%) scale(.96)}to{transform:translateX(-50%) translateY(7%) scale(1.08);filter:brightness(1.08)} }
-@keyframes uppercutContact { from{transform:translateX(-50%) translateY(8%) scale(.88)}62%{transform:translateX(-50%) translateY(-2%) scale(1.12)}to{transform:translateX(-50%) translateY(-9%) scale(1.31);filter:brightness(1.16)} }
+@keyframes uppercutContact { from{transform:translateX(-50%) translateY(2%) scale(.98)}62%{transform:translateX(-50%) translateY(1%) rotate(-2deg) scale(1.08)}to{transform:translateX(-50%) translateY(0) rotate(-1deg) scale(1.13);filter:brightness(1.16)} }
 @keyframes comboBombLeft { 0%{transform:translateX(-43%) rotate(10deg) scale(.9)}55%{transform:translateX(-58%) translateY(-2%) rotate(-8deg) scale(1.14)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes comboBombRight { 0%{transform:translateX(-57%) rotate(-10deg) scale(.9)}55%{transform:translateX(-42%) translateY(-2%) rotate(8deg) scale(1.14)}100%{transform:translateX(-50%) scale(1.03)} }
-@keyframes uppercutDrive { 0%{transform:translateX(-50%) translateY(8%) scale(.92)}48%{transform:translateX(-48%) translateY(5%) rotate(4deg) scale(.96)}72%{transform:translateX(-52%) translateY(-7%) rotate(-4deg) scale(1.1)}100%{transform:translateX(-50%) translateY(-3%) scale(1.04)} }
+@keyframes uppercutDrive { 0%{transform:translateX(-50%) translateY(3%) rotate(3deg) scale(.97)}48%{transform:translateX(-49%) translateY(3%) rotate(4deg) scale(.98)}72%{transform:translateX(-51%) translateY(1%) rotate(-3deg) scale(1.04)}100%{transform:translateX(-50%) translateY(0) rotate(-1deg) scale(1.02)} }
 @keyframes tauntBreathe { from{transform:translateX(-50%) translateY(1%) scale(1)} to{transform:translateX(-50%) translateY(-1%) scale(1.018)} }
 @keyframes visionPulse { from{filter:brightness(.92)} to{filter:brightness(.72)} }
 @keyframes enemyShoulderDrive { 0%{transform:translate(-8%,5%) rotate(43deg)}35%{transform:translate(-12%,7%) rotate(49deg)}58%{transform:translate(23%,-10%) rotate(-8deg) scale(1.12)}100%{transform:rotate(23deg)} }
