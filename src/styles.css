@@ -268,8 +268,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .knee-near { --knee-y:15%; --knee-scale:1.04; --knee-entry-scale:.96; --knee-bounce-scale:1.065; }
 .knee-far { --knee-y:22%; --knee-scale:.74; --knee-entry-scale:.68; --knee-bounce-scale:.76; }
 .pose-knockdown-knee { animation:mohawkKneeSettle .46s cubic-bezier(.18,.76,.22,1) both,mohawkKneeBreathing .8s .46s ease-in-out infinite alternate; filter:brightness(.88) saturate(.92); }
-.pose-rising { animation:mohawkRiseFromKnee .62s cubic-bezier(.15,.78,.2,1) both; }
-.pose-failed-rise { animation:mohawkFailedRise .62s cubic-bezier(.18,.7,.22,1) both; filter:brightness(.92) saturate(.9); }
+.pose-rising,.pose-failed-rise { transform:translateX(-50%) translateY(calc(var(--knee-y) - 7%)) scale(var(--knee-scale)); animation:none; transition:none; }
 .pose-returning { animation:mohawkReturnToRange .48s cubic-bezier(.12,.78,.18,1) both; }
 .pose-guard { transform: translateX(-50%) translateY(-1%) scale(1.04); filter:brightness(.78); }
 .pose-guard::before { content:""; position:absolute; z-index:5; left:50%; top:27%; width:42%; aspect-ratio:1.25; transform:translateX(-50%); border:4px solid rgba(255,190,49,.8); border-top-color:rgba(255,242,176,.95); border-bottom-color:transparent; border-radius:50%; filter:drop-shadow(0 0 9px rgba(255,170,24,.8)); pointer-events:none; animation:mohawkGuardFlash .42s ease-out both; }

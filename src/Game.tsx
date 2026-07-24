@@ -69,7 +69,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.39.0";
+const GAME_VERSION = "0.40.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
