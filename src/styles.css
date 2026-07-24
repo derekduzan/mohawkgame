@@ -235,10 +235,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-attack-left { animation: opponentLeft .31s cubic-bezier(.2,.8,.2,1); }
 .pose-attack-right { animation: opponentRight .31s cubic-bezier(.2,.8,.2,1); }
 .pose-attack-body { animation: opponentBody .36s cubic-bezier(.2,.8,.2,1); }
-.pose-windup-heavy { transform:translateX(-46%) translateY(-6%) rotate(-8deg) scale(.72); filter:brightness(.82) saturate(.9); transition:transform .2s cubic-bezier(.2,.75,.2,1),filter .15s; }
-.pose-windup-heavy-left { transform:translateX(-54%) translateY(-6%) rotate(8deg) scale(.72); filter:brightness(.82) saturate(.9); transition:transform .2s cubic-bezier(.2,.75,.2,1),filter .15s; }
+.pose-windup-heavy { transform:translateX(-50%) translateY(8%) rotate(-4deg) scale(.78); filter:brightness(.82) saturate(.9); transition:transform .2s cubic-bezier(.2,.75,.2,1),filter .15s; }
+.pose-windup-heavy-left { transform:translateX(-50%) translateY(8%) rotate(4deg) scale(.78); filter:brightness(.82) saturate(.9); transition:transform .2s cubic-bezier(.2,.75,.2,1),filter .15s; }
 .pose-windup-haymaker-right { transform:translateX(-50%) translateY(-1%) scale(.9); filter:brightness(.92); transition:transform .18s cubic-bezier(.2,.75,.2,1),filter .15s; }
-.pose-windup-haymaker-left { transform:translateX(-50%) translateY(-1%) scale(-.9,.9); filter:brightness(.92); transition:transform .18s cubic-bezier(.2,.75,.2,1),filter .15s; }
+.pose-windup-haymaker-left { transform:translateX(-50%) translateY(-1%) scale(.9); filter:brightness(.92); transition:transform .18s cubic-bezier(.2,.75,.2,1),filter .15s; }
 .pose-attack-heavy { animation:heavyBomb .48s cubic-bezier(.08,.78,.12,1); }
 .pose-attack-heavy-left { animation:heavyBombLeft .48s cubic-bezier(.08,.78,.12,1); }
 .pose-attack-haymaker-right { animation:haymakerRightSweep .34s cubic-bezier(.06,.78,.12,1) both; }
@@ -247,7 +247,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-attack-heavy-left-contact { animation:heavyContactLeft .12s cubic-bezier(.05,.82,.12,1) both; }
 .pose-attack-haymaker-right-contact { animation:haymakerRightContact .12s cubic-bezier(.05,.82,.12,1) both; }
 .pose-attack-haymaker-left-contact { animation:haymakerLeftContact .12s cubic-bezier(.05,.82,.12,1) both; }
-.pose-windup-heavy-left .opponent-pose-art,.pose-attack-heavy-left .opponent-pose-art,.pose-attack-heavy-left-contact .opponent-pose-art { transform:scaleX(-1); }
 .pose-attack-left-contact { animation:jabContact .1s cubic-bezier(.05,.82,.12,1) both; }
 .pose-attack-right-contact { animation:crossContact .11s cubic-bezier(.05,.82,.12,1) both; }
 .pose-attack-body-contact { animation:bodyContact .11s cubic-bezier(.05,.82,.12,1) both; }
@@ -530,7 +529,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes opponentLeft { 0%{transform:translateX(-52%) rotate(3deg)}48%{transform:translateX(-45%) translateY(-1%) scale(1.085) rotate(-4deg)}100%{transform:translateX(-50%) rotate(0)} }
 @keyframes opponentRight { 0%{transform:translateX(-48%) rotate(-3deg)}48%{transform:translateX(-55%) translateY(-1%) scale(1.085) rotate(4deg)}100%{transform:translateX(-50%) rotate(0)} }
 @keyframes opponentBody { 0%{transform:translateX(-50%) translateY(3%) scale(.97)}48%{transform:translateX(-50%) translateY(5%) scale(1.075) rotate(-2deg)}100%{transform:translateX(-50%)} }
-@keyframes heavyBomb { 0%{transform:translateX(-46%) translateY(-6%) rotate(-9deg) scale(.72)}28%{transform:translateX(-43%) translateY(-5%) rotate(-13deg) scale(.76)}66%{transform:translateX(-58%) translateY(-2%) rotate(7deg) scale(1.17)}82%{transform:translateX(-55%) translateY(-1%) rotate(5deg) scale(1.12)}100%{transform:translateX(-50%) scale(1.03)} }
+@keyframes heavyBomb { 0%{transform:translateX(-50%) translateY(8%) rotate(-4deg) scale(.78)}28%{transform:translateX(-49%) translateY(8%) rotate(-6deg) scale(.8)}66%{transform:translateX(-52%) translateY(1%) rotate(3deg) scale(1.02)}82%{transform:translateX(-51%) translateY(0) rotate(2deg) scale(1.04)}100%{transform:translateX(-50%) translateY(0) scale(1)} }
 @keyframes heavyBombLeft { 0%{transform:translateX(-54%) translateY(-6%) rotate(9deg) scale(.72)}28%{transform:translateX(-57%) translateY(-5%) rotate(13deg) scale(.76)}66%{transform:translateX(-42%) translateY(-2%) rotate(-7deg) scale(1.17)}82%{transform:translateX(-45%) translateY(-1%) rotate(-5deg) scale(1.12)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes heavyContact { from{transform:translateX(-54%) translateY(-2%) rotate(4deg) scale(1.02);filter:brightness(1)}to{transform:translateX(-50%) translateY(-1%) rotate(1deg) scale(1.2);filter:brightness(1.14)} }
 @keyframes heavyContactLeft { from{transform:translateX(-46%) translateY(-2%) rotate(-4deg) scale(1.02);filter:brightness(1)}to{transform:translateX(-50%) translateY(-1%) rotate(-1deg) scale(1.2);filter:brightness(1.14)} }
