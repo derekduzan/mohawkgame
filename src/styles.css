@@ -173,6 +173,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .combo-counter strong { display:block; font-size: clamp(2.8rem,6vw,6rem); line-height:.75; }
 .combo-counter span { font: 900 clamp(.6rem,.9vw,.9rem)/1 Arial,sans-serif; letter-spacing:.15em; color:white; }
 .score { position:absolute; right:3%; top:18%; z-index:20; font:700 clamp(.45rem,.75vw,.75rem)/1 Arial,sans-serif; letter-spacing:.12em; color:#aaa; }
+.pause-trigger { display:none; position:absolute; z-index:52; right:max(2.5%,env(safe-area-inset-right)); top:15%; width:42px; height:38px; color:#fff; background:#111c; border:2px solid #ddd5c8; border-radius:4px; font:1000 1rem/1 Arial,sans-serif; }
 
 .opponent-stage { position: absolute; z-index: 6; left: 50%; bottom: 8%; width: min(60vw, 900px); height: 88%; transform: translateX(-50%); transform-origin: 50% 92%; transition: transform .1s ease-out, filter .1s; isolation:isolate; }
 .opponent-torso { position: absolute; z-index:2; left:50%; bottom:0; transform: translateX(-50%); width: 100%; height:100%; object-fit:contain; object-position:center bottom; filter: drop-shadow(0 14px 14px #000) saturate(.92) contrast(1.05); mix-blend-mode:lighten; clip-path:polygon(17% 0,83% 0,82% 42%,72% 100%,28% 100%,18% 42%); -webkit-mask-image:linear-gradient(to right,transparent 0,#000 14%,#000 86%,transparent 100%),linear-gradient(to bottom,rgba(0,0,0,.08) 0,#000 8%,#000 88%,transparent 100%); -webkit-mask-composite:source-in; mask-image:linear-gradient(to right,transparent 0,#000 14%,#000 86%,transparent 100%),linear-gradient(to bottom,rgba(0,0,0,.08) 0,#000 8%,#000 88%,transparent 100%); mask-composite:intersect; pointer-events:none; }
@@ -244,6 +245,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-hit-body { transform: translateX(-50%) translateY(4%) scale(1.03,.99); }
 .pose-hit-left .damage-glow,.pose-hit-right .damage-glow,.pose-hit-body .damage-glow { opacity:.7; }
 .pose-stunned { transform: translateX(-50%) translateY(2%) rotate(2deg) scale(.98); filter:brightness(1.12); animation:stunned .18s ease-in-out infinite alternate; }
+.pose-stumble-back { animation:mohawkStumbleBack .72s cubic-bezier(.12,.74,.18,1) both; filter:brightness(1.06); }
+.pose-knockdown-knee { animation:mohawkToKnee .85s cubic-bezier(.18,.7,.22,1) forwards; filter:brightness(.88) saturate(.92); }
+.pose-rising { animation:mohawkRiseFromKnee .62s cubic-bezier(.15,.78,.2,1) both; }
 .pose-guard { transform: translateX(-50%) translateY(-1%) scale(1.04); filter:brightness(.78); }
 .pose-guard::before { content:""; position:absolute; z-index:5; left:50%; top:27%; width:42%; aspect-ratio:1.25; transform:translateX(-50%); border:4px solid rgba(255,190,49,.8); border-top-color:rgba(255,242,176,.95); border-bottom-color:transparent; border-radius:50%; filter:drop-shadow(0 0 9px rgba(255,170,24,.8)); pointer-events:none; animation:mohawkGuardFlash .42s ease-out both; }
 .pose-knockout { animation: knockout 1.15s cubic-bezier(.4,0,.7,1) forwards; }
@@ -260,19 +264,19 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .first-person-body { position:absolute; z-index:14; inset:0; pointer-events:none; transform-origin:center bottom; transition:transform .12s ease-out; }
 .player-pose-art { position:absolute; z-index:2; left:50%; bottom:-3%; transform:translateX(-50%); width:70%; height:70%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 9px 10px #120605aa); }
 .player-block-art { visibility:hidden; opacity:0; }
-.player-block .player-main-art { visibility:hidden; }
+.player-block .player-arm-art,.player-block .player-hit-art { visibility:hidden; }
 .player-block .player-block-art { visibility:visible; opacity:1; transition:none; }
-.player-jab-left .player-pose-art,.player-power-jab .player-pose-art,.player-special-uppercut .player-pose-art,.player-cross-right .player-pose-art { width:84%; height:84%; bottom:-5%; }
-.player-haymaker .player-pose-art { width:90%; height:90%; bottom:-7%; }
-.player-body-hook .player-pose-art { width:78%; height:78%; bottom:-4%; }
-.player-jab-left .player-main-art { animation:jabPose 145ms cubic-bezier(.12,.78,.18,1) both; transform-origin:38% 86%; }
-.player-power-jab-charge .player-main-art { animation:powerJabLoad 410ms cubic-bezier(.16,.72,.2,1) both,powerJabChargePulse .45s 410ms ease-in-out infinite alternate; transform-origin:38% 86%; }
-.player-power-jab .player-main-art { animation:powerJabPose 220ms cubic-bezier(.06,.72,.13,1) both; transform-origin:38% 86%; }
+.player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art { width:84%; height:84%; bottom:-5%; }
+.player-haymaker .player-right-art { width:90%; height:90%; bottom:-7%; }
+.player-body-hook .player-left-art { width:78%; height:78%; bottom:-4%; }
+.player-jab-left .player-left-art { animation:jabPose 145ms cubic-bezier(.12,.78,.18,1) both; transform-origin:38% 86%; }
+.player-power-jab-charge .player-left-art { animation:powerJabLoad 410ms cubic-bezier(.16,.72,.2,1) both,powerJabChargePulse .45s 410ms ease-in-out infinite alternate; transform-origin:38% 86%; }
+.player-power-jab .player-left-art { animation:powerJabPose 220ms cubic-bezier(.06,.72,.13,1) both; transform-origin:38% 86%; }
 .player-special-uppercut .player-main-art { animation:specialUppercutPose 330ms cubic-bezier(.05,.74,.1,1) both; transform-origin:66% 90%; }
-.player-cross-right .player-main-art { animation:crossPose 175ms cubic-bezier(.08,.72,.16,1) both; transform-origin:68% 88%; }
-.player-haymaker-charge .player-main-art { animation:haymakerLoad 480ms cubic-bezier(.16,.72,.2,1) both,haymakerChargePulse .5s 480ms ease-in-out infinite alternate; transform-origin:68% 88%; }
-.player-haymaker .player-main-art { animation:haymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:68% 88%; }
-.player-body-hook .player-main-art { animation:bodyHookPose 175ms cubic-bezier(.12,.74,.2,1) both; transform-origin:32% 88%; }
+.player-cross-right .player-right-art { animation:crossPose 175ms cubic-bezier(.08,.72,.16,1) both; transform-origin:68% 88%; }
+.player-haymaker-charge .player-right-art { animation:haymakerLoad 480ms cubic-bezier(.16,.72,.2,1) both,haymakerChargePulse .5s 480ms ease-in-out infinite alternate; transform-origin:68% 88%; }
+.player-haymaker .player-right-art { animation:haymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:68% 88%; }
+.player-body-hook .player-left-art { animation:bodyHookPose 175ms cubic-bezier(.12,.74,.2,1) both; transform-origin:32% 88%; }
 .player-block .player-pose-art { width:78%; height:78%; bottom:8%; }
 .arm { position:absolute; bottom:-9%; width:13.5%; height:38%; border-radius:45% 45% 17% 17%; background:linear-gradient(90deg,#5a2719,#ad5735 35%,#d48355 63%,#71301d); box-shadow:inset -10px -3px 15px rgba(49,15,8,.45),0 10px 20px #000; transform-origin:50% 100%; transition:transform .13s cubic-bezier(.2,.8,.2,1); }
 .arm-left { left:19%; transform:rotate(14deg); }
@@ -298,6 +302,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .impact b { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-8deg); color:#fff; font-size:clamp(1.5rem,4vw,4rem); -webkit-text-stroke:2px #101110; text-shadow:5px 5px var(--blood); }
 .impact-left { transform:translate(-68%,-50%); }.impact-right{transform:translate(-32%,-50%)}.impact-body{top:57%;}
 .hurt-flash { position:absolute; z-index:35; inset:0; background:radial-gradient(circle,transparent 25%,rgba(196,0,0,.72)); animation:hurtFlash .22s ease-out forwards; pointer-events:none; }
+.overhand-impact { position:absolute; z-index:48; left:50%; top:48%; width:min(92vw,1100px); height:92%; object-fit:contain; transform:translate(-50%,-50%); filter:drop-shadow(0 0 30px rgba(255,0,0,.95)); pointer-events:none; animation:overhandKnuckleFlash .19s cubic-bezier(.05,.75,.12,1) both; }
 .is-special-contact-hidden,.first-person-body.player-special-uppercut { opacity:0; }
 .special-uppercut-contact { position:absolute; z-index:34; left:50%; bottom:3%; width:min(72%,920px); height:90%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 17px 18px #000c); pointer-events:none; animation:specialContactDrive 330ms cubic-bezier(.06,.74,.1,1) both; }
 .vision-damage { position:absolute; z-index:45; inset:0; pointer-events:none; opacity:0; transition:opacity .5s; }
@@ -449,6 +454,16 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes championArmsRise { from{transform:translateX(-50%) translateY(24%) scale(.9);opacity:0} to{transform:translateX(-50%) scale(1.12);opacity:1} }
 
 .knockdown-overlay { z-index:72; display:flex; flex-direction:column; justify-content:center; gap:.35rem; padding:5%; color:#f4ecdf; text-align:center; background:radial-gradient(circle,rgba(91,20,13,.42),rgba(3,4,3,.92) 68%); }
+.pause-overlay { z-index:90; display:grid; place-items:center; padding:4%; background:radial-gradient(circle at 50% 40%,rgba(72,48,18,.72),rgba(3,4,3,.96) 72%); }
+.pause-card { width:min(760px,92vw); max-height:90vh; overflow:auto; padding:clamp(1rem,2.5vw,2.2rem); color:#f2eadc; background:linear-gradient(155deg,#181713f2,#090a09f7); border:3px solid var(--gold); box-shadow:12px 14px #0009; text-align:center; }
+.pause-card>p { margin:0;color:var(--gold);font:900 .65rem/1 Arial,sans-serif;letter-spacing:.25em; }
+.pause-card h2 { margin:.3rem 0 1rem;font-size:clamp(2rem,5vw,4rem);line-height:.9; }
+.pause-rules { display:grid;grid-template-columns:1fr 1fr;gap:.65rem;text-align:left; }
+.pause-rules section { padding:.75rem;border:1px solid #5b574d;background:#0d0e0dcf; }
+.pause-rules strong { display:block;margin-bottom:.35rem;color:#ffbe2e;font:1000 .68rem/1 Arial,sans-serif;letter-spacing:.12em; }
+.pause-rules span { display:block;color:#ccc4b7;font:700 .72rem/1.35 Arial,sans-serif; }
+.pause-card .fight-button { margin:1.1rem auto .6rem; }
+.pause-card small { display:block;color:#8f8c84;font:800 .55rem/1 Arial,sans-serif;letter-spacing:.16em; }
 .knockdown-overlay>p { margin:0; color:var(--gold); font:900 clamp(.7rem,1.2vw,1rem)/1 Arial,sans-serif; letter-spacing:.24em; }
 .knockdown-overlay>strong { color:#fff; font:1000 clamp(7rem,22vw,18rem)/.8 "Arial Black",Arial,sans-serif; text-shadow:8px 10px var(--blood),14px 16px #000; transform:rotate(-3deg); }
 .knockdown-overlay h2 { margin:0; font-size:clamp(2rem,5vw,5rem); letter-spacing:.08em; }
@@ -485,6 +500,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes enemyBodyShoulder { 0%{transform:scaleX(-1) translate(-8%,42%) rotate(8deg)}42%{transform:scaleX(-1) translate(-13%,50%) rotate(2deg)}65%{transform:scaleX(-1) translate(15%,28%) rotate(-19deg) scale(1.08)}100%{transform:scaleX(-1) rotate(23deg)} }
 @keyframes enemyBodyForearm { 0%{transform:rotate(-72deg)}42%{transform:rotate(-86deg)}65%{transform:translate(30%,38%) rotate(-12deg) scale(2.25,1.45)}100%{transform:rotate(-64deg)} }
 @keyframes stunned { from{margin-left:-.7%}to{margin-left:.7%} }
+@keyframes mohawkStumbleBack { 0%{transform:translateX(-50%) scale(1)}30%{transform:translateX(-42%) translateY(-2%) rotate(8deg) scale(.94)}62%{transform:translateX(-56%) translateY(1%) rotate(-6deg) scale(.86)}100%{transform:translateX(-50%) translateY(2%) rotate(2deg) scale(.9)} }
+@keyframes mohawkToKnee { 0%{transform:translateX(-50%) scale(1)}22%{transform:translateX(-43%) rotate(8deg) scale(.96)}48%{transform:translateX(-56%) translateY(7%) rotate(-7deg) scale(.91)}72%{transform:translateX(-47%) translateY(20%) rotate(4deg) scale(.86)}100%{transform:translateX(-50%) translateY(35%) rotate(-2deg) scale(.82)} }
+@keyframes mohawkRiseFromKnee { from{transform:translateX(-50%) translateY(35%) rotate(-2deg) scale(.82)}55%{transform:translateX(-47%) translateY(12%) rotate(3deg) scale(.91)}to{transform:translateX(-50%) translateY(0) scale(1)} }
+@keyframes overhandKnuckleFlash { 0%{opacity:0;transform:translate(-50%,-50%) scale(.28)}45%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.42)} }
 @keyframes knockout { 0%{transform:translateX(-50%)}28%{transform:translateX(-50%) translateY(-4%) rotate(5deg)}100%{transform:translateX(-50%) translateY(88%) rotate(-78deg);opacity:.15} }
 @keyframes playerJab { 0%{transform:rotate(14deg)}45%{transform:translate(132%,-96%) rotate(-2deg) scale(.82,2.15)}100%{transform:rotate(14deg)} }
 @keyframes playerCross { 0%{transform:rotate(-14deg)}45%{transform:translate(-132%,-98%) rotate(2deg) scale(.82,2.2)}100%{transform:rotate(-14deg)} }
@@ -566,6 +585,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .controls { bottom:max(1.5%,env(safe-area-inset-bottom)); }
   .corner-label { display:none; }
   .opponent-stage { width:min(57%,540px); height:84%; bottom:9%; }
+  .pause-trigger { display:block; }
 }
 
 @media (max-width: 650px) and (orientation: portrait) {
@@ -624,6 +644,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .sportsmanship-group .sportsmanship-mohawk { right:-9%; width:78%; height:78%; bottom:4%; }
   .sportsmanship-group .mohawk-speech { top:0; right:3%; width:67%; }
   .special-uppercut-contact { width:120%; height:76%; bottom:15%; }
+  .pause-trigger { top:17%; right:3%; width:36px; height:34px; }
+  .pause-card { max-height:86dvh; padding:.85rem; }
+  .pause-rules { grid-template-columns:1fr; gap:.4rem; }
+  .pause-rules section { padding:.55rem; }
   .haymaker-charge-meter { bottom:12%; width:54vw; }
   .jab-charge-meter { bottom:12%; width:52vw; }
 }
@@ -641,8 +665,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .round-clock time { font-size:1.1rem; }
   .opponent-stage { width:min(54%,470px); height:84%; bottom:8%; }
   .player-pose-art { width:62%; height:62%; bottom:-5%; }
-  .player-jab-left .player-pose-art,.player-power-jab .player-pose-art,.player-special-uppercut .player-pose-art,.player-cross-right .player-pose-art,.player-haymaker .player-pose-art { width:72%; height:72%; }
-  .player-body-hook .player-pose-art,.player-block .player-pose-art { width:70%; height:70%; }
+  .player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art,.player-haymaker .player-right-art { width:72%; height:72%; }
+  .player-body-hook .player-left-art,.player-block .player-pose-art { width:70%; height:70%; }
   .controls { bottom:max(1%,env(safe-area-inset-bottom)); }
   .controls button { min-width:56px; height:50px; }
   .controls button span { font-size:.44rem; }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-type MatchState = "intro" | "fighting" | "player-down" | "enemy-down" | "won" | "lost";
+type MatchState = "intro" | "fighting" | "paused" | "player-down" | "enemy-down" | "won" | "lost";
 type FighterPose =
   | "idle"
   | "windup-left"
@@ -26,6 +26,9 @@ type FighterPose =
   | "hit-right"
   | "hit-body"
   | "stunned"
+  | "stumble-back"
+  | "rising"
+  | "knockdown-knee"
   | "knockout";
 type PlayerPose =
   | "idle"
@@ -52,10 +55,13 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//
 const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
+  asset("/opponent-overhand-impact.webp"),
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
+  asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
+  asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
   asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"), asset("/player-special-uppercut-contact.webp"),
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
@@ -68,6 +74,7 @@ function clamp(value: number, min = 0, max = 100) {
 
 export default function Home() {
   const [matchState, setMatchState] = useState<MatchState>("intro");
+  const [paused, setPaused] = useState(false);
   const [enemyHealth, setEnemyHealth] = useState(MAX_HEALTH);
   const [playerHealth, setPlayerHealth] = useState(MAX_HEALTH);
   const [stamina, setStamina] = useState(100);
@@ -100,6 +107,7 @@ export default function Home() {
   const [haymakerCharging, setHaymakerCharging] = useState(false);
   const [jabCharging, setJabCharging] = useState(false);
   const [special, setSpecial] = useState(0);
+  const [overhandImpact, setOverhandImpact] = useState(false);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -314,8 +322,8 @@ export default function Home() {
     dodgeRef.current = null;
     setDodgeDirection(null);
     if (result === "won") {
-      setEnemyPoseSafe("knockout");
-      setCallout("KNOCKOUT!");
+      setEnemyPoseSafe("knockdown-knee");
+      setCallout("MOHAWK CANNOT RISE!");
       playSound("ko");
     } else if (reason === "time") {
       setPlayerPose("idle");
@@ -357,6 +365,8 @@ export default function Home() {
     setJabCharging(false);
     specialRef.current = 0;
     setSpecial(0);
+    setOverhandImpact(false);
+    setPaused(false);
     enemyStunHitsRef.current = 0;
     enemyWindedUntilRef.current = 0;
     setEnemyPoseSafe("idle");
@@ -393,6 +403,20 @@ export default function Home() {
     playSound("bell");
     window.setTimeout(() => setCallout("READ THE SHOULDERS"), 900);
   }, [assetsReady, playSound, setEnemyPoseSafe]);
+
+  const togglePause = useCallback(() => {
+    if (matchRef.current === "fighting") {
+      matchRef.current = "paused";
+      setMatchState("paused");
+      setPaused(true);
+      setCallout("PAUSED");
+    } else if (matchRef.current === "paused") {
+      matchRef.current = "fighting";
+      setMatchState("fighting");
+      setPaused(false);
+      setCallout("FIGHT!");
+    }
+  }, []);
 
   const takePlayerDamage = useCallback((amount: number) => {
     const actionId = ++playerActionRef.current;
@@ -441,8 +465,7 @@ export default function Home() {
     setGetUpTaps(taps);
     if (taps < requiredGetUpTapsRef.current) return;
 
-    const recoveryLadder = [75, 50, 35, 24];
-    const recoveryHealth = recoveryLadder[playerKnockdownsRef.current - 1] ?? 24;
+    const recoveryHealth = 50;
     playerHealthRef.current = recoveryHealth;
     staminaRef.current = 100;
     guardRef.current = 70;
@@ -495,13 +518,18 @@ export default function Home() {
           const recoveryHealth = enemyRecoveryHealthRef.current;
           enemyHealthRef.current = recoveryHealth;
           setEnemyHealth(recoveryHealth);
-          setEnemyPoseSafe("idle");
+          setEnemyPoseSafe("rising");
           setSecondWind(true);
-          matchRef.current = "fighting";
-          setMatchState("fighting");
-          setCallout(`MOHAWK RISES WITH ${recoveryHealth}%!`);
-          playSound("bell");
-          window.setTimeout(() => setSecondWind(false), 2600);
+          setCallout("MOHAWK PUSHES UP FROM HIS KNEE!");
+          window.setTimeout(() => {
+            if (matchRef.current !== "enemy-down") return;
+            matchRef.current = "fighting";
+            setMatchState("fighting");
+            setEnemyPoseSafe("idle");
+            setCallout(`MOHAWK RISES WITH ${recoveryHealth}%!`);
+            playSound("bell");
+            window.setTimeout(() => setSecondWind(false), 2600);
+          }, 620);
         }, 300);
       } else if (riseAt === null && count >= 10) {
         window.clearInterval(countTimer);
@@ -647,6 +675,11 @@ export default function Home() {
             return;
           }
 
+          if (style === "heavy") {
+            setOverhandImpact(true);
+            window.setTimeout(() => setOverhandImpact(false), 190);
+          }
+
           if (blockingRef.current && guardRef.current > 0) {
             const lateBlock = performance.now() - blockStartedAtRef.current < 95;
             const baseGuardCost = style === "heavy" ? 42 : comboUppercut ? 30 : comboHaymaker ? 18 : style === "uppercut" ? 34 : style === "flurry" ? 14 : move === "body" ? 30 : 22;
@@ -777,9 +810,12 @@ export default function Home() {
       setCombo((value) => enemyIsGuarding ? 0 : value + 1);
       enemyStunHitsRef.current = enemyIsGuarding ? 0 : enemyStunHitsRef.current + 1;
       const triggersWindedStun = !enemyIsGuarding && nextHealth > 0 && enemyStunHitsRef.current >= 8;
+      const triggersStumble = !enemyIsGuarding && !triggersWindedStun && nextHealth > 0 && nextHealth <= 35 && Math.random() < (nextHealth <= 15 ? .38 : .2);
       if (triggersWindedStun) {
         enemyStunHitsRef.current = 0;
         enemyWindedUntilRef.current = performance.now() + 1650;
+      } else if (triggersStumble) {
+        enemyWindedUntilRef.current = performance.now() + 720;
       }
       if (!enemyIsGuarding) {
         const specialGain = kind === "left" ? 3 : kind === "power-jab" ? 6 : kind === "right" ? 4 : kind === "body" ? 5 : kind === "haymaker" ? 7 : 0;
@@ -791,9 +827,9 @@ export default function Home() {
       setImpact(enemyIsGuarding ? null : kind === "haymaker" || kind === "uppercut" || kind === "power-jab" ? "right" : kind);
       setHitStop(true);
       setScreenShake(true);
-      setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersWindedStun ? "stunned" : kind === "left" || kind === "power-jab" ? "hit-right" : kind === "right" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
+      setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersWindedStun ? "stunned" : triggersStumble ? "stumble-back" : kind === "left" || kind === "power-jab" ? "hit-right" : kind === "right" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
       playSound("punch");
-      setCallout(enemyIsGuarding ? kind === "haymaker" || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : triggersWindedStun ? "MOHAWK IS WINDED!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "haymaker" ? "HAYMAKER!" : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
+      setCallout(enemyIsGuarding ? kind === "haymaker" || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : triggersWindedStun ? "MOHAWK IS WINDED!" : triggersStumble ? "MOHAWK STUMBLES BACK!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "haymaker" ? "HAYMAKER!" : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
       const heavyImpact = slipCounter || kind === "haymaker" || kind === "uppercut" || kind === "power-jab";
       window.setTimeout(() => setHitStop(false), heavyImpact ? 88 : 52);
       window.setTimeout(() => setScreenShake(false), heavyImpact ? 135 : 82);
@@ -805,6 +841,10 @@ export default function Home() {
             setCallout("MOHAWK RECOVERS");
           }
         }, 1650);
+      } else if (triggersStumble) {
+        window.setTimeout(() => {
+          if (matchRef.current === "fighting" && performance.now() >= enemyWindedUntilRef.current) setEnemyPoseSafe("idle");
+        }, 740);
       }
 
       if (enemyIsGuarding && kind === "haymaker") {
@@ -833,12 +873,14 @@ export default function Home() {
         const knockdowns = enemyKnockdownsRef.current + 1;
         enemyKnockdownsRef.current = knockdowns;
         setEnemyKnockdowns(knockdowns);
-        const recoveryPlans = [
-          { health: 75, min: 2, max: 4 },
-          { health: 50, min: 4, max: 6 },
-          { health: 24, min: 6, max: 8 },
-        ];
-        const plan = recoveryPlans[knockdowns - 1];
+        const laterKneeRecovery = knockdowns >= 3 && Math.random() < .5;
+        const plan = knockdowns === 1
+          ? { health: 75, min: 2, max: 4 }
+          : knockdowns === 2
+            ? { health: 50, min: 4, max: 6 }
+            : laterKneeRecovery
+              ? { health: 24, min: 6, max: 8 }
+              : undefined;
         const riseAt = plan ? plan.min + Math.floor(Math.random() * (plan.max - plan.min + 1)) : null;
         enemyRiseAtRef.current = riseAt;
         enemyRecoveryHealthRef.current = plan?.health ?? 0;
@@ -848,9 +890,9 @@ export default function Home() {
         punchLockRef.current = false;
         bufferedPunchRef.current = null;
         setPlayerPose("idle");
-        setEnemyPoseSafe("knockout");
+        setEnemyPoseSafe("knockdown-knee");
         setSecondWind(Boolean(plan));
-        setCallout(plan ? "MOHAWK IS DOWN — THE COUNT STARTS!" : "STAY DOWN!");
+        setCallout(plan ? "MOHAWK WOBBLES TO A KNEE!" : "MOHAWK CANNOT FIND HIS FEET!");
         matchRef.current = "enemy-down";
         setMatchState("enemy-down");
         playSound("ko");
@@ -1025,7 +1067,12 @@ export default function Home() {
     const down = (event: KeyboardEvent) => {
       if (event.repeat) return;
       const key = event.key.toLowerCase();
-      if (matchRef.current === "player-down") {
+      if (key === "escape" && (matchRef.current === "fighting" || matchRef.current === "paused")) {
+        event.preventDefault();
+        togglePause();
+      } else if (matchRef.current === "paused") {
+        event.preventDefault();
+      } else if (matchRef.current === "player-down") {
         event.preventDefault();
         attemptGetUp();
       } else if (matchRef.current === "intro" && (key === "enter" || key === " ")) {
@@ -1054,7 +1101,7 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, dodge, endBlock, punch, releaseCrossCharge, releaseJabCharge, startMatch]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, dodge, endBlock, punch, releaseCrossCharge, releaseJabCharge, startMatch, togglePause]);
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
@@ -1091,6 +1138,10 @@ export default function Home() {
                       ? asset("/opponent-uppercut.webp")
                       : enemyPose === "taunt"
                         ? asset("/opponent-taunt.webp")
+                        : enemyPose === "stumble-back"
+                          ? asset("/opponent-hit-cross.webp")
+                          : enemyPose === "knockdown-knee" || enemyPose === "rising"
+                            ? asset("/opponent-hit-body.webp")
                         : enemyPose === "hit-right"
                           ? asset("/opponent-hit-jab.webp")
                           : enemyPose === "hit-left"
@@ -1098,21 +1149,14 @@ export default function Home() {
                             : enemyPose === "hit-body"
                               ? asset("/opponent-hit-body.webp")
               : asset("/opponent-guard.webp");
-  const playerAsset = playerPose === "jab-left"
-    ? asset("/player-power-jab.webp")
-    : playerPose === "power-jab"
-      ? asset("/player-power-jab.webp")
-    : playerPose === "cross-right"
-      ? asset("/player-cross-right.webp")
-      : playerPose === "haymaker"
-        ? asset("/player-cross-right.webp")
-      : playerPose === "body-hook"
-        ? asset("/player-body-hook.webp")
-        : playerPose === "special-uppercut"
-          ? asset("/player-special-uppercut.webp")
-        : playerPose === "hit"
-            ? asset("/player-hit.webp")
-            : asset("/player-guard.webp");
+  const leftArmAsset = playerPose === "jab-left" || playerPose === "power-jab"
+    ? asset("/player-jab-left-arm.webp")
+    : playerPose === "body-hook"
+      ? asset("/player-body-left-arm.webp")
+      : asset("/player-guard-left.webp");
+  const rightArmAsset = playerPose === "cross-right" || playerPose === "haymaker"
+    ? asset("/player-cross-right-arm.webp")
+    : asset("/player-guard-right.webp");
 
   return (
     <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
@@ -1151,6 +1195,7 @@ export default function Home() {
 
         {combo >= 3 && matchState === "fighting" && <div className="combo-counter"><strong>{combo}</strong><span>HIT COMBO</span></div>}
         {matchState === "fighting" && <div className="score">SCORE {score.toLocaleString()}</div>}
+        {matchState === "fighting" && <button className="pause-trigger" onClick={togglePause} aria-label="Pause fight">Ⅱ</button>}
 
         <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
@@ -1166,6 +1211,7 @@ export default function Home() {
           </div>
         )}
         {impact === "player" && <div className="hurt-flash" aria-hidden="true" />}
+        {overhandImpact && <img className="overhand-impact" src={asset("/opponent-overhand-impact.webp")} alt="" aria-hidden="true" draggable={false} />}
         {playerPose === "special-uppercut" && matchState === "fighting" && (
           <img className="special-uppercut-contact" src={asset("/player-special-uppercut-contact.webp")} alt="The player's right uppercut connecting beneath Mohawk's chin" draggable={false} />
         )}
@@ -1177,10 +1223,19 @@ export default function Home() {
           <div className="jab-charge-meter" aria-live="polite"><span /><b>POWER JAB</b></div>
         )}
 
-        <div className={`first-person-body player-${playerPose}`} aria-hidden="true">
-          <img className="player-pose-art player-main-art" src={playerAsset} alt="" draggable={false} />
-          <img className="player-pose-art player-block-art" src={asset("/player-block.webp")} alt="" draggable={false} />
-        </div>
+        {matchState !== "won" && matchState !== "lost" && (
+          <div className={`first-person-body player-${playerPose}`} aria-hidden="true">
+            {playerPose === "hit" ? (
+              <img className="player-pose-art player-hit-art" src={asset("/player-hit.webp")} alt="" draggable={false} />
+            ) : (
+              <>
+                <img className="player-pose-art player-arm-art player-left-art" src={leftArmAsset} alt="" draggable={false} />
+                <img className="player-pose-art player-arm-art player-right-art" src={rightArmAsset} alt="" draggable={false} />
+              </>
+            )}
+            <img className="player-pose-art player-block-art" src={asset("/player-block.webp")} alt="" draggable={false} />
+          </div>
+        )}
 
         {matchState === "fighting" && (
           <div className="controls" aria-label="Fight controls">
@@ -1239,9 +1294,27 @@ export default function Home() {
           </div>
         )}
 
+        {paused && matchState === "paused" && (
+          <div className="overlay pause-overlay" role="dialog" aria-modal="true" aria-label="Fight paused">
+            <div className="pause-card">
+              <p>FIGHT PAUSED</p>
+              <h2>CORNER NOTES</h2>
+              <div className="pause-rules">
+                <section><strong>RAGE MODE</strong><span>Below 35% health, Mohawk attacks faster, hits harder, guards more often, and recovers sooner.</span></section>
+                <section><strong>CHARGED SHOTS</strong><span>Hold J for a power jab. Hold K for a haymaker. A blocked haymaker invites a heavy counter.</span></section>
+                <section><strong>SPECIAL</strong><span>Landed punches fill the purple meter. At 100%, press U for the finishing uppercut.</span></section>
+                <section><strong>DEFENSE</strong><span>Hold Space to block. Slip with A/D; a successful slip powers up your next counter.</span></section>
+                <section><strong>MOHAWK&apos;S KNEES</strong><span>He does not fall flat. He may stumble or take a knee. From the third knee onward, every rise is a 50/50 fight.</span></section>
+              </div>
+              <button className="fight-button" onClick={togglePause}>RETURN TO FIGHT <i>›</i></button>
+              <small>PRESS ESC TO RESUME</small>
+            </div>
+          </div>
+        )}
+
         {matchState === "enemy-down" && (
           <div className="enemy-count-overlay" aria-live="assertive">
-            <p>MOHAWK KNOCKDOWN {enemyKnockdowns}</p>
+            <p>MOHAWK TAKES A KNEE · {enemyKnockdowns}</p>
             <strong>{enemyCount}</strong>
             <span>{enemyRiseAt === null ? "THE FINAL COUNT" : `CAN HE RISE?`}</span>
           </div>
@@ -1333,12 +1406,12 @@ export default function Home() {
                 </div>
                 <img className="player-holds-belt" src={asset("/player-holds-belt.webp")} alt="The player holding the gold championship belt" draggable={false} />
                 <div className="champion-copy">
-                  <p>FOUR KNOCKDOWNS · TEN COUNT</p>
+                  <p>MOHAWK COULD NOT RISE · TEN COUNT</p>
                   <h2>YOU DEFEATED<br /><span>THE MOHAWK</span></h2>
                   <h3>GRIT CITY CHAMPION</h3>
                   <div className="result-stats">
                     <span><em>SCORE</em><strong>{score.toLocaleString()}</strong></span>
-                    <span><em>KNOCKDOWNS</em><strong>{enemyKnockdowns}</strong></span>
+                    <span><em>KNEE COUNTS</em><strong>{enemyKnockdowns}</strong></span>
                     <span><em>TIME</em><strong>{timerText}</strong></span>
                   </div>
                   {showRematch ? (
