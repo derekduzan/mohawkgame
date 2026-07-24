@@ -1,4 +1,4 @@
-# Mohawk Bare Knuckle
+# FightTime
 
 A first-person arcade bare-knuckle boxing game built for desktop and mobile browsers.
 
@@ -9,7 +9,7 @@ A first-person arcade bare-knuckle boxing game built for desktop and mobile brow
 3. Commit the files to the `main` branch.
 4. Open **Settings → Pages** in the repository.
 5. Under **Build and deployment → Source**, choose **GitHub Actions**.
-6. Open the **Actions** tab and wait for “Deploy Mohawk Game to GitHub Pages” to finish.
+6. Open the **Actions** tab and wait for the FightTime GitHub Pages deployment to finish.
 7. Visit <https://derekduzan.github.io/mohawkgame/>.
 
 Every later commit to `main` automatically republishes the game.

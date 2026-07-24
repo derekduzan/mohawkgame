@@ -69,6 +69,7 @@ const POSE_ASSETS = [
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
   asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
+  asset("/fighttime-logo.png"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -1357,8 +1358,7 @@ export default function Home() {
         {paused && matchState === "paused" && (
           <div className="overlay pause-overlay" role="dialog" aria-modal="true" aria-label="Fight paused">
             <div className="pause-card">
-              <p>FIGHT PAUSED</p>
-              <h2>CORNER NOTES</h2>
+              <img className="pause-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
               <div className="pause-rules">
                 <section><strong>RAGE MODE</strong><span>Below 35% health, Mohawk attacks faster, hits harder, guards more often, and recovers sooner.</span></section>
                 <section><strong>CHARGED SHOTS</strong><span>Hold J for a power jab. Hold K for a haymaker. A blocked haymaker invites a heavy counter.</span></section>
@@ -1383,9 +1383,7 @@ export default function Home() {
         {matchState === "intro" && !assetsReady && (
           <div className="overlay preload-overlay" role="status" aria-live="polite" aria-label={`Loading fight assets, ${loadingProgress}% complete`}>
             <div className="preload-lockup">
-              <p>GRIT CITY FIGHT NIGHT</p>
-              <h1>BARE <span>KNUCKLE</span></h1>
-              <strong>MOHAWK</strong>
+              <img className="preload-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
             </div>
             <div className="preload-status">
               <div><span>WRAPPING HANDS</span><b>{loadingProgress}%</b></div>
@@ -1397,12 +1395,9 @@ export default function Home() {
 
         {matchState === "intro" && assetsReady && (
           <div className="overlay intro-overlay">
-            <div className="intro-marquee">GRIT CITY FIGHT NIGHT · MAIN EVENT</div>
             <img className="intro-mohawk" src={asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
             <div className="title-lockup">
-              <p>BARE-KNUCKLE ARCADE BOXING</p>
-              <h1><i>BARE</i><br /><span>KNUCKLE</span></h1>
-              <div className="slash">MOHAWK</div>
+              <img className="intro-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
             </div>
             <div className="intro-versus-card">
               <div className="versus-row"><strong>YOU</strong><b>VS</b><strong>THE MOHAWK</strong></div>
