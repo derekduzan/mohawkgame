@@ -69,6 +69,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
+const GAME_VERSION = "0.39.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -436,11 +437,10 @@ export default function Home() {
 
   useEffect(() => {
     if (matchState !== "countdown") return;
-    const actionId = playerActionRef.current;
     const two = window.setTimeout(() => setFightCountdown(2), 700);
     const one = window.setTimeout(() => setFightCountdown(1), 1400);
     const fight = window.setTimeout(() => {
-      if (matchRef.current !== "countdown" || playerActionRef.current !== actionId) return;
+      if (matchRef.current !== "countdown") return;
       matchRef.current = "fighting";
       setMatchState("fighting");
       setCallout("FIGHT!");
@@ -1525,6 +1525,7 @@ export default function Home() {
             <img className="intro-mohawk" src={asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
             <div className="title-lockup">
               <img className="intro-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
+              <span className="intro-version">VERSION {GAME_VERSION}</span>
             </div>
             <div className="intro-versus-card">
               <div className="versus-row"><strong>YOU</strong><b>VS</b><strong>THE MOHAWK</strong></div>

@@ -389,6 +389,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .intro-mohawk { position:absolute; z-index:2; right:-2%; bottom:-7%; width:58%; height:94%; object-fit:contain; object-position:center bottom; filter:drop-shadow(-18px 12px 22px #000) saturate(1.06) contrast(1.08); animation:introFighterBreathe 1.4s ease-in-out infinite alternate; }
 .intro-overlay .title-lockup { position:absolute; z-index:5; left:3%; top:13%; width:64%; transform:rotate(-2deg); }
 .intro-logo { display:block; width:100%; height:auto; filter:drop-shadow(10px 12px 0 #0009) drop-shadow(0 0 18px rgba(225,40,30,.24)); }
+.intro-version { display:inline-block; margin:.45rem 0 0 4%; padding:.32rem .58rem; color:#f4ead7; background:#090a09d9; border-left:3px solid var(--gold); box-shadow:4px 4px #0008; font:900 clamp(.52rem,.85vw,.82rem)/1 Arial,sans-serif; letter-spacing:.18em; text-shadow:1px 2px #000; }
 .intro-overlay .title-lockup p { position:relative; z-index:2; margin:0 0 .7rem .35rem; color:var(--gold); font:900 clamp(.52rem,.9vw,.9rem)/1 Arial,sans-serif; letter-spacing:.28em; }
 .intro-overlay .title-lockup h1 { margin:0; font-size:clamp(4rem,9.2vw,9rem); line-height:.68; letter-spacing:-.055em; color:#f1eadc; -webkit-text-stroke:2px #090a09; }
 .intro-overlay .title-lockup h1 > i { display:inline-block; font-style:normal; transform:translateY(-.14em); }
@@ -684,6 +685,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .intro-marquee { top:2.5%; width:88%; min-width:0; padding:.45rem .6rem; font-size:.48rem; letter-spacing:.16em; }
   .intro-mohawk { right:-30%; bottom:10%; width:150%; height:76%; opacity:.72; }
   .intro-overlay .title-lockup { left:3%; top:9%; width:94%; text-align:left; }
+  .intro-version { margin-top:.25rem; font-size:.48rem; }
   .intro-overlay .title-lockup h1 { font-size:19vw; }
   .intro-overlay .title-lockup p { font-size:.48rem; letter-spacing:.2em; }
   .intro-overlay .slash { margin-top:.65rem; }
