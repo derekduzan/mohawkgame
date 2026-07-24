@@ -59,6 +59,7 @@ const POSE_ASSETS = [
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
+  asset("/opponent-knee-breathing.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
   asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
@@ -404,6 +405,30 @@ export default function Home() {
     window.setTimeout(() => setCallout("READ THE SHOULDERS"), 900);
   }, [assetsReady, playSound, setEnemyPoseSafe]);
 
+  const returnToMenu = useCallback(() => {
+    ++playerActionRef.current;
+    window.clearTimeout(crossChargeTimerRef.current);
+    window.clearTimeout(jabChargeTimerRef.current);
+    crossChargingRef.current = false;
+    jabChargingRef.current = false;
+    matchRef.current = "intro";
+    setMatchState("intro");
+    setShowRematch(false);
+    setPaused(false);
+    setBlocking(false);
+    blockingRef.current = false;
+    dodgeRef.current = null;
+    setDodgeDirection(null);
+    setPlayerPose("idle");
+    setEnemyPoseSafe("idle");
+    setSecondWind(false);
+    setOverhandImpact(false);
+    setImpact(null);
+    setHitStop(false);
+    setScreenShake(false);
+    setCallout("");
+  }, [setEnemyPoseSafe]);
+
   const togglePause = useCallback(() => {
     if (matchRef.current === "fighting") {
       matchRef.current = "paused";
@@ -507,11 +532,12 @@ export default function Home() {
     let count = 1;
     let resolutionTimer: number | undefined;
     const countTimer = window.setInterval(() => {
-      count += 1;
-      setEnemyCount(count);
+      const nextCount = count + 1;
       const riseAt = enemyRiseAtRef.current;
 
-      if (riseAt !== null && count >= riseAt) {
+      if (riseAt !== null && nextCount >= riseAt) {
+        count = nextCount;
+        setEnemyCount(count);
         window.clearInterval(countTimer);
         resolutionTimer = window.setTimeout(() => {
           if (matchRef.current !== "enemy-down") return;
@@ -531,11 +557,16 @@ export default function Home() {
             window.setTimeout(() => setSecondWind(false), 2600);
           }, 620);
         }, 300);
-      } else if (riseAt === null && count >= 10) {
+      } else if (riseAt === null && nextCount >= 10) {
+        // Ten is the deadline, not another waiting frame. Keep nine as the
+        // final visible number and wave the fight off the instant ten arrives.
         window.clearInterval(countTimer);
         resolutionTimer = window.setTimeout(() => {
           if (matchRef.current === "enemy-down") finishMatch("won");
-        }, 650);
+        }, 80);
+      } else {
+        count = nextCount;
+        setEnemyCount(count);
       }
     }, 800);
     return () => {
@@ -890,12 +921,17 @@ export default function Home() {
         punchLockRef.current = false;
         bufferedPunchRef.current = null;
         setPlayerPose("idle");
-        setEnemyPoseSafe("knockdown-knee");
         setSecondWind(Boolean(plan));
-        setCallout(plan ? "MOHAWK WOBBLES TO A KNEE!" : "MOHAWK CANNOT FIND HIS FEET!");
         matchRef.current = "enemy-down";
         setMatchState("enemy-down");
         playSound("ko");
+        // Preserve the punch-specific impact art for a beat before changing
+        // to the separate sustained one-knee breathing pose.
+        window.setTimeout(() => {
+          if (matchRef.current !== "enemy-down") return;
+          setEnemyPoseSafe("knockdown-knee");
+          setCallout(plan ? "MOHAWK WOBBLES TO A KNEE!" : "MOHAWK CANNOT FIND HIS FEET!");
+        }, 260);
         return;
       }
 
@@ -1141,7 +1177,7 @@ export default function Home() {
                         : enemyPose === "stumble-back"
                           ? asset("/opponent-hit-cross.webp")
                           : enemyPose === "knockdown-knee" || enemyPose === "rising"
-                            ? asset("/opponent-hit-body.webp")
+                            ? asset("/opponent-knee-breathing.webp")
                         : enemyPose === "hit-right"
                           ? asset("/opponent-hit-jab.webp")
                           : enemyPose === "hit-left"
@@ -1166,7 +1202,9 @@ export default function Home() {
         <div className="ceiling-lights" aria-hidden="true"><i /><i /><i /></div>
         <div className={`crowd ${secondWind ? "is-chanting" : ""}`} aria-hidden="true">
           {Array.from({ length: 18 }).map((_, index) => <i key={index} />)}
-          <div className="crowd-chant"><span>MO—HAWK!</span><span>MO—HAWK!</span></div>
+          <div className="crowd-chant">
+            {Array.from({ length: 6 }).map((_, index) => <span key={index}>MO—HAWK!</span>)}
+          </div>
         </div>
         <div className="ring-post post-left" aria-hidden="true" />
         <div className="ring-post post-right" aria-hidden="true" />
@@ -1386,7 +1424,10 @@ export default function Home() {
                     <span><em>TIME</em><strong>{timerText}</strong></span>
                   </div>
                   {showRematch ? (
-                    <button className="fight-button rematch-button" onClick={startMatch}>FIGHT AGAIN <i>↻</i></button>
+                    <div className="result-actions">
+                      <button className="fight-button rematch-button" onClick={startMatch}>FIGHT AGAIN <i>↻</i></button>
+                      <button className="fight-button menu-button" onClick={returnToMenu}>MAIN MENU <i>‹</i></button>
+                    </div>
                   ) : (
                     <div className="victory-delay" role="status">MOHAWK CELEBRATES...</div>
                   )}
@@ -1415,7 +1456,10 @@ export default function Home() {
                     <span><em>TIME</em><strong>{timerText}</strong></span>
                   </div>
                   {showRematch ? (
-                    <button className="fight-button rematch-button" onClick={startMatch}>DEFEND THE TITLE <i>↻</i></button>
+                    <div className="result-actions">
+                      <button className="fight-button rematch-button" onClick={startMatch}>DEFEND THE TITLE <i>↻</i></button>
+                      <button className="fight-button menu-button" onClick={returnToMenu}>MAIN MENU <i>‹</i></button>
+                    </div>
                   ) : (
                     <div className="victory-delay" role="status">THE CROWD ERUPTS...</div>
                   )}
