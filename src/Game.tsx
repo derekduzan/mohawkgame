@@ -69,7 +69,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.45.0";
+const GAME_VERSION = "0.46.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -145,6 +145,7 @@ export default function Home() {
   const guardRef = useRef(guard);
   const blockingRef = useRef(blocking);
   const dodgeRef = useRef<DodgeDirection>(dodgeDirection);
+  const heldSlipRef = useRef<DodgeDirection>(null);
   const poseRef = useRef<FighterPose>(enemyPose);
   const punchLockRef = useRef(false);
   const playerActionRef = useRef(0);
@@ -350,6 +351,7 @@ export default function Home() {
     setBlocking(false);
     blockingRef.current = false;
     dodgeRef.current = null;
+    heldSlipRef.current = null;
     setDodgeDirection(null);
     if (result === "won") {
       setEnemyPoseSafe("knockdown-knee");
@@ -469,6 +471,7 @@ export default function Home() {
     setBlocking(false);
     blockingRef.current = false;
     dodgeRef.current = null;
+    heldSlipRef.current = null;
     setDodgeDirection(null);
     setPlayerPose("idle");
     setEnemyPoseSafe("idle");
@@ -896,8 +899,8 @@ export default function Home() {
   const punch = useCallback((requestedKind: PunchKind): void => {
     if (matchRef.current !== "fighting" || blockingRef.current) return;
     const kind: PunchKind =
-      requestedKind === "right" && dodgeRef.current === "right" ? "right-haymaker"
-        : requestedKind === "left" && dodgeRef.current === "left" ? "left-haymaker"
+      requestedKind === "right" && heldSlipRef.current === "right" ? "right-haymaker"
+        : requestedKind === "left" && heldSlipRef.current === "left" ? "left-haymaker"
           : requestedKind;
     const isHaymaker = kind === "haymaker" || kind === "left-haymaker" || kind === "right-haymaker";
     if (kind === "uppercut" && specialRef.current < 100) {
@@ -1105,7 +1108,12 @@ export default function Home() {
   useEffect(() => void (punchRef.current = punch), [punch]);
 
   const beginJabCharge = useCallback(() => {
-    if (matchRef.current !== "fighting" || blockingRef.current || dodgeRef.current || jabChargingRef.current) return;
+    if (matchRef.current !== "fighting" || blockingRef.current || jabChargingRef.current) return;
+    if (heldSlipRef.current === "left") {
+      punch("left");
+      return;
+    }
+    if (dodgeRef.current) return;
     if (punchLockRef.current) {
       bufferedPunchRef.current = "left";
       return;
@@ -1124,7 +1132,7 @@ export default function Home() {
     jabChargeTimerRef.current = window.setTimeout(() => {
       if (jabChargingRef.current && matchRef.current === "fighting") setCallout("POWER JAB READY!");
     }, 410);
-  }, []);
+  }, [punch]);
 
   const releaseJabCharge = useCallback(() => {
     if (!jabChargingRef.current) return;
@@ -1139,7 +1147,12 @@ export default function Home() {
   }, [punch]);
 
   const beginCrossCharge = useCallback(() => {
-    if (matchRef.current !== "fighting" || blockingRef.current || dodgeRef.current || crossChargingRef.current) return;
+    if (matchRef.current !== "fighting" || blockingRef.current || crossChargingRef.current) return;
+    if (heldSlipRef.current === "right") {
+      punch("right");
+      return;
+    }
+    if (dodgeRef.current) return;
     if (punchLockRef.current) {
       bufferedPunchRef.current = "right";
       return;
@@ -1160,7 +1173,7 @@ export default function Home() {
     crossChargeTimerRef.current = window.setTimeout(() => {
       if (crossChargingRef.current && matchRef.current === "fighting") setCallout("HAYMAKER READY!");
     }, 480);
-  }, []);
+  }, [punch]);
 
   const releaseCrossCharge = useCallback(() => {
     if (!crossChargingRef.current) return;
@@ -1188,13 +1201,23 @@ export default function Home() {
     setPlayerPose(direction === "left" ? "dodge-left" : "dodge-right");
     playSound("dodge");
     window.setTimeout(() => {
-      dodgeRef.current = null;
-      setDodgeDirection(null);
+    dodgeRef.current = null;
+    heldSlipRef.current = null;
+    setDodgeDirection(null);
       if (matchRef.current === "fighting" && !blockingRef.current && playerActionRef.current === actionId) {
         setPlayerPose("idle");
       }
     }, 300);
   }, [playSound]);
+
+  const beginSlip = useCallback((direction: Exclude<DodgeDirection, null>) => {
+    heldSlipRef.current = direction;
+    dodge(direction);
+  }, [dodge]);
+
+  const endSlip = useCallback((direction: Exclude<DodgeDirection, null>) => {
+    if (heldSlipRef.current === direction) heldSlipRef.current = null;
+  }, []);
 
   const beginBlock = useCallback(() => {
     if (matchRef.current !== "fighting" || guardRef.current <= 0 || performance.now() < guardBrokenUntilRef.current) return;
@@ -1206,6 +1229,7 @@ export default function Home() {
     crossChargingRef.current = false;
     setHaymakerCharging(false);
     dodgeRef.current = null;
+    heldSlipRef.current = null;
     ++playerActionRef.current;
     blockingRef.current = true;
     blockStartedAtRef.current = performance.now();
@@ -1240,8 +1264,8 @@ export default function Home() {
       } else if (matchRef.current === "intro" && (key === "enter" || key === " ")) {
         event.preventDefault();
         startMatch();
-      } else if (key === "a" || key === "arrowleft") dodge("left");
-      else if (key === "d" || key === "arrowright") dodge("right");
+      } else if (key === "a" || key === "arrowleft") beginSlip("left");
+      else if (key === "d" || key === "arrowright") beginSlip("right");
       else if (key === "j") beginJabCharge();
       else if (key === "k") beginCrossCharge();
       else if (key === "l") punch("body");
@@ -1256,6 +1280,8 @@ export default function Home() {
       if (key === " ") endBlock();
       else if (key === "k") releaseCrossCharge();
       else if (key === "j") releaseJabCharge();
+      else if (key === "a" || key === "arrowleft") endSlip("left");
+      else if (key === "d" || key === "arrowright") endSlip("right");
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -1263,7 +1289,7 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, dodge, endBlock, punch, releaseCrossCharge, releaseJabCharge, startMatch, togglePause]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, punch, releaseCrossCharge, releaseJabCharge, startMatch, togglePause]);
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
@@ -1433,8 +1459,20 @@ export default function Home() {
         {matchState === "fighting" && (
           <div className="controls" aria-label="Fight controls">
             <div className="move-controls">
-              <button onPointerDown={(event) => { event.preventDefault(); dodge("left"); }} aria-label="Dodge left"><kbd>A</kbd><span>SLIP LEFT</span></button>
-              <button onPointerDown={(event) => { event.preventDefault(); dodge("right"); }} aria-label="Dodge right"><kbd>D</kbd><span>SLIP RIGHT</span></button>
+              <button
+                onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); beginSlip("left"); }}
+                onPointerUp={() => endSlip("left")}
+                onPointerLeave={() => endSlip("left")}
+                onPointerCancel={() => endSlip("left")}
+                aria-label="Hold slip left"
+              ><kbd>A</kbd><span>SLIP LEFT</span></button>
+              <button
+                onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); beginSlip("right"); }}
+                onPointerUp={() => endSlip("right")}
+                onPointerLeave={() => endSlip("right")}
+                onPointerCancel={() => endSlip("right")}
+                aria-label="Hold slip right"
+              ><kbd>D</kbd><span>SLIP RIGHT</span></button>
             </div>
             <div className="punch-controls">
               <button
