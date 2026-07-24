@@ -17,6 +17,7 @@ type FighterPose =
   | "attack-right"
   | "attack-body"
   | "attack-heavy"
+  | "attack-heavy-contact"
   | "attack-combo-left"
   | "attack-combo-right"
   | "attack-uppercut"
@@ -58,7 +59,7 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//
 const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
-  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-right.webp"),
+  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-right.webp"), asset("/opponent-overhand-contact.webp"),
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
@@ -707,6 +708,15 @@ export default function Home() {
       later(() => {
         if (matchRef.current !== "fighting") return;
         setEnemyPoseSafe(attackPose);
+        if (style === "heavy") {
+          // The swing pose establishes the high looping arc. Swap to a much
+          // more foreshortened fist only at the final approach to the camera.
+          later(() => {
+            if (matchRef.current === "fighting" && poseRef.current === attackPose && dodgeRef.current === null) {
+              setEnemyPoseSafe("attack-heavy-contact");
+            }
+          }, 240);
+        }
         // Let the committed punch frame render before resolving contact.
         // This keeps the visual impact and damage event in the same sequence.
         later(() => {
@@ -714,7 +724,7 @@ export default function Home() {
           // A strike may only resolve while its matching punch frame is still
           // on screen. If the player interrupted Esteban during this window,
           // cancel the contact instead of applying invisible damage.
-          if (poseRef.current !== attackPose) {
+          if (poseRef.current !== attackPose && !(style === "heavy" && poseRef.current === "attack-heavy-contact")) {
             queueAttack();
             return;
           }
@@ -1205,6 +1215,8 @@ export default function Home() {
                 ? asset("/opponent-windup-right.webp")
                 : enemyPose === "attack-heavy"
                   ? asset("/opponent-overhand-right.webp")
+                  : enemyPose === "attack-heavy-contact"
+                    ? asset("/opponent-overhand-contact.webp")
                   : enemyPose === "windup-uppercut"
                     ? asset("/opponent-uppercut-windup.webp")
                     : enemyPose === "attack-uppercut"
