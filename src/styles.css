@@ -234,8 +234,22 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-attack-right { animation: opponentRight .31s cubic-bezier(.2,.8,.2,1); }
 .pose-attack-body { animation: opponentBody .36s cubic-bezier(.2,.8,.2,1); }
 .pose-windup-heavy { transform:translateX(-46%) translateY(-6%) rotate(-8deg) scale(.72); filter:brightness(.82) saturate(.9); transition:transform .2s cubic-bezier(.2,.75,.2,1),filter .15s; }
+.pose-windup-heavy-left { transform:translateX(-54%) translateY(-6%) rotate(8deg) scale(.72); filter:brightness(.82) saturate(.9); transition:transform .2s cubic-bezier(.2,.75,.2,1),filter .15s; }
+.pose-windup-haymaker-right { transform:translateX(-47%) translateY(-2%) rotate(-5deg) scale(.84); filter:brightness(.9); transition:transform .18s cubic-bezier(.2,.75,.2,1),filter .15s; }
+.pose-windup-haymaker-left { transform:translateX(-53%) translateY(-2%) rotate(5deg) scale(.84); filter:brightness(.9); transition:transform .18s cubic-bezier(.2,.75,.2,1),filter .15s; }
 .pose-attack-heavy { animation:heavyBomb .48s cubic-bezier(.08,.78,.12,1); }
+.pose-attack-heavy-left { animation:heavyBombLeft .48s cubic-bezier(.08,.78,.12,1); }
+.pose-attack-haymaker-right { animation:haymakerRightSweep .34s cubic-bezier(.06,.78,.12,1) both; }
+.pose-attack-haymaker-left { animation:haymakerLeftSweep .34s cubic-bezier(.06,.78,.12,1) both; }
 .pose-attack-heavy-contact { animation:heavyContact .12s cubic-bezier(.05,.82,.12,1) both; }
+.pose-attack-heavy-left-contact { animation:heavyContactLeft .12s cubic-bezier(.05,.82,.12,1) both; }
+.pose-attack-haymaker-right-contact { animation:haymakerRightContact .12s cubic-bezier(.05,.82,.12,1) both; }
+.pose-attack-haymaker-left-contact { animation:haymakerLeftContact .12s cubic-bezier(.05,.82,.12,1) both; }
+.pose-windup-heavy-left .opponent-pose-art,.pose-attack-heavy-left .opponent-pose-art,.pose-attack-heavy-left-contact .opponent-pose-art { transform:scaleX(-1); }
+.pose-attack-left-contact { animation:jabContact .1s cubic-bezier(.05,.82,.12,1) both; }
+.pose-attack-right-contact { animation:crossContact .11s cubic-bezier(.05,.82,.12,1) both; }
+.pose-attack-body-contact { animation:bodyContact .11s cubic-bezier(.05,.82,.12,1) both; }
+.pose-attack-uppercut-contact { animation:uppercutContact .12s cubic-bezier(.05,.82,.12,1) both; }
 .pose-windup-combo-left { transform:translateX(-43%) translateY(2%) rotate(10deg) scale(.9); filter:brightness(.88); }
 .pose-windup-combo-right { transform:translateX(-57%) translateY(2%) rotate(-10deg) scale(.9); filter:brightness(.88); }
 .pose-attack-combo-left { animation:comboBombLeft .34s cubic-bezier(.06,.8,.12,1); }
@@ -281,7 +295,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-block .player-arm-art,.player-block .player-hit-art { visibility:hidden; }
 .player-block .player-block-art { visibility:visible; opacity:1; transition:none; }
 .player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art { width:84%; height:84%; bottom:-5%; }
-.player-haymaker .player-right-art { width:90%; height:90%; bottom:-7%; }
+.player-haymaker .player-right-art,.player-right-haymaker .player-right-art,.player-left-haymaker .player-left-art { width:90%; height:90%; bottom:-7%; }
 .player-body-hook .player-left-art { width:78%; height:78%; bottom:-4%; }
 .player-jab-left .player-left-art { animation:jabPose 145ms cubic-bezier(.12,.78,.18,1) both; transform-origin:38% 86%; }
 .player-power-jab-charge .player-left-art { animation:powerJabLoad 410ms cubic-bezier(.16,.72,.2,1) both,powerJabChargePulse .45s 410ms ease-in-out infinite alternate; transform-origin:38% 86%; }
@@ -290,6 +304,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-cross-right .player-right-art { animation:crossPose 175ms cubic-bezier(.08,.72,.16,1) both; transform-origin:68% 88%; }
 .player-haymaker-charge .player-right-art { animation:haymakerLoad 480ms cubic-bezier(.16,.72,.2,1) both,haymakerChargePulse .5s 480ms ease-in-out infinite alternate; transform-origin:68% 88%; }
 .player-haymaker .player-right-art { animation:haymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:68% 88%; }
+.player-right-haymaker .player-right-art { animation:rightSlipHaymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:74% 90%; }
+.player-left-haymaker .player-left-art { animation:leftSlipHaymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:26% 90%; }
 .player-body-hook .player-left-art { animation:bodyHookPose 175ms cubic-bezier(.12,.74,.2,1) both; transform-origin:32% 88%; }
 .player-block .player-pose-art { width:78%; height:78%; bottom:8%; }
 .arm { position:absolute; bottom:-9%; width:13.5%; height:38%; border-radius:45% 45% 17% 17%; background:linear-gradient(90deg,#5a2719,#ad5735 35%,#d48355 63%,#71301d); box-shadow:inset -10px -3px 15px rgba(49,15,8,.45),0 10px 20px #000; transform-origin:50% 100%; transition:transform .13s cubic-bezier(.2,.8,.2,1); }
@@ -509,7 +525,17 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes opponentRight { 0%{transform:translateX(-48%) rotate(-3deg)}48%{transform:translateX(-55%) translateY(-1%) scale(1.085) rotate(4deg)}100%{transform:translateX(-50%) rotate(0)} }
 @keyframes opponentBody { 0%{transform:translateX(-50%) translateY(3%) scale(.97)}48%{transform:translateX(-50%) translateY(5%) scale(1.075) rotate(-2deg)}100%{transform:translateX(-50%)} }
 @keyframes heavyBomb { 0%{transform:translateX(-46%) translateY(-6%) rotate(-9deg) scale(.72)}28%{transform:translateX(-43%) translateY(-5%) rotate(-13deg) scale(.76)}66%{transform:translateX(-58%) translateY(-2%) rotate(7deg) scale(1.17)}82%{transform:translateX(-55%) translateY(-1%) rotate(5deg) scale(1.12)}100%{transform:translateX(-50%) scale(1.03)} }
+@keyframes heavyBombLeft { 0%{transform:translateX(-54%) translateY(-6%) rotate(9deg) scale(.72)}28%{transform:translateX(-57%) translateY(-5%) rotate(13deg) scale(.76)}66%{transform:translateX(-42%) translateY(-2%) rotate(-7deg) scale(1.17)}82%{transform:translateX(-45%) translateY(-1%) rotate(-5deg) scale(1.12)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes heavyContact { from{transform:translateX(-54%) translateY(-2%) rotate(4deg) scale(1.02);filter:brightness(1)}to{transform:translateX(-50%) translateY(-1%) rotate(1deg) scale(1.2);filter:brightness(1.14)} }
+@keyframes heavyContactLeft { from{transform:translateX(-46%) translateY(-2%) rotate(-4deg) scale(1.02);filter:brightness(1)}to{transform:translateX(-50%) translateY(-1%) rotate(-1deg) scale(1.2);filter:brightness(1.14)} }
+@keyframes haymakerRightSweep { from{transform:translateX(-47%) rotate(-7deg) scale(.84)}55%{transform:translateX(-56%) rotate(7deg) scale(1.08)}to{transform:translateX(-52%) rotate(3deg) scale(1.16)} }
+@keyframes haymakerLeftSweep { from{transform:translateX(-53%) rotate(7deg) scale(.84)}55%{transform:translateX(-44%) rotate(-7deg) scale(1.08)}to{transform:translateX(-48%) rotate(-3deg) scale(1.16)} }
+@keyframes haymakerRightContact { from{transform:translateX(-55%) rotate(5deg) scale(1.05)}to{transform:translateX(-51%) rotate(1deg) scale(1.24);filter:brightness(1.14)} }
+@keyframes haymakerLeftContact { from{transform:translateX(-45%) rotate(-5deg) scale(1.05)}to{transform:translateX(-49%) rotate(-1deg) scale(1.24);filter:brightness(1.14)} }
+@keyframes jabContact { from{transform:translateX(-53%) scale(.96)}to{transform:translateX(-50%) translateY(-1%) scale(1.07);filter:brightness(1.08)} }
+@keyframes crossContact { from{transform:translateX(-47%) rotate(-2deg) scale(.96)}to{transform:translateX(-50%) translateY(-1%) rotate(1deg) scale(1.1);filter:brightness(1.1)} }
+@keyframes bodyContact { from{transform:translateX(-50%) translateY(5%) scale(.96)}to{transform:translateX(-50%) translateY(7%) scale(1.08);filter:brightness(1.08)} }
+@keyframes uppercutContact { from{transform:translateX(-50%) translateY(8%) scale(.88)}62%{transform:translateX(-50%) translateY(-2%) scale(1.12)}to{transform:translateX(-50%) translateY(-9%) scale(1.31);filter:brightness(1.16)} }
 @keyframes comboBombLeft { 0%{transform:translateX(-43%) rotate(10deg) scale(.9)}55%{transform:translateX(-58%) translateY(-2%) rotate(-8deg) scale(1.14)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes comboBombRight { 0%{transform:translateX(-57%) rotate(-10deg) scale(.9)}55%{transform:translateX(-42%) translateY(-2%) rotate(8deg) scale(1.14)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes uppercutDrive { 0%{transform:translateX(-50%) translateY(8%) scale(.92)}48%{transform:translateX(-48%) translateY(5%) rotate(4deg) scale(.96)}72%{transform:translateX(-52%) translateY(-7%) rotate(-4deg) scale(1.1)}100%{transform:translateX(-50%) translateY(-3%) scale(1.04)} }
@@ -575,6 +601,16 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   0% { transform:translateX(-50%) translate(14%,14%) rotate(11deg) scale(.76); filter:drop-shadow(0 10px 14px #120605dd) blur(1px); }
   58% { transform:translateX(-50%) translate(-14%,-8%) rotate(-5deg) scale(1.14); filter:drop-shadow(0 15px 18px #120605ee) blur(.3px); }
   100% { transform:translateX(-50%) translate(-2%,-1%) rotate(-1deg) scale(1.03); filter:drop-shadow(0 11px 12px #120605cc); }
+}
+@keyframes rightSlipHaymakerPose {
+  0% { transform:translateX(-50%) translate(28%,8%) rotate(18deg) scale(.76); filter:drop-shadow(0 10px 14px #120605dd) blur(1px); }
+  56% { transform:translateX(-50%) translate(-8%,-8%) rotate(-7deg) scale(1.13); filter:drop-shadow(0 15px 18px #120605ee) blur(.25px); }
+  100% { transform:translateX(-50%) translate(-1%,-2%) rotate(-1deg) scale(1.04); filter:drop-shadow(0 11px 12px #120605cc); }
+}
+@keyframes leftSlipHaymakerPose {
+  0% { transform:translateX(-50%) translate(-28%,8%) rotate(-18deg) scale(.76); filter:drop-shadow(0 10px 14px #120605dd) blur(1px); }
+  56% { transform:translateX(-50%) translate(8%,-8%) rotate(7deg) scale(1.13); filter:drop-shadow(0 15px 18px #120605ee) blur(.25px); }
+  100% { transform:translateX(-50%) translate(1%,-2%) rotate(1deg) scale(1.04); filter:drop-shadow(0 11px 12px #120605cc); }
 }
 @keyframes haymakerFill { from{width:0} to{width:100%} }
 @keyframes mohawkGuardFlash { from{opacity:0;transform:translateX(-50%) scale(.72)} 35%{opacity:1} to{opacity:.38;transform:translateX(-50%) scale(1.08)} }

@@ -10,6 +10,9 @@ type FighterPose =
   | "windup-right"
   | "windup-body"
   | "windup-heavy"
+  | "windup-heavy-left"
+  | "windup-haymaker-right"
+  | "windup-haymaker-left"
   | "windup-combo-left"
   | "windup-combo-right"
   | "windup-uppercut"
@@ -17,7 +20,17 @@ type FighterPose =
   | "attack-right"
   | "attack-body"
   | "attack-heavy"
+  | "attack-heavy-left"
+  | "attack-haymaker-right"
+  | "attack-haymaker-left"
   | "attack-heavy-contact"
+  | "attack-heavy-left-contact"
+  | "attack-haymaker-right-contact"
+  | "attack-haymaker-left-contact"
+  | "attack-left-contact"
+  | "attack-right-contact"
+  | "attack-body-contact"
+  | "attack-uppercut-contact"
   | "attack-combo-left"
   | "attack-combo-right"
   | "attack-uppercut"
@@ -41,6 +54,8 @@ type PlayerPose =
   | "cross-right"
   | "haymaker-charge"
   | "haymaker"
+  | "left-haymaker"
+  | "right-haymaker"
   | "body-hook"
   | "special-uppercut"
   | "dodge-left"
@@ -49,7 +64,7 @@ type PlayerPose =
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
-type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "uppercut";
+type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "uppercut";
 type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
@@ -60,6 +75,10 @@ const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
   asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-right.webp"), asset("/opponent-overhand-contact.webp"),
+  asset("/opponent-haymaker-right-windup.webp"), asset("/opponent-haymaker-right-contact.webp"),
+  asset("/opponent-haymaker-left-windup.webp"), asset("/opponent-haymaker-left-contact.webp"),
+  asset("/opponent-jab-contact.webp"), asset("/opponent-cross-contact.webp"),
+  asset("/opponent-body-contact.webp"), asset("/opponent-uppercut-contact.webp"),
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
@@ -67,6 +86,7 @@ const POSE_ASSETS = [
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
   asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
+  asset("/player-haymaker-left-arm.webp"), asset("/player-haymaker-right-arm.webp"),
   asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"), asset("/player-special-uppercut-contact.webp"),
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
@@ -648,7 +668,7 @@ export default function Home() {
   useEffect(() => {
     if (matchState !== "fighting") return;
     type EnemyMove = "left" | "right" | "body" | "uppercut";
-    type AttackStyle = "normal" | "heavy" | "flurry" | "uppercut" | "power-combo";
+    type AttackStyle = "normal" | "heavy" | "haymaker" | "flurry" | "uppercut" | "power-combo";
     let cancelled = false;
     const timers: number[] = [];
     const later = (fn: () => void, delay: number) => {
@@ -685,38 +705,59 @@ export default function Home() {
       const firstPunch = index === 0;
       const comboUppercut = style === "power-combo" && move === "uppercut";
       const comboHaymaker = style === "power-combo" && !comboUppercut;
-      const windup = style === "heavy" ? 760
+      const directionalHaymaker = style === "haymaker";
+      const powerShot = style === "heavy" || directionalHaymaker;
+      const windup = powerShot ? 760
         : comboUppercut ? 250
         : comboHaymaker ? firstPunch ? 430 : 115
         : style === "uppercut" ? 480
         : style === "flurry" ? firstPunch ? 185 : 58
         : firstPunch ? rage ? 240 : move === "body" ? 430 : 340
         : rage ? 90 : move === "body" ? 180 : 130;
-      const windupPose: FighterPose = style === "heavy" ? "windup-heavy"
+      const windupPose: FighterPose = directionalHaymaker ? move === "left" ? "windup-haymaker-left" : "windup-haymaker-right"
+        : style === "heavy" ? "windup-heavy"
         : comboUppercut ? "windup-uppercut"
         : comboHaymaker ? `windup-combo-${move}` as FighterPose
         : style === "uppercut" ? "windup-uppercut"
         : `windup-${move}` as FighterPose;
-      const attackPose: FighterPose = style === "heavy" ? "attack-heavy"
+      const attackPose: FighterPose = directionalHaymaker ? move === "left" ? "attack-haymaker-left" : "attack-haymaker-right"
+        : style === "heavy" ? "attack-heavy"
         : comboUppercut ? "attack-uppercut"
         : comboHaymaker ? `attack-combo-${move}` as FighterPose
         : style === "uppercut" ? "attack-uppercut"
         : `attack-${move}` as FighterPose;
+      const contactPose: FighterPose = directionalHaymaker ? move === "left" ? "attack-haymaker-left-contact" : "attack-haymaker-right-contact"
+        : style === "heavy" ? "attack-heavy-contact"
+        : move === "left" ? "attack-left-contact"
+        : move === "right" ? "attack-right-contact"
+        : move === "body" ? "attack-body-contact"
+        : "attack-uppercut-contact";
+      const resolutionDelay = powerShot ? 320
+        : comboUppercut ? 280
+        : comboHaymaker ? 175
+        : style === "uppercut" ? 280
+        : style === "flurry" ? 92
+        : rage ? 125
+        : 155;
+      const contactLead = style === "flurry" ? 30 : powerShot ? 80 : 55;
       setEnemyPoseSafe(windupPose);
-      setCallout(style === "heavy" ? "HAYMAKER — HE RETREATS!" : style === "power-combo" ? comboUppercut ? "COMBO FINISHER!" : "HAYMAKER BARRAGE!" : style === "flurry" ? "VOLUME FLURRY" : style === "uppercut" ? "WATCH THE CENTER" : "PRESSURE");
+      setCallout(directionalHaymaker ? `${move.toUpperCase()} HAYMAKER — SLIP ${move === "right" ? "LEFT" : "RIGHT"}!` : style === "heavy" ? "OVERHAND — HE RETREATS!" : style === "power-combo" ? comboUppercut ? "COMBO FINISHER!" : "HAYMAKER BARRAGE!" : style === "flurry" ? "VOLUME FLURRY" : style === "uppercut" ? "WATCH THE CENTER" : "PRESSURE");
 
       later(() => {
         if (matchRef.current !== "fighting") return;
         setEnemyPoseSafe(attackPose);
-        if (style === "heavy") {
-          // The swing pose establishes the high looping arc. Swap to a much
-          // more foreshortened fist only at the final approach to the camera.
-          later(() => {
-            if (matchRef.current === "fighting" && poseRef.current === attackPose && dodgeRef.current === null) {
-              setEnemyPoseSafe("attack-heavy-contact");
-            }
-          }, 240);
-        }
+        // Every punch gets a dedicated foreshortened contact frame. Do not
+        // show it when the player has already completed the correct slip.
+        later(() => {
+          if (matchRef.current !== "fighting" || poseRef.current !== attackPose) return;
+          const alreadyDodging = dodgeRef.current !== null &&
+            (directionalHaymaker
+              ? (move === "right" && dodgeRef.current === "left") || (move === "left" && dodgeRef.current === "right")
+              : style === "heavy" || move === "body" || move === "uppercut" ||
+                (move === "left" && dodgeRef.current === "right") ||
+                (move === "right" && dodgeRef.current === "left"));
+          if (!alreadyDodging) setEnemyPoseSafe(contactPose);
+        }, Math.max(35, resolutionDelay - contactLead));
         // Let the committed punch frame render before resolving contact.
         // This keeps the visual impact and damage event in the same sequence.
         later(() => {
@@ -724,16 +765,20 @@ export default function Home() {
           // A strike may only resolve while its matching punch frame is still
           // on screen. If the player interrupted Esteban during this window,
           // cancel the contact instead of applying invisible damage.
-          if (poseRef.current !== attackPose && !(style === "heavy" && poseRef.current === "attack-heavy-contact")) {
+          if (poseRef.current !== attackPose && poseRef.current !== contactPose) {
             queueAttack();
             return;
           }
           const dodged = dodgeRef.current !== null &&
-            (style === "heavy" || move === "body" || move === "uppercut" || (move === "left" && dodgeRef.current === "right") || (move === "right" && dodgeRef.current === "left"));
+            (directionalHaymaker
+              ? (move === "right" && dodgeRef.current === "left") || (move === "left" && dodgeRef.current === "right")
+              : style === "heavy" || move === "body" || move === "uppercut" ||
+                (move === "left" && dodgeRef.current === "right") ||
+                (move === "right" && dodgeRef.current === "left"));
 
           if (dodged) {
-            counterReadyUntilRef.current = performance.now() + (style === "heavy" ? 980 : 720);
-            setCallout(style === "heavy" ? "HAYMAKER MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
+            counterReadyUntilRef.current = performance.now() + (powerShot ? 980 : 720);
+            setCallout(directionalHaymaker ? `${move === "right" ? "LEFT" : "RIGHT"} SLIP — HAYMAKER PUNISH!` : style === "heavy" ? "OVERHAND MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
             setEnemyPoseSafe("stunned");
             setScore((value) => value + 250);
             playSound("dodge");
@@ -743,7 +788,7 @@ export default function Home() {
                 setCallout(enemyHealthRef.current <= 35 ? "MOHAWK IS RAGING" : "STAY SHARP");
               }
               queueAttack();
-            }, rage ? 340 : 480);
+            }, powerShot ? 850 : rage ? 340 : 480);
             return;
           }
 
@@ -754,23 +799,23 @@ export default function Home() {
 
           if (blockingRef.current && guardRef.current > 0) {
             const lateBlock = performance.now() - blockStartedAtRef.current < 95;
-            const baseGuardCost = style === "heavy" ? 42 : comboUppercut ? 30 : comboHaymaker ? 18 : style === "uppercut" ? 34 : style === "flurry" ? 14 : move === "body" ? 30 : 22;
+            const baseGuardCost = powerShot ? 42 : comboUppercut ? 30 : comboHaymaker ? 18 : style === "uppercut" ? 34 : style === "flurry" ? 14 : move === "body" ? 30 : 22;
             const guardCost = baseGuardCost + (lateBlock ? 9 : 0);
             const nextGuard = clamp(guardRef.current - guardCost);
             guardRef.current = nextGuard;
             setGuard(nextGuard);
-            const chip = style === "heavy" ? 9 : comboUppercut ? 7 : comboHaymaker ? 4 : style === "uppercut" ? 7 : style === "flurry" ? 2 : move === "body" ? 5 : 3;
+            const chip = powerShot ? 9 : comboUppercut ? 7 : comboHaymaker ? 4 : style === "uppercut" ? 7 : style === "flurry" ? 2 : move === "body" ? 5 : 3;
             takePlayerDamage(lateBlock ? chip + 4 : chip);
-            setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : style === "heavy" ? "HAYMAKER CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
+            setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : directionalHaymaker ? "HAYMAKER CRUSHES YOUR GUARD!" : style === "heavy" ? "OVERHAND CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
             if (nextGuard <= 0) {
               setBlocking(false);
               blockingRef.current = false;
               guardBrokenUntilRef.current = performance.now() + 700;
             }
           } else {
-            const damage = style === "heavy" ? 36 : comboUppercut ? 24 : comboHaymaker ? 16 : style === "uppercut" ? 22 : style === "flurry" ? 7 : move === "body" ? 18 : rage ? 17 : 14;
+            const damage = powerShot ? 36 : comboUppercut ? 24 : comboHaymaker ? 16 : style === "uppercut" ? 22 : style === "flurry" ? 7 : move === "body" ? 18 : rage ? 17 : 14;
             takePlayerDamage(damage);
-            setCallout(style === "heavy" ? "MOHAWK HAYMAKER!" : style === "uppercut" ? "UPPERCUT!" : move === "body" ? "LIVER SHOT!" : "CLEAN HIT");
+            setCallout(directionalHaymaker ? `MOHAWK ${move.toUpperCase()} HAYMAKER!` : style === "heavy" ? "MOHAWK OVERHAND!" : style === "uppercut" ? "UPPERCUT!" : move === "body" ? "LIVER SHOT!" : "CLEAN HIT");
           }
 
           if (index + 1 < combination.length) {
@@ -783,7 +828,7 @@ export default function Home() {
               }
             }, rage ? 230 : 360);
           }
-        }, style === "heavy" ? 320 : comboUppercut ? 280 : comboHaymaker ? 175 : style === "uppercut" ? 280 : style === "flurry" ? 92 : rage ? 125 : 155);
+        }, resolutionDelay);
       }, windup);
     };
 
@@ -806,7 +851,9 @@ export default function Home() {
       }
       const pattern = Math.random();
       if (pattern < .13) throwStrike(["right", "left", "right", "left", "uppercut"], 0, "power-combo");
-      else if (pattern < .28) throwStrike(["right"], 0, "heavy");
+      else if (pattern < .19) throwStrike(["right"], 0, "heavy");
+      else if (pattern < .235) throwStrike(["right"], 0, "haymaker");
+      else if (pattern < .28) throwStrike(["left"], 0, "haymaker");
       else if (pattern < .44) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
       else if (pattern < .58) throwStrike(["uppercut"], 0, "uppercut");
       else throwStrike(chooseCombination(), 0);
@@ -819,8 +866,13 @@ export default function Home() {
     };
   }, [matchState, playSound, setEnemyPoseSafe, takePlayerDamage]);
 
-  const punch = useCallback((kind: PunchKind): void => {
+  const punch = useCallback((requestedKind: PunchKind): void => {
     if (matchRef.current !== "fighting" || blockingRef.current) return;
+    const kind: PunchKind =
+      requestedKind === "right" && dodgeRef.current === "right" ? "right-haymaker"
+        : requestedKind === "left" && dodgeRef.current === "left" ? "left-haymaker"
+          : requestedKind;
+    const isHaymaker = kind === "haymaker" || kind === "left-haymaker" || kind === "right-haymaker";
     if (kind === "uppercut" && specialRef.current < 100) {
       setCallout("BUILD YOUR SPECIAL!");
       return;
@@ -829,7 +881,7 @@ export default function Home() {
       if (kind === "left" || kind === "right" || kind === "body") bufferedPunchRef.current = kind;
       return;
     }
-    const cost = kind === "left" ? 6 : kind === "power-jab" ? 12 : kind === "right" ? 9 : kind === "body" ? 11 : kind === "uppercut" ? 18 : 19;
+    const cost = kind === "left" ? 6 : kind === "power-jab" ? 12 : kind === "right" ? 9 : kind === "body" ? 11 : kind === "uppercut" ? 18 : isHaymaker ? 19 : 19;
     if (staminaRef.current < cost) {
       setCallout("BREATHE — LOW STAMINA");
       return;
@@ -844,12 +896,12 @@ export default function Home() {
       specialRef.current = 0;
       setSpecial(0);
     }
-    setPlayerPose(kind === "left" ? "jab-left" : kind === "power-jab" ? "power-jab" : kind === "right" ? "cross-right" : kind === "body" ? "body-hook" : kind === "uppercut" ? "special-uppercut" : "haymaker");
+    setPlayerPose(kind === "left" ? "jab-left" : kind === "power-jab" ? "power-jab" : kind === "right" ? "cross-right" : kind === "left-haymaker" ? "left-haymaker" : kind === "right-haymaker" ? "right-haymaker" : kind === "body" ? "body-hook" : kind === "uppercut" ? "special-uppercut" : "haymaker");
 
     // Mohawk reads obvious offense and actively closes his guard. A charged
     // haymaker is much easier for him to see coming unless he is stunned.
     const canReadPunch = poseRef.current === "idle" || poseRef.current === "taunt";
-    if (canReadPunch && Math.random() < (kind === "haymaker" || kind === "uppercut" ? 0.58 : kind === "power-jab" ? 0.32 : 0.2)) {
+    if (canReadPunch && Math.random() < (isHaymaker || kind === "uppercut" ? 0.58 : kind === "power-jab" ? 0.32 : 0.2)) {
       setEnemyPoseSafe("guard");
     }
 
@@ -867,8 +919,8 @@ export default function Home() {
       const enemyIsOpen = poseRef.current === "stunned" || poseRef.current.startsWith("windup");
       const enemyIsGuarding = poseRef.current === "guard";
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
-      const base = kind === "left" ? 4 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "body" ? 6 : kind === "uppercut" ? 72 : 43;
-      const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (kind === "haymaker" ? 1.25 : 2.1)) : base;
+      const base = kind === "left" ? 4 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "body" ? 6 : kind === "uppercut" ? 72 : isHaymaker ? 43 : 43;
+      const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (isHaymaker ? 1.25 : 2.1)) : base;
       // Mohawk remains durable across four health bars, but the addition of
       // active guarding made the former one-sixth scaling too restrictive.
       // One-quarter scaling restores a realistic 90-second knockout path.
@@ -890,19 +942,19 @@ export default function Home() {
         enemyWindedUntilRef.current = performance.now() + 720;
       }
       if (!enemyIsGuarding) {
-        const specialGain = kind === "left" ? 3 : kind === "power-jab" ? 6 : kind === "right" ? 4 : kind === "body" ? 5 : kind === "haymaker" ? 7 : 0;
+        const specialGain = kind === "left" ? 3 : kind === "power-jab" ? 6 : kind === "right" ? 4 : kind === "body" ? 5 : isHaymaker ? 7 : 0;
         const nextSpecial = clamp(specialRef.current + specialGain + (slipCounter ? 4 : 0));
         specialRef.current = nextSpecial;
         setSpecial(nextSpecial);
       }
-      setScore((value) => value + damage * 100 + (slipCounter ? 900 : enemyIsOpen ? 350 : kind === "haymaker" && !enemyIsGuarding ? 1200 : 0));
-      setImpact(enemyIsGuarding ? null : kind === "haymaker" || kind === "uppercut" || kind === "power-jab" ? "right" : kind);
+      setScore((value) => value + damage * 100 + (slipCounter ? 900 : enemyIsOpen ? 350 : isHaymaker && !enemyIsGuarding ? 1200 : 0));
+      setImpact(enemyIsGuarding ? null : isHaymaker || kind === "uppercut" || kind === "power-jab" ? "right" : kind);
       setHitStop(true);
       setScreenShake(true);
-      setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersWindedStun ? "stunned" : triggersStumble ? "stumble-back" : kind === "left" || kind === "power-jab" ? "hit-right" : kind === "right" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
+      setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersWindedStun ? "stunned" : triggersStumble ? "stumble-back" : kind === "left" || kind === "power-jab" || kind === "left-haymaker" ? "hit-right" : kind === "right" || kind === "right-haymaker" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
       playSound("punch");
-      setCallout(enemyIsGuarding ? kind === "haymaker" || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : triggersWindedStun ? "MOHAWK IS WINDED!" : triggersStumble ? "MOHAWK STUMBLES BACK!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "haymaker" ? "HAYMAKER!" : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
-      const heavyImpact = slipCounter || kind === "haymaker" || kind === "uppercut" || kind === "power-jab";
+      setCallout(enemyIsGuarding ? isHaymaker || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : triggersWindedStun ? "MOHAWK IS WINDED!" : triggersStumble ? "MOHAWK STUMBLES BACK!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : isHaymaker ? `${kind === "left-haymaker" ? "LEFT" : "RIGHT"} HAYMAKER!` : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
+      const heavyImpact = slipCounter || isHaymaker || kind === "uppercut" || kind === "power-jab";
       window.setTimeout(() => setHitStop(false), heavyImpact ? 88 : 52);
       window.setTimeout(() => setScreenShake(false), heavyImpact ? 135 : 82);
       window.setTimeout(() => setImpact(null), heavyImpact ? 180 : 120);
@@ -919,7 +971,7 @@ export default function Home() {
         }, 740);
       }
 
-      if (enemyIsGuarding && kind === "haymaker") {
+      if (enemyIsGuarding && isHaymaker) {
         // The blocked haymaker leaves the player fully committed. Mohawk
         // answers immediately with a damaging heavy counter animation.
         window.setTimeout(() => {
@@ -957,7 +1009,7 @@ export default function Home() {
         enemyRiseAtRef.current = riseAt;
         enemyRecoveryHealthRef.current = plan?.health ?? 0;
         const nextKneeDepth: KneeDepth =
-          kind === "uppercut" || kind === "haymaker"
+          kind === "uppercut" || isHaymaker
             ? Math.random() < .68 ? "far" : "near"
             : Math.random() < .3 ? "far" : "near";
         kneeDepthRef.current = nextKneeDepth;
@@ -1003,8 +1055,8 @@ export default function Home() {
             setEnemyPoseSafe("idle");
           }
         }
-      }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "power-jab" ? 210 : kind === "right" ? 210 : kind === "haymaker" || kind === "uppercut" ? 300 : 220);
-    }, kind === "left" ? 72 : kind === "power-jab" ? 112 : kind === "right" ? 98 : kind === "haymaker" ? 155 : kind === "uppercut" ? 145 : 105);
+      }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "power-jab" ? 210 : kind === "right" ? 210 : isHaymaker || kind === "uppercut" ? 300 : 220);
+    }, kind === "left" ? 72 : kind === "power-jab" ? 112 : kind === "right" ? 98 : isHaymaker ? 155 : kind === "uppercut" ? 145 : 105);
 
     // Retract before accepting the buffered strike. Keeping the lock active
     // during this short guard frame guarantees a full extension on every hit,
@@ -1013,7 +1065,7 @@ export default function Home() {
       if (matchRef.current === "fighting" && !blockingRef.current && playerActionRef.current === actionId) {
         setPlayerPose("idle");
       }
-    }, kind === "left" ? 145 : kind === "power-jab" ? 220 : kind === "haymaker" ? 310 : kind === "uppercut" ? 330 : 175);
+    }, kind === "left" ? 145 : kind === "power-jab" ? 220 : isHaymaker ? 310 : kind === "uppercut" ? 330 : 175);
 
     window.setTimeout(() => {
       punchLockRef.current = false;
@@ -1211,12 +1263,28 @@ export default function Home() {
             ? asset("/opponent-body-windup.webp")
             : enemyPose === "attack-body"
               ? asset("/opponent-body-punch.webp")
-              : enemyPose === "windup-heavy"
+              : enemyPose === "windup-heavy" || enemyPose === "windup-heavy-left"
                 ? asset("/opponent-windup-right.webp")
-                : enemyPose === "attack-heavy"
+                : enemyPose === "windup-haymaker-right"
+                  ? asset("/opponent-haymaker-right-windup.webp")
+                  : enemyPose === "windup-haymaker-left"
+                    ? asset("/opponent-haymaker-left-windup.webp")
+                : enemyPose === "attack-heavy" || enemyPose === "attack-heavy-left"
                   ? asset("/opponent-overhand-right.webp")
-                  : enemyPose === "attack-heavy-contact"
+                  : enemyPose === "attack-haymaker-right" || enemyPose === "attack-haymaker-right-contact"
+                    ? asset("/opponent-haymaker-right-contact.webp")
+                    : enemyPose === "attack-haymaker-left" || enemyPose === "attack-haymaker-left-contact"
+                      ? asset("/opponent-haymaker-left-contact.webp")
+                  : enemyPose === "attack-heavy-contact" || enemyPose === "attack-heavy-left-contact"
                     ? asset("/opponent-overhand-contact.webp")
+                    : enemyPose === "attack-left-contact"
+                      ? asset("/opponent-jab-contact.webp")
+                      : enemyPose === "attack-right-contact"
+                        ? asset("/opponent-cross-contact.webp")
+                        : enemyPose === "attack-body-contact"
+                          ? asset("/opponent-body-contact.webp")
+                          : enemyPose === "attack-uppercut-contact"
+                            ? asset("/opponent-uppercut-contact.webp")
                   : enemyPose === "windup-uppercut"
                     ? asset("/opponent-uppercut-windup.webp")
                     : enemyPose === "attack-uppercut"
@@ -1234,13 +1302,17 @@ export default function Home() {
                             : enemyPose === "hit-body"
                               ? asset("/opponent-hit-body.webp")
               : asset("/opponent-guard.webp");
-  const leftArmAsset = playerPose === "jab-left" || playerPose === "power-jab"
+  const leftArmAsset = playerPose === "left-haymaker"
+    ? asset("/player-haymaker-left-arm.webp")
+    : playerPose === "jab-left" || playerPose === "power-jab"
     ? asset("/player-jab-left-arm.webp")
     : playerPose === "body-hook"
       ? asset("/player-body-left-arm.webp")
       : asset("/player-guard-left.webp");
-  const rightArmAsset = playerPose === "cross-right" || playerPose === "haymaker"
-    ? asset("/player-cross-right-arm.webp")
+  const rightArmAsset = playerPose === "right-haymaker" || playerPose === "haymaker"
+    ? asset("/player-haymaker-right-arm.webp")
+    : playerPose === "cross-right"
+      ? asset("/player-cross-right-arm.webp")
     : asset("/player-guard-right.webp");
 
   return (
