@@ -69,7 +69,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.43.0";
+const GAME_VERSION = "0.45.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -823,10 +823,15 @@ export default function Home() {
             const lateBlock = performance.now() - blockStartedAtRef.current < 95;
             const baseGuardCost = powerShot ? 42 : comboUppercut ? 30 : comboHaymaker ? 18 : style === "uppercut" ? 34 : style === "flurry" ? 14 : move === "body" ? 30 : 22;
             const guardCost = baseGuardCost + (lateBlock ? 9 : 0);
-            const nextGuard = clamp(guardRef.current - guardCost);
+            const canBreakGuard = powerShot || comboUppercut || comboHaymaker || style === "uppercut";
+            // Ordinary jabs, crosses, and flurry punches can pressure a guard,
+            // but only a designated power shot can actually break through it.
+            const nextGuard = canBreakGuard
+              ? clamp(guardRef.current - guardCost)
+              : Math.max(1, clamp(guardRef.current - guardCost));
             guardRef.current = nextGuard;
             setGuard(nextGuard);
-            const chip = powerShot ? 9 : comboUppercut ? 7 : comboHaymaker ? 4 : style === "uppercut" ? 7 : style === "flurry" ? 2 : move === "body" ? 5 : 3;
+            const chip = powerShot ? 7 : comboUppercut ? 5 : comboHaymaker ? 3 : style === "uppercut" ? 5 : style === "flurry" ? 1 : move === "body" ? 4 : 1;
             takePlayerDamage(lateBlock ? chip + 4 : chip);
             setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : directionalHaymaker ? "HAYMAKER CRUSHES YOUR GUARD!" : style === "heavy" ? "OVERHAND CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
             if (nextGuard <= 0) {
@@ -835,7 +840,7 @@ export default function Home() {
               guardBrokenUntilRef.current = performance.now() + 700;
             }
           } else {
-            const damage = powerShot ? 36 : comboUppercut ? 24 : comboHaymaker ? 16 : style === "uppercut" ? 22 : style === "flurry" ? 7 : move === "body" ? 18 : rage ? 17 : 14;
+            const damage = powerShot ? 31 : comboUppercut ? 20 : comboHaymaker ? 13 : style === "uppercut" ? 18 : style === "flurry" ? 5 : move === "body" ? 14 : rage ? 14 : 11;
             takePlayerDamage(damage);
             setCallout(directionalHaymaker ? `MOHAWK ${move.toUpperCase()} HAYMAKER!` : style === "heavy" ? "MOHAWK OVERHAND!" : style === "uppercut" ? "UPPERCUT!" : move === "body" ? "LIVER SHOT!" : "CLEAN HIT");
           }
@@ -923,7 +928,7 @@ export default function Home() {
     // Mohawk reads obvious offense and actively closes his guard. A charged
     // haymaker is much easier for him to see coming unless he is stunned.
     const canReadPunch = poseRef.current === "idle" || poseRef.current === "taunt";
-    if (canReadPunch && Math.random() < (isHaymaker || kind === "uppercut" ? 0.58 : kind === "power-jab" ? 0.32 : 0.2)) {
+    if (canReadPunch && Math.random() < (isHaymaker || kind === "uppercut" ? 0.4 : kind === "power-jab" ? 0.22 : 0.12)) {
       setEnemyPoseSafe("guard");
     }
 
@@ -1059,7 +1064,7 @@ export default function Home() {
       window.setTimeout(() => {
         if (matchRef.current !== "fighting") return;
         const rage = enemyHealthRef.current <= 35;
-        if (Math.random() < (rage ? 0.48 : 0.32)) {
+        if (Math.random() < (rage ? 0.26 : 0.17)) {
           setEnemyPoseSafe("guard");
           window.setTimeout(() => {
             if (matchRef.current === "fighting" && poseRef.current === "guard") setEnemyPoseSafe("idle");

@@ -541,7 +541,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes jabContact { from{transform:translateX(-53%) scale(.96)}to{transform:translateX(-50%) translateY(-1%) scale(1.07);filter:brightness(1.08)} }
 @keyframes crossContact { from{transform:translateX(-47%) rotate(-2deg) scale(.96)}to{transform:translateX(-50%) translateY(-1%) rotate(1deg) scale(1.1);filter:brightness(1.1)} }
 @keyframes bodyContact { from{transform:translateX(-50%) translateY(5%) scale(.96)}to{transform:translateX(-50%) translateY(7%) scale(1.08);filter:brightness(1.08)} }
-@keyframes uppercutContact { from{transform:translateX(-50%) translateY(2%) scale(.98)}62%{transform:translateX(-50%) translateY(1%) rotate(-2deg) scale(1.08)}to{transform:translateX(-50%) translateY(0) rotate(-1deg) scale(1.13);filter:brightness(1.16)} }
+@keyframes uppercutContact { from{transform:translateX(-50%) translateY(1%)}62%{transform:translateX(-50%) translateY(0) rotate(-1deg)}to{transform:translateX(-50%) translateY(0);filter:brightness(1.16)} }
 @keyframes comboBombLeft { 0%{transform:translateX(-43%) rotate(10deg) scale(.9)}55%{transform:translateX(-58%) translateY(-2%) rotate(-8deg) scale(1.14)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes comboBombRight { 0%{transform:translateX(-57%) rotate(-10deg) scale(.9)}55%{transform:translateX(-42%) translateY(-2%) rotate(8deg) scale(1.14)}100%{transform:translateX(-50%) scale(1.03)} }
 @keyframes uppercutDrive { 0%{transform:translateX(-50%) translateY(3%) rotate(3deg) scale(.97)}48%{transform:translateX(-49%) translateY(3%) rotate(4deg) scale(.98)}72%{transform:translateX(-51%) translateY(1%) rotate(-3deg) scale(1.04)}100%{transform:translateX(-50%) translateY(0) rotate(-1deg) scale(1.02)} }
