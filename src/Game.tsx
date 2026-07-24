@@ -69,7 +69,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.40.0";
+const GAME_VERSION = "0.42.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -1290,7 +1290,7 @@ export default function Home() {
                 : enemyPose === "windup-haymaker-right"
                   ? asset("/opponent-haymaker-right-windup.webp")
                   : enemyPose === "windup-haymaker-left"
-                    ? asset("/opponent-haymaker-left-windup.webp")
+                    ? asset("/opponent-haymaker-right-windup.webp")
                 : enemyPose === "attack-heavy" || enemyPose === "attack-heavy-left"
                   ? asset("/opponent-overhand-right.webp")
                   : enemyPose === "attack-haymaker-right" || enemyPose === "attack-haymaker-right-contact"
