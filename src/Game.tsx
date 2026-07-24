@@ -28,6 +28,7 @@ type FighterPose =
   | "stunned"
   | "stumble-back"
   | "rising"
+  | "failed-rise"
   | "returning"
   | "knockdown-knee"
   | "knockout";
@@ -57,7 +58,7 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//
 const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
-  asset("/opponent-overhand-impact.webp"),
+  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-right.webp"),
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
@@ -538,6 +539,8 @@ export default function Home() {
     if (matchState !== "enemy-down") return;
     let count = 1;
     let resolutionTimer: number | undefined;
+    const attemptTimers: number[] = [];
+    const failedAttemptCounts = new Set(timer >= 20 ? [4, 6, 8] : [5, 8]);
     const countTimer = window.setInterval(() => {
       const nextCount = count + 1;
       const riseAt = enemyRiseAtRef.current;
@@ -584,13 +587,24 @@ export default function Home() {
       } else {
         count = nextCount;
         setEnemyCount(count);
+        if (riseAt === null && failedAttemptCounts.has(count)) {
+          setEnemyPoseSafe("failed-rise");
+          setCallout(count >= 8 ? "MOHAWK WILLS HIMSELF UP!" : "MOHAWK TRIES TO STAND!");
+          attemptTimers.push(window.setTimeout(() => {
+            if (matchRef.current === "enemy-down" && poseRef.current === "failed-rise") {
+              setEnemyPoseSafe("knockdown-knee");
+              setCallout(count >= 8 ? "HE FALLS BACK TO THE KNEE!" : "NOT YET!");
+            }
+          }, 620));
+        }
       }
     }, 800);
     return () => {
       window.clearInterval(countTimer);
       if (resolutionTimer) window.clearTimeout(resolutionTimer);
+      attemptTimers.forEach((attemptTimer) => window.clearTimeout(attemptTimer));
     };
-  }, [finishMatch, matchState, playSound, setEnemyPoseSafe]);
+  }, [finishMatch, matchState, playSound, setEnemyPoseSafe, timer]);
 
   useEffect(() => {
     if (matchState !== "fighting") return;
@@ -1190,7 +1204,7 @@ export default function Home() {
               : enemyPose === "windup-heavy"
                 ? asset("/opponent-windup-right.webp")
                 : enemyPose === "attack-heavy"
-                  ? asset("/opponent-punch-right.webp")
+                  ? asset("/opponent-overhand-right.webp")
                   : enemyPose === "windup-uppercut"
                     ? asset("/opponent-uppercut-windup.webp")
                     : enemyPose === "attack-uppercut"
@@ -1199,7 +1213,7 @@ export default function Home() {
                         ? asset("/opponent-taunt.webp")
                         : enemyPose === "stumble-back"
                           ? asset("/opponent-hit-cross.webp")
-                          : enemyPose === "knockdown-knee" || enemyPose === "rising"
+                          : enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise"
                             ? asset("/opponent-knee-breathing.webp")
                         : enemyPose === "hit-right"
                           ? asset("/opponent-hit-jab.webp")
@@ -1258,7 +1272,7 @@ export default function Home() {
         {matchState === "fighting" && <div className="score">SCORE {score.toLocaleString()}</div>}
         {matchState === "fighting" && <button className="pause-trigger" onClick={togglePause} aria-label="Pause fight">Ⅱ</button>}
 
-        <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
+        <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
           <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
           <div className="damage-glow" aria-hidden="true" />

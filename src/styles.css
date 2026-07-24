@@ -249,9 +249,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-stunned { transform: translateX(-50%) translateY(2%) rotate(2deg) scale(.98); filter:brightness(1.12); animation:stunned .18s ease-in-out infinite alternate; }
 .pose-stumble-back { animation:mohawkStumbleBack .72s cubic-bezier(.12,.74,.18,1) both; filter:brightness(1.06); }
 .knee-near { --knee-y:15%; --knee-scale:1.04; --knee-entry-scale:.96; --knee-bounce-scale:1.065; }
-.knee-far { --knee-y:6%; --knee-scale:.74; --knee-entry-scale:.68; --knee-bounce-scale:.76; }
+.knee-far { --knee-y:22%; --knee-scale:.74; --knee-entry-scale:.68; --knee-bounce-scale:.76; }
 .pose-knockdown-knee { animation:mohawkKneeSettle .46s cubic-bezier(.18,.76,.22,1) both,mohawkKneeBreathing .8s .46s ease-in-out infinite alternate; filter:brightness(.88) saturate(.92); }
 .pose-rising { animation:mohawkRiseFromKnee .62s cubic-bezier(.15,.78,.2,1) both; }
+.pose-failed-rise { animation:mohawkFailedRise .62s cubic-bezier(.18,.7,.22,1) both; filter:brightness(.92) saturate(.9); }
 .pose-returning { animation:mohawkReturnToRange .48s cubic-bezier(.12,.78,.18,1) both; }
 .pose-guard { transform: translateX(-50%) translateY(-1%) scale(1.04); filter:brightness(.78); }
 .pose-guard::before { content:""; position:absolute; z-index:5; left:50%; top:27%; width:42%; aspect-ratio:1.25; transform:translateX(-50%); border:4px solid rgba(255,190,49,.8); border-top-color:rgba(255,242,176,.95); border-bottom-color:transparent; border-radius:50%; filter:drop-shadow(0 0 9px rgba(255,170,24,.8)); pointer-events:none; animation:mohawkGuardFlash .42s ease-out both; }
@@ -523,6 +524,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes mohawkKneeSettle { from{transform:translateX(-50%) translateY(calc(var(--knee-y) - 9%)) rotate(4deg) scale(var(--knee-entry-scale));opacity:.35}55%{transform:translateX(-53%) translateY(calc(var(--knee-y) + 2%)) rotate(-2deg) scale(var(--knee-bounce-scale));opacity:1}to{transform:translateX(-50%) translateY(var(--knee-y)) scale(var(--knee-scale));opacity:1} }
 @keyframes mohawkKneeBreathing { from{translate:0 0;scale:1 1}to{translate:0 1.1%;scale:1.008 .988;filter:brightness(.94) saturate(.9)} }
 @keyframes mohawkRiseFromKnee { from{transform:translateX(-50%) translateY(var(--knee-y)) scale(var(--knee-scale));opacity:1}55%{transform:translateX(-47%) translateY(calc(var(--knee-y) - 9%)) rotate(3deg) scale(var(--knee-scale));opacity:1}to{transform:translateX(-50%) translateY(calc(var(--knee-y) - 18%)) scale(var(--knee-scale));opacity:0} }
+@keyframes mohawkFailedRise { 0%{transform:translateX(-50%) translateY(var(--knee-y)) scale(var(--knee-scale))}32%{transform:translateX(-48%) translateY(calc(var(--knee-y) - 13%)) rotate(2deg) scale(var(--knee-scale));filter:brightness(1.08)}55%{transform:translateX(-51%) translateY(calc(var(--knee-y) - 15%)) rotate(-1deg) scale(var(--knee-scale));filter:brightness(1.12)}72%{transform:translateX(-49%) translateY(calc(var(--knee-y) - 8%)) rotate(3deg) scale(var(--knee-scale))}100%{transform:translateX(-50%) translateY(var(--knee-y)) rotate(-2deg) scale(var(--knee-scale));filter:brightness(.88)} }
 @keyframes mohawkReturnToRange { from{transform:translateX(-50%) translateY(4%) scale(.74);opacity:.3}to{transform:translateX(-50%) translateY(0) scale(1);opacity:1} }
 @keyframes overhandKnuckleFlash { 0%{opacity:0;transform:translate(-50%,-50%) scale(.28)}45%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.42)} }
 @keyframes knockout { 0%{transform:translateX(-50%)}28%{transform:translateX(-50%) translateY(-4%) rotate(5deg)}100%{transform:translateX(-50%) translateY(88%) rotate(-78deg);opacity:.15} }
@@ -615,6 +617,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .fight-hud { grid-template-columns:1fr 64px 1fr; gap:7px; }
   .name-row { font-size:.56rem; }
   .opponent-stage { width:108%; height:72%; bottom:16%; }
+  .knee-far { --knee-y:12%; }
   /* Keep the portrait camera rig fixed so the guarding hand never jumps with
      the punching hand. Only the active arm rises toward Mohawk's chin. */
   .first-person-body { transform:translateY(-18dvh) scale(1.22); transform-origin:center bottom; }
