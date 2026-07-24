@@ -31,7 +31,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .game-shell.is-performance .crowd.is-chanting i,
 .game-shell.is-performance .crowd.is-chanting i::after { animation:none; }
 .game-shell.is-performance .crowd.is-chanting { filter:none; }
-.game-shell.is-performance .crowd.is-chanting .crowd-chant { animation:none; opacity:1; }
+.game-shell.is-performance .crowd.is-chanting .crowd-chant { opacity:1; }
 .game-shell.is-performance .ceiling-lights i { box-shadow:0 0 14px rgba(255,246,217,.45); }
 .game-shell.is-performance .fight-hud { filter:none; }
 .game-shell.is-performance .opponent-pose-art,
@@ -101,10 +101,12 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .crowd.is-chanting { opacity:1; filter:brightness(1.75) drop-shadow(0 0 7px rgba(244,173,47,.55)); }
 .crowd.is-chanting i { animation:crowdChant .27s ease-in-out infinite alternate; }
 .crowd.is-chanting i::after { opacity:1; animation:crowdArms .27s ease-in-out infinite alternate; }
-.crowd-chant { position:absolute; z-index:4; left:3%; right:3%; top:1%; display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(.45rem,1.6vw,1.4rem) clamp(.5rem,3vw,3rem); color:var(--gold); font:900 clamp(.78rem,2.15vw,2.2rem)/1 "Arial Black",sans-serif; letter-spacing:.06em; white-space:nowrap; opacity:0; text-align:center; text-shadow:3px 4px #000,-2px -2px var(--blood); }
-.crowd-chant span:nth-child(2),.crowd-chant span:nth-child(5) { translate:0 28%; }
-.crowd-chant span:nth-child(even) { color:#f4ece0; }
-.crowd.is-chanting .crowd-chant { animation:chantFlash .54s steps(2,end) infinite; }
+.crowd-chant { position:absolute; z-index:4; left:50%; top:13%; display:flex; align-items:baseline; color:var(--gold); font:1000 clamp(1.05rem,3.3vw,3.4rem)/1 "Arial Black",sans-serif; letter-spacing:.045em; white-space:nowrap; opacity:0; transform:translateX(-50%) rotate(-8deg); transform-origin:left bottom; text-align:center; text-shadow:4px 5px #000,-2px -2px var(--blood),0 0 12px rgba(255,177,31,.75); }
+.crowd-chant span { display:inline-block; opacity:0; }
+.crowd-chant .chant-hawk { color:#f4ece0; text-shadow:4px 5px #000,-2px -2px var(--blood),0 0 12px rgba(255,244,220,.7); }
+.crowd.is-chanting .crowd-chant { opacity:1; }
+.crowd.is-chanting .chant-mo { animation:chantMoReveal 1.65s steps(1,end) infinite; }
+.crowd.is-chanting .chant-hawk { animation:chantHawkReveal 1.65s steps(1,end) infinite; }
 .crowd i:nth-child(1) { left: 1%; transform: scale(.83); }
 .crowd i:nth-child(2) { left: 7%; transform: scale(1.05); animation-delay: -.4s; }
 .crowd i:nth-child(3) { left: 13%; transform: scale(.76); }
@@ -281,6 +283,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .damage-tier-2 .facial-damage,.damage-tier-2 .facial-damage i,.damage-tier-2 .facial-damage b { opacity:.82; }
 .damage-tier-3 .facial-damage,.damage-tier-3 .facial-damage i,.damage-tier-3 .facial-damage b,.damage-tier-3 .facial-damage em { opacity:1; }
 .opponent-stage:not(.pose-idle):not(.pose-guard):not(.pose-taunt) .facial-damage { opacity:0 !important; }
+.fight-countdown { position:absolute; z-index:62; inset:0; display:grid; place-items:center; pointer-events:none; background:radial-gradient(circle at center,rgba(246,173,42,.12),transparent 33%); }
+.fight-countdown strong { color:#f7f2e7; font:1000 clamp(8rem,25vw,22rem)/1 "Arial Black",sans-serif; -webkit-text-stroke:clamp(3px,.45vw,8px) #17110f; text-shadow:clamp(7px,1vw,18px) clamp(9px,1.3vw,24px) 0 #d52219,0 0 30px rgba(255,185,44,.7); animation:countdownPop .7s cubic-bezier(.12,.8,.2,1) both; }
 
 .first-person-body { position:absolute; z-index:14; inset:0; pointer-events:none; transform-origin:center bottom; transition:transform .12s ease-out; }
 .player-pose-art { position:absolute; z-index:2; left:50%; bottom:-3%; transform:translateX(-50%); width:70%; height:70%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 9px 10px #120605aa); }
@@ -519,7 +523,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes crowdBob { to{transform:translateY(-4%) scale(var(--s,1));} }
 @keyframes crowdChant { from{translate:0 5%;scale:var(--s,1)} to{translate:0 -9%;scale:var(--s,1)} }
 @keyframes crowdArms { from{transform:rotate(-42deg) translateY(6%)} to{transform:rotate(-12deg) translateY(-10%)} }
-@keyframes chantFlash { 0%,45%{opacity:1;scale:1} 46%,100%{opacity:.35;scale:.94} }
+@keyframes chantMoReveal { 0%,10%{opacity:0;filter:brightness(1)} 11%,72%{opacity:1;filter:brightness(1.45)} 73%,100%{opacity:0} }
+@keyframes chantHawkReveal { 0%,30%{opacity:0;filter:brightness(1)} 31%,72%{opacity:1;filter:brightness(1.55)} 73%,100%{opacity:0} }
+@keyframes countdownPop { 0%{opacity:0;transform:scale(1.65)}18%{opacity:1;transform:scale(1)}72%{opacity:1;transform:scale(.94)}100%{opacity:0;transform:scale(.72)} }
 @keyframes fighterBreathe { from{transform:translateX(-50%) scale(1)} to{transform:translateX(-50%) translateY(-.7%) scale(1.008)} }
 @keyframes opponentLeft { 0%{transform:translateX(-52%) rotate(3deg)}48%{transform:translateX(-45%) translateY(-1%) scale(1.085) rotate(-4deg)}100%{transform:translateX(-50%) rotate(0)} }
 @keyframes opponentRight { 0%{transform:translateX(-48%) rotate(-3deg)}48%{transform:translateX(-55%) translateY(-1%) scale(1.085) rotate(4deg)}100%{transform:translateX(-50%) rotate(0)} }

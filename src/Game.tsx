@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-type MatchState = "intro" | "fighting" | "paused" | "player-down" | "enemy-down" | "won" | "lost";
+type MatchState = "intro" | "countdown" | "fighting" | "paused" | "player-down" | "enemy-down" | "won" | "lost";
 type FighterPose =
   | "idle"
   | "windup-left"
@@ -82,7 +82,7 @@ const POSE_ASSETS = [
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
-  asset("/opponent-knee-breathing.webp"),
+  asset("/opponent-knee-breathing.webp"), asset("/opponent-knee-rising.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
   asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
@@ -106,6 +106,7 @@ export default function Home() {
   const [stamina, setStamina] = useState(100);
   const [guard, setGuard] = useState(100);
   const [timer, setTimer] = useState(ROUND_TIME);
+  const [fightCountdown, setFightCountdown] = useState(3);
   const [enemyPose, setEnemyPose] = useState<FighterPose>("idle");
   const [playerPose, setPlayerPose] = useState<PlayerPose>("idle");
   const [dodgeDirection, setDodgeDirection] = useState<DodgeDirection>(null);
@@ -426,13 +427,34 @@ export default function Home() {
     setShowRematch(false);
     bufferedPunchRef.current = null;
     guardBrokenUntilRef.current = 0;
-    setCallout("FIGHT!");
-    matchRef.current = "fighting";
-    setMatchState("fighting");
+    setFightCountdown(3);
+    setCallout("GET READY");
+    matchRef.current = "countdown";
+    setMatchState("countdown");
     setAudioReady(true);
-    playSound("bell");
-    window.setTimeout(() => setCallout("READ THE SHOULDERS"), 900);
-  }, [assetsReady, playSound, setEnemyPoseSafe]);
+  }, [assetsReady, setEnemyPoseSafe]);
+
+  useEffect(() => {
+    if (matchState !== "countdown") return;
+    const actionId = playerActionRef.current;
+    const two = window.setTimeout(() => setFightCountdown(2), 700);
+    const one = window.setTimeout(() => setFightCountdown(1), 1400);
+    const fight = window.setTimeout(() => {
+      if (matchRef.current !== "countdown" || playerActionRef.current !== actionId) return;
+      matchRef.current = "fighting";
+      setMatchState("fighting");
+      setCallout("FIGHT!");
+      playSound("bell");
+      window.setTimeout(() => {
+        if (matchRef.current === "fighting") setCallout("READ THE SHOULDERS");
+      }, 900);
+    }, 2100);
+    return () => {
+      window.clearTimeout(two);
+      window.clearTimeout(one);
+      window.clearTimeout(fight);
+    };
+  }, [matchState, playSound]);
 
   const returnToMenu = useCallback(() => {
     ++playerActionRef.current;
@@ -1293,8 +1315,10 @@ export default function Home() {
                         ? asset("/opponent-taunt.webp")
                         : enemyPose === "stumble-back"
                           ? asset("/opponent-hit-cross.webp")
-                          : enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise"
-                            ? asset("/opponent-knee-breathing.webp")
+                          : enemyPose === "rising" || enemyPose === "failed-rise"
+                            ? asset("/opponent-knee-rising.webp")
+                            : enemyPose === "knockdown-knee"
+                              ? asset("/opponent-knee-breathing.webp")
                         : enemyPose === "hit-right"
                           ? asset("/opponent-hit-jab.webp")
                           : enemyPose === "hit-left"
@@ -1324,7 +1348,7 @@ export default function Home() {
         <div className={`crowd ${secondWind ? "is-chanting" : ""}`} aria-hidden="true">
           {Array.from({ length: 18 }).map((_, index) => <i key={index} />)}
           <div className="crowd-chant">
-            {Array.from({ length: 6 }).map((_, index) => <span key={index}>MO—HAWK!</span>)}
+            <span className="chant-mo">MO</span><span className="chant-hawk">—HAWK!</span>
           </div>
         </div>
         <div className="ring-post post-left" aria-hidden="true" />
@@ -1355,6 +1379,11 @@ export default function Home() {
         {combo >= 3 && matchState === "fighting" && <div className="combo-counter"><strong>{combo}</strong><span>HIT COMBO</span></div>}
         {matchState === "fighting" && <div className="score">SCORE {score.toLocaleString()}</div>}
         {matchState === "fighting" && <button className="pause-trigger" onClick={togglePause} aria-label="Pause fight">Ⅱ</button>}
+        {matchState === "countdown" && (
+          <div className="fight-countdown" role="status" aria-live="assertive">
+            <strong key={fightCountdown}>{fightCountdown}</strong>
+          </div>
+        )}
 
         <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
