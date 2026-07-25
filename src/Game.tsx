@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.54.0";
+const GAME_VERSION = "0.55.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -173,6 +173,8 @@ export default function Home() {
   const specialRef = useRef(0);
   const enemyStunHitsRef = useRef(0);
   const enemyWindedUntilRef = useRef(0);
+  const enemyAttackActionRef = useRef(0);
+  const enemyQueueAttackRef = useRef<() => void>(() => undefined);
   const audioContextRef = useRef<AudioContext | null>(null);
   const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const preloadStartedRef = useRef(false);
@@ -297,6 +299,18 @@ export default function Home() {
     setEnemyPose(pose);
   }, []);
 
+  useEffect(() => {
+    if (matchState !== "fighting" || !enemyPose.includes("-contact")) return;
+    const strandedPose = enemyPose;
+    const failsafe = window.setTimeout(() => {
+      if (matchRef.current !== "fighting" || poseRef.current !== strandedPose) return;
+      ++enemyAttackActionRef.current;
+      setEnemyPoseSafe("idle");
+      enemyQueueAttackRef.current();
+    }, 700);
+    return () => window.clearTimeout(failsafe);
+  }, [enemyPose, matchState, setEnemyPoseSafe]);
+
   const playSound = useCallback((kind: "punch" | "hurt" | "bell" | "dodge" | "ko") => {
     if (typeof window === "undefined") return;
     const AudioCtx = window.AudioContext ||
@@ -404,6 +418,7 @@ export default function Home() {
     setPaused(false);
     enemyStunHitsRef.current = 0;
     enemyWindedUntilRef.current = 0;
+    ++enemyAttackActionRef.current;
     setEnemyPoseSafe("idle");
     setPlayerPose("idle");
     setDodgeDirection(null);
@@ -500,21 +515,24 @@ export default function Home() {
     }
   }, []);
 
-  const takePlayerDamage = useCallback((amount: number) => {
-    const actionId = ++playerActionRef.current;
+  const takePlayerDamage = useCallback((amount: number, preserveGuardPose = false) => {
     const next = clamp(playerHealthRef.current - amount);
+    const guardAbsorbedHit = preserveGuardPose && blockingRef.current && next > 0;
+    const actionId = guardAbsorbedHit ? playerActionRef.current : ++playerActionRef.current;
     playerHealthRef.current = next;
     setPlayerHealth(next);
     setCombo(0);
     setImpact("player");
     setScreenShake(true);
-    setPlayerPose("hit");
+    if (!guardAbsorbedHit) setPlayerPose("hit");
     playSound("hurt");
     window.setTimeout(() => setImpact(null), 170);
     window.setTimeout(() => setScreenShake(false), 240);
-    window.setTimeout(() => {
-      if (matchRef.current === "fighting" && playerActionRef.current === actionId) setPlayerPose("idle");
-    }, 260);
+    if (!guardAbsorbedHit) {
+      window.setTimeout(() => {
+        if (matchRef.current === "fighting" && playerActionRef.current === actionId) setPlayerPose("idle");
+      }, 260);
+    }
     if (next <= 0) {
       ++playerActionRef.current;
       punchLockRef.current = false;
@@ -745,6 +763,7 @@ export default function Home() {
               : 320 + Math.random() * 280;
       later(beginAttack, delay);
     };
+    enemyQueueAttackRef.current = queueAttack;
 
     const chooseCombination = (): EnemyMove[] => {
       const roll = Math.random();
@@ -757,10 +776,16 @@ export default function Home() {
       return ["left", "right", "left"];
     };
 
-    const throwStrike = (combination: EnemyMove[], index: number, style: AttackStyle = "normal") => {
+    const throwStrike = (
+      combination: EnemyMove[],
+      index: number,
+      style: AttackStyle = "normal",
+      sequenceId = ++enemyAttackActionRef.current,
+    ) => {
       if (cancelled || matchRef.current !== "fighting") return;
+      if (sequenceId !== enemyAttackActionRef.current) return;
       if (performance.now() < enemyWindedUntilRef.current) {
-        later(() => throwStrike(combination, index, style), 240);
+        later(() => throwStrike(combination, index, style, sequenceId), 240);
         return;
       }
       const move = combination[index];
@@ -807,12 +832,12 @@ export default function Home() {
       setCallout(directionalHaymaker ? `${move.toUpperCase()} HAYMAKER — SLIP ${move === "right" ? "LEFT" : "RIGHT"}!` : style === "heavy" ? "OVERHAND — HE RETREATS!" : style === "power-combo" ? comboUppercut ? "COMBO FINISHER!" : "HAYMAKER BARRAGE!" : style === "flurry" ? "VOLUME FLURRY" : style === "uppercut" ? "WATCH THE CENTER" : "PRESSURE");
 
       later(() => {
-        if (matchRef.current !== "fighting") return;
+        if (matchRef.current !== "fighting" || sequenceId !== enemyAttackActionRef.current) return;
         setEnemyPoseSafe(attackPose);
         // Every punch gets a dedicated foreshortened contact frame. Do not
         // show it when the player has already completed the correct slip.
         later(() => {
-          if (matchRef.current !== "fighting" || poseRef.current !== attackPose) return;
+          if (matchRef.current !== "fighting" || sequenceId !== enemyAttackActionRef.current || poseRef.current !== attackPose) return;
           const alreadyDodging = dodgeRef.current !== null &&
             (directionalHaymaker
               ? (move === "right" && dodgeRef.current === "left") || (move === "left" && dodgeRef.current === "right")
@@ -824,7 +849,7 @@ export default function Home() {
         // Let the committed punch frame render before resolving contact.
         // This keeps the visual impact and damage event in the same sequence.
         later(() => {
-          if (matchRef.current !== "fighting") return;
+          if (matchRef.current !== "fighting" || sequenceId !== enemyAttackActionRef.current) return;
           // A strike may only resolve while its matching punch frame is still
           // on screen. If the player interrupted Esteban during this window,
           // cancel the contact instead of applying invisible damage.
@@ -873,7 +898,7 @@ export default function Home() {
             guardRef.current = nextGuard;
             setGuard(nextGuard);
             const chip = powerShot ? 5 : comboUppercut ? 4 : comboHaymaker ? 2 : style === "uppercut" ? 4 : style === "flurry" ? .5 : move === "body" ? 3 : .5;
-            takePlayerDamage(lateBlock ? chip + 4 : chip);
+            takePlayerDamage(lateBlock ? chip + 4 : chip, nextGuard > 0);
             setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : directionalHaymaker ? "HAYMAKER CRUSHES YOUR GUARD!" : style === "heavy" ? "OVERHAND CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
             if (nextGuard <= 0) {
               setBlocking(false);
@@ -887,7 +912,7 @@ export default function Home() {
           }
 
           if (index + 1 < combination.length) {
-            later(() => throwStrike(combination, index + 1, style), style === "flurry" ? 34 : style === "power-combo" ? 75 : rage ? 55 : 85);
+            later(() => throwStrike(combination, index + 1, style, sequenceId), style === "flurry" ? 34 : style === "power-combo" ? 75 : rage ? 55 : 85);
           } else {
             later(() => {
               if (matchRef.current === "fighting") {
@@ -921,11 +946,14 @@ export default function Home() {
       const pattern = Math.random();
       if (fightPhase === 0) {
         // Opening phase: Mohawk wins exchanges with relentless hand speed and
-        // volume rather than loading up on single power shots.
-        if (pattern < .48) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
-        else if (pattern < .72) throwStrike(["right", "left", "right", "left"], 0, "flurry");
-        else if (pattern < .92) throwStrike(["left", "right", "left"], 0);
-        else throwStrike(["uppercut"], 0, "uppercut");
+        // volume, but flurries remain a signature surprise instead of every
+        // other exchange.
+        if (pattern < .22) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
+        else if (pattern < .36) throwStrike(["right", "left", "right", "left"], 0, "flurry");
+        else if (pattern < .66) throwStrike(["left", "right", "left"], 0);
+        else if (pattern < .82) throwStrike(chooseCombination(), 0);
+        else if (pattern < .94) throwStrike(["uppercut"], 0, "uppercut");
+        else throwStrike(["right"], 0, "heavy");
       } else if (fightPhase === 1) {
         // After the first knee he becomes measured: cover up, read the player,
         // then answer with shorter, safer combinations.
@@ -968,6 +996,7 @@ export default function Home() {
     later(queueAttack, 750);
     return () => {
       cancelled = true;
+      enemyQueueAttackRef.current = () => undefined;
       timers.forEach(window.clearTimeout);
     };
   }, [matchState, playSound, setEnemyPoseSafe, takePlayerDamage]);
@@ -1040,6 +1069,13 @@ export default function Home() {
 
       enemyHealthRef.current = nextHealth;
       setEnemyHealth(nextHealth);
+      // Any clean player hit owns the next opponent pose. Invalidate every
+      // pending windup/contact callback from the interrupted enemy attack so
+      // it cannot restore an extended fist over the stun or hit reaction.
+      if (!enemyIsGuarding) {
+        ++enemyAttackActionRef.current;
+        window.setTimeout(() => enemyQueueAttackRef.current(), 0);
+      }
       setCombo((value) => enemyIsGuarding ? 0 : value + 1);
       enemyStunHitsRef.current = enemyIsGuarding ? 0 : enemyStunHitsRef.current + 1;
       const specialUppercutStun = kind === "uppercut" && !enemyIsGuarding && nextHealth > 0;
