@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.51.0";
+const GAME_VERSION = "0.52.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -140,7 +140,6 @@ export default function Home() {
   const [special, setSpecial] = useState(0);
   const [overhandImpact, setOverhandImpact] = useState(false);
   const [kneeDepth, setKneeDepth] = useState<KneeDepth>("near");
-  const [facialDamageTier, setFacialDamageTier] = useState(0);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -416,7 +415,6 @@ export default function Home() {
     setImpact(null);
     setHitStop(false);
     setSecondWind(false);
-    setFacialDamageTier(0);
     enemyKnockdownsRef.current = 0;
     enemyRiseAtRef.current = null;
     enemyRecoveryHealthRef.current = 0;
@@ -1038,8 +1036,6 @@ export default function Home() {
 
       enemyHealthRef.current = nextHealth;
       setEnemyHealth(nextHealth);
-      const reachedDamageTier = nextHealth <= 25 ? 3 : nextHealth <= 50 ? 2 : nextHealth <= 75 ? 1 : 0;
-      setFacialDamageTier((currentTier) => Math.max(currentTier, reachedDamageTier));
       setCombo((value) => enemyIsGuarding ? 0 : value + 1);
       enemyStunHitsRef.current = enemyIsGuarding ? 0 : enemyStunHitsRef.current + 1;
       const specialUppercutStun = kind === "uppercut" && !enemyIsGuarding && nextHealth > 0;
@@ -1120,9 +1116,9 @@ export default function Home() {
         const plan = knockdowns === 1
           ? { health: 75, min: 2, max: 4 }
           : knockdowns === 2
-            ? { health: 50, min: 4, max: 6 }
+            ? { health: 75, min: 4, max: 6 }
             : laterKneeRecovery
-              ? { health: 24, min: 6, max: 8 }
+              ? { health: 75, min: 6, max: 8 }
               : undefined;
         const riseAt = plan ? plan.min + Math.floor(Math.random() * (plan.max - plan.min + 1)) : null;
         enemyRiseAtRef.current = riseAt;
@@ -1530,11 +1526,10 @@ export default function Home() {
           </div>
         )}
 
-        <div className={`opponent-stage pose-${enemyPose} damage-tier-${facialDamageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
+        <div className={`opponent-stage pose-${enemyPose} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
           <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
           <div className="damage-glow" aria-hidden="true" />
-          <div className="facial-damage" aria-hidden="true"><i /><b /><em /></div>
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>
 
