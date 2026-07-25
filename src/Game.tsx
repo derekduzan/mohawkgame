@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-type MatchState = "intro" | "countdown" | "fighting" | "paused" | "player-down" | "enemy-down" | "won" | "lost";
+type MatchState = "intro" | "countdown" | "fighting" | "paused" | "player-down" | "enemy-down" | "finisher" | "won" | "lost";
 type FighterPose =
   | "idle"
   | "windup-left"
@@ -109,7 +109,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.72.0";
+const GAME_VERSION = "0.74.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -132,7 +132,8 @@ const POSE_ASSETS = [
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
   asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
-  asset("/fighttime-logo.png"),
+  asset("/fighttime-logo.png"), asset("/finisher-wobble.png"), asset("/finisher-kick.png"),
+  asset("/finisher-lift.png"), asset("/finisher-slam.png"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -200,9 +201,13 @@ export default function Home() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [flamingHands, setFlamingHands] = useState(false);
   const [ironJaw, setIronJaw] = useState(false);
+  const [endlessFight, setEndlessFight] = useState(false);
+  const [aura, setAura] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
+  const [finisherFrame, setFinisherFrame] = useState<"wobble" | "kick" | "lift" | "slam">("wobble");
+  const [finisherRunning, setFinisherRunning] = useState(false);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -245,8 +250,11 @@ export default function Home() {
   const preloadStartedRef = useRef(false);
   const flamingHandsRef = useRef(false);
   const ironJawRef = useRef(false);
+  const endlessFightRef = useRef(false);
+  const auraRef = useRef(false);
   const secretBufferRef = useRef("");
   const secretConfirmationTimerRef = useRef(0);
+  const finisherRunningRef = useRef(false);
 
   useEffect(() => void (matchRef.current = matchState), [matchState]);
   useEffect(() => void (enemyHealthRef.current = enemyHealth), [enemyHealth]);
@@ -260,6 +268,8 @@ export default function Home() {
   useEffect(() => void (timerRef.current = timer), [timer]);
   useEffect(() => void (flamingHandsRef.current = flamingHands), [flamingHands]);
   useEffect(() => void (ironJawRef.current = ironJaw), [ironJaw]);
+  useEffect(() => void (endlessFightRef.current = endlessFight), [endlessFight]);
+  useEffect(() => void (auraRef.current = aura), [aura]);
 
   const activateSecretCode = useCallback((rawCode: string) => {
     const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -272,6 +282,14 @@ export default function Home() {
       ironJawRef.current = true;
       setIronJaw(true);
       confirmation = "IRON JAW ACTIVATED";
+    } else if (code.endsWith("ENDLESS")) {
+      endlessFightRef.current = true;
+      setEndlessFight(true);
+      confirmation = "ENDLESS FIGHT ACTIVATED";
+    } else if (code.endsWith("AURA")) {
+      auraRef.current = true;
+      setAura(true);
+      confirmation = "AURA ACTIVATED";
     }
     if (!confirmation) return false;
     setSecretCode("");
@@ -531,6 +549,36 @@ export default function Home() {
     }, result === "won" ? 2400 : 3000);
   }, [playSound, setEnemyPoseSafe]);
 
+  const executeFinisher = useCallback(() => {
+    if (matchRef.current !== "finisher" || finisherRunningRef.current) return;
+    finisherRunningRef.current = true;
+    setFinisherRunning(true);
+    setCallout("FINISHER!");
+    setFinisherFrame("kick");
+    setImpact("right");
+    setScreenShake(true);
+    playSound("hurt");
+    window.setTimeout(() => {
+      setImpact(null);
+      setScreenShake(false);
+      setFinisherFrame("lift");
+      setCallout("POWERBOMB!");
+    }, 650);
+    window.setTimeout(() => {
+      setFinisherFrame("slam");
+      setImpact("right");
+      setScreenShake(true);
+      playSound("ko");
+    }, 1450);
+    window.setTimeout(() => {
+      setImpact(null);
+      setScreenShake(false);
+      finisherRunningRef.current = false;
+      setFinisherRunning(false);
+      finishMatch("won");
+    }, 2450);
+  }, [finishMatch, playSound]);
+
   const startMatch = useCallback(() => {
     if (!assetsReady) return;
     ++playerActionRef.current;
@@ -589,6 +637,9 @@ export default function Home() {
     setGetUpTaps(0);
     setKnockdownCount(1);
     setShowRematch(false);
+    finisherRunningRef.current = false;
+    setFinisherRunning(false);
+    setFinisherFrame("wobble");
     bufferedPunchRef.current = null;
     guardBrokenUntilRef.current = 0;
     setFightCountdown(3);
@@ -685,6 +736,13 @@ export default function Home() {
   }, []);
 
   const takePlayerDamage = useCallback((amount: number, preserveGuardPose = false) => {
+    if (auraRef.current) {
+      setCallout("AURA BLOCK!");
+      setImpact("player");
+      playSound("dodge");
+      window.setTimeout(() => setImpact(null), 150);
+      return;
+    }
     const appliedAmount = ironJawRef.current ? amount / 3 : amount;
     const next = clamp(playerHealthRef.current - appliedAmount);
     const guardAbsorbedHit = preserveGuardPose && blockingRef.current && next > 0;
@@ -881,6 +939,7 @@ export default function Home() {
   useEffect(() => {
     if (matchState !== "fighting") return;
     const ticker = window.setInterval(() => {
+      if (endlessFightRef.current) return;
       setTimer((value) => {
         if (value <= 1) {
           // This is a championship challenge, not a judges' decision. The
@@ -1181,14 +1240,14 @@ export default function Home() {
       return;
     }
     const cost = kind === "left" ? 6 : kind === "left-uppercut" ? 10 : kind === "power-jab" ? 12 : kind === "right" ? 9 : kind === "right-hook" ? 12 : kind === "body" ? 11 : kind === "uppercut" ? 18 : isHaymaker ? 19 : 19;
-    if (staminaRef.current < cost) {
+    if (!flamingHandsRef.current && staminaRef.current < cost) {
       setCallout("BREATHE — LOW STAMINA");
       return;
     }
 
     punchLockRef.current = true;
     const actionId = ++playerActionRef.current;
-    const nextStamina = clamp(staminaRef.current - cost);
+    const nextStamina = flamingHandsRef.current ? 100 : clamp(staminaRef.current - cost);
     staminaRef.current = nextStamina;
     setStamina(nextStamina);
     if (kind === "uppercut") {
@@ -1226,7 +1285,9 @@ export default function Home() {
       // iron-jawed champion like an ordinary opponent. Counters and charged
       // power retain their multipliers, but all incoming damage is scaled.
       const damage = fullDamage / 7;
-      const nextHealth = clamp(enemyHealthRef.current - damage);
+      const nextHealth = endlessFightRef.current
+        ? Math.max(1, clamp(enemyHealthRef.current - damage))
+        : clamp(enemyHealthRef.current - damage);
 
       if (slipCounter) counterReadyUntilRef.current = 0;
 
@@ -1308,14 +1369,27 @@ export default function Home() {
         const knockdowns = enemyKnockdownsRef.current + 1;
         enemyKnockdownsRef.current = knockdowns;
         setEnemyKnockdowns(knockdowns);
-        const laterKneeRecovery = knockdowns >= 3 && Math.random() < .5;
+        if (knockdowns >= 4 && !endlessFightRef.current) {
+          ++playerActionRef.current;
+          punchLockRef.current = false;
+          bufferedPunchRef.current = null;
+          setPlayerPose("idle");
+          specialRef.current = 100;
+          setSpecial(100);
+          setFinisherFrame("wobble");
+          finisherRunningRef.current = false;
+          setFinisherRunning(false);
+          matchRef.current = "finisher";
+          setMatchState("finisher");
+          setCallout("FINISH HIM!");
+          playSound("ko");
+          return;
+        }
         const plan = knockdowns === 1
           ? { health: 75, min: 2, max: 4 }
           : knockdowns === 2
             ? { health: 75, min: 4, max: 6 }
-            : laterKneeRecovery
-              ? { health: 75, min: 6, max: 8 }
-              : undefined;
+            : { health: 75, min: 6, max: 8 };
         const riseAt = plan ? plan.min + Math.floor(Math.random() * (plan.max - plan.min + 1)) : null;
         enemyRiseAtRef.current = riseAt;
         enemyRecoveryHealthRef.current = plan?.health ?? 0;
@@ -1550,6 +1624,9 @@ export default function Home() {
       } else if (matchRef.current === "player-down") {
         event.preventDefault();
         attemptGetUp();
+      } else if (matchRef.current === "finisher") {
+        event.preventDefault();
+        if (key === "u" || key === "enter" || key === " ") executeFinisher();
       } else if (matchRef.current === "intro" && (key === "enter" || key === " ")) {
         event.preventDefault();
         startMatch();
@@ -1578,13 +1655,16 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, punch, releaseCrossCharge, releaseJabCharge, showLeaderboard, startMatch, togglePause]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, executeFinisher, punch, releaseCrossCharge, releaseJabCharge, showLeaderboard, startMatch, togglePause]);
 
-  const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
+  const displayTimer = Math.max(0, Math.ceil(timer));
+  const timerText = endlessFight
+    ? "∞"
+    : `${Math.floor(displayTimer / 60)}:${String(displayTimer % 60).padStart(2, "0")}`;
   const landedPunches = (Object.keys(punchStats) as (keyof PunchStats)[])
     .reduce((total, key) => total + punchStats[key], 0);
   const punchScore = calculatePunchScore(punchStats);
-  const timeBonus = matchState === "won" ? timer * TIME_BONUS_PER_SECOND : 0;
+  const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
@@ -1678,7 +1758,7 @@ export default function Home() {
 
   return (
     <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
-      <section className={`arena ${matchState === "fighting" ? "is-live" : ""}`} aria-label="Bare knuckle boxing ring">
+      <section className={`arena ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""}`} aria-label="Bare knuckle boxing ring">
         <div className="grain" aria-hidden="true" />
         <div className="vision-damage" aria-hidden="true"><i /><b /></div>
         <div className="ceiling-lights" aria-hidden="true"><i /><i /><i /></div>
@@ -1749,6 +1829,8 @@ export default function Home() {
         )}
 
         {matchState !== "won" && matchState !== "lost" && (
+          <>
+          {aura && <div className="player-aura-effect" aria-hidden="true"><i /><i /></div>}
           <div className={`first-person-body player-${playerPose} ${flamingHands ? "has-flaming-hands" : ""}`} aria-hidden="true">
             {playerPose === "hit" ? (
               <img className="player-pose-art player-hit-art" src={asset("/player-hit.webp")} alt="" draggable={false} />
@@ -1759,7 +1841,14 @@ export default function Home() {
               </>
             )}
             <img className="player-pose-art player-block-art" src={asset("/player-block.webp")} alt="" draggable={false} />
+            {flamingHands && (
+              <>
+                <span className="hand-flames flame-left"><i /><i /><i /></span>
+                <span className="hand-flames flame-right"><i /><i /><i /></span>
+              </>
+            )}
           </div>
+          </>
         )}
 
         {matchState === "fighting" && (
@@ -1813,6 +1902,19 @@ export default function Home() {
                 aria-label="Hold to block"
               ><kbd>SPACE</kbd><span>HOLD BLOCK</span></button>
             </div>
+          </div>
+        )}
+
+        {matchState === "finisher" && (
+          <div className={`finisher-sequence frame-${finisherFrame} ${finisherRunning ? "is-running" : ""}`} aria-live="assertive">
+            <img src={asset(`/finisher-${finisherFrame}.png`)} alt="" draggable={false} />
+            {finisherFrame === "wobble" && (
+              <div className="finish-him-lockup">
+                <strong>FINISH HIM!</strong>
+                <span>PRESS <kbd>U</kbd> FOR THE SPECIAL FINISHER</span>
+                <button onClick={executeFinisher}>UNLEASH FINISHER</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1907,10 +2009,12 @@ export default function Home() {
                 </form>
               )}
               {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
-              {(flamingHands || ironJaw) && (
+              {(flamingHands || ironJaw || endlessFight || aura) && (
                 <div className="active-secrets" aria-label="Active secret powers">
                   {flamingHands && <span>🔥 FLAMING HANDS</span>}
                   {ironJaw && <span>◆ IRON JAW</span>}
+                  {endlessFight && <span>∞ ENDLESS</span>}
+                  {aura && <span>◉ AURA</span>}
                 </div>
               )}
               <small>1 ROUND · 90 SECONDS · SURVIVE THE STORM</small>
@@ -1976,7 +2080,7 @@ export default function Home() {
                       <span><em>LANDED PUNCHES</em><strong>{landedPunches}</strong></span>
                       <span><em>PUNCH POINTS</em><strong>{punchScore.toLocaleString()}</strong></span>
                       <span><em>TIME BONUS</em><strong>+{timeBonus.toLocaleString()}</strong></span>
-                      <span><em>KNOCKDOWNS</em><strong className="score-penalty">−{knockdownPenalty.toLocaleString()}</strong></span>
+                      <span><em>KNOCKDOWNS</em><strong className="score-penalty">{knockdownPenalty === 0 ? "0" : `−${knockdownPenalty.toLocaleString()}`}</strong></span>
                     </div>
                     <div className="scorecard-total"><em>FINAL SCORE</em><strong>{score.toLocaleString()}</strong></div>
                     {showRematch && awaitingInitials && (
