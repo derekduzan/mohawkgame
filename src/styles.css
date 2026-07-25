@@ -278,8 +278,25 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .fight-countdown strong { color:#f7f2e7; font:1000 clamp(8rem,25vw,22rem)/1 "Arial Black",sans-serif; -webkit-text-stroke:clamp(3px,.45vw,8px) #17110f; text-shadow:clamp(7px,1vw,18px) clamp(9px,1.3vw,24px) 0 #d52219,0 0 30px rgba(255,185,44,.7); animation:countdownPop .7s cubic-bezier(.12,.8,.2,1) both; }
 
 .first-person-body { position:absolute; z-index:14; inset:0; pointer-events:none; transform-origin:center bottom; transition:transform .12s ease-out; }
-.player-pose-art { position:absolute; z-index:2; left:50%; bottom:-13%; transform:translateX(-50%); width:82%; height:82%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 9px 10px #120605aa); }
+.player-pose-art { position:absolute; z-index:2; left:50%; bottom:-20%; transform:translateX(-50%); width:92%; height:92%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 9px 10px #120605aa); }
 .player-arm-art { -webkit-mask-image:linear-gradient(to top,transparent 0,#000 4%,#000 100%); mask-image:linear-gradient(to top,transparent 0,#000 4%,#000 100%); }
+.player-idle .player-left-art,
+.player-jab-left .player-right-art,
+.player-power-jab-charge .player-right-art,
+.player-power-jab .player-right-art,
+.player-cross-right .player-left-art,
+.player-right-hook .player-left-art,
+.player-haymaker-charge .player-left-art,
+.player-haymaker .player-left-art,
+.player-right-haymaker .player-left-art,
+.player-body-hook .player-right-art {
+  transform:translateX(-42%) translateY(6%) scale(1.12);
+}
+.player-idle .player-right-art,
+.player-left-uppercut .player-right-art,
+.player-left-haymaker .player-right-art {
+  transform:translateX(-58%) translateY(6%) scale(1.12);
+}
 .player-body-hook .player-left-art {
   -webkit-mask-image:linear-gradient(to right,transparent 0,#000 11%,#000 100%),linear-gradient(to top,transparent 0,#000 4%,#000 100%);
   -webkit-mask-composite:source-in;
@@ -289,9 +306,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-block-art { visibility:hidden; opacity:0; }
 .player-block .player-arm-art,.player-block .player-hit-art { visibility:hidden; }
 .player-block .player-block-art { visibility:visible; opacity:1; transition:none; }
-.player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art,.player-left-uppercut .player-left-art,.player-right-hook .player-right-art { width:96%; height:96%; bottom:-15%; }
-.player-haymaker .player-right-art,.player-right-haymaker .player-right-art,.player-left-haymaker .player-left-art { width:102%; height:102%; bottom:-17%; }
-.player-body-hook .player-left-art { width:90%; height:90%; bottom:-14%; }
+.player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art,.player-left-uppercut .player-left-art,.player-right-hook .player-right-art { width:100%; height:100%; bottom:-18%; }
+.player-haymaker .player-right-art,.player-right-haymaker .player-right-art,.player-left-haymaker .player-left-art { width:106%; height:106%; bottom:-20%; }
+.player-body-hook .player-left-art { width:94%; height:94%; bottom:-17%; }
 .player-jab-left .player-left-art { animation:jabPose 145ms cubic-bezier(.12,.78,.18,1) both; transform-origin:38% 86%; }
 .player-power-jab-charge .player-left-art { animation:powerJabLoad 410ms cubic-bezier(.16,.72,.2,1) both,powerJabChargePulse .45s 410ms ease-in-out infinite alternate; transform-origin:38% 86%; }
 .player-power-jab .player-left-art { animation:powerJabPose 220ms cubic-bezier(.06,.72,.13,1) both; transform-origin:38% 86%; }
@@ -304,7 +321,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-right-haymaker .player-right-art { animation:rightSlipHaymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:74% 90%; }
 .player-left-haymaker .player-left-art { animation:leftSlipHaymakerPose 310ms cubic-bezier(.06,.7,.12,1) both; transform-origin:26% 90%; }
 .player-body-hook .player-left-art { animation:bodyHookPose 175ms cubic-bezier(.12,.74,.2,1) both; transform-origin:32% 88%; }
-.player-block .player-pose-art { width:90%; height:90%; bottom:-2%; }
+.player-block .player-pose-art { width:96%; height:96%; bottom:-7%; }
 .arm { position:absolute; bottom:-9%; width:13.5%; height:38%; border-radius:45% 45% 17% 17%; background:linear-gradient(90deg,#5a2719,#ad5735 35%,#d48355 63%,#71301d); box-shadow:inset -10px -3px 15px rgba(49,15,8,.45),0 10px 20px #000; transform-origin:50% 100%; transition:transform .13s cubic-bezier(.2,.8,.2,1); }
 .arm-left { left:19%; transform:rotate(14deg); }
 .arm-right { right:19%; transform:rotate(-14deg); }
@@ -329,7 +346,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .impact b { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-8deg); color:#fff; font-size:clamp(1.5rem,4vw,4rem); -webkit-text-stroke:2px #101110; text-shadow:5px 5px var(--blood); }
 .impact-left { transform:translate(-68%,-50%); }.impact-right{transform:translate(-32%,-50%)}.impact-body{top:57%;}
 .hurt-flash { position:absolute; z-index:16; inset:0; background:radial-gradient(circle,transparent 25%,rgba(196,0,0,.72)); animation:hurtFlash .22s ease-out forwards; pointer-events:none; }
-.overhand-impact { position:absolute; z-index:48; left:50%; top:48%; width:min(92vw,1100px); height:92%; object-fit:contain; transform:translate(-50%,-50%); filter:drop-shadow(0 0 30px rgba(255,0,0,.95)); pointer-events:none; animation:overhandKnuckleFlash .19s cubic-bezier(.05,.75,.12,1) both; }
 .is-special-contact-hidden,.first-person-body.player-special-uppercut { opacity:0; }
 .special-uppercut-contact { position:absolute; z-index:34; left:50%; bottom:-8%; width:min(84%,1070px); height:102%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 17px 18px #000c); pointer-events:none; animation:specialContactDrive 330ms cubic-bezier(.06,.74,.1,1) both; }
 .vision-damage { position:absolute; z-index:16; inset:0; pointer-events:none; opacity:0; transition:opacity .5s; }
@@ -398,6 +414,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .intro-versus-card .how-to kbd { color:var(--gold); background:#10110f; border-color:#777064; }
 .intro-versus-card .how-to span { color:#bbb3a5; }
 .intro-fight-button { border:2px solid #ff9a35; box-shadow:0 6px 0 #72100b,0 0 18px rgba(225,40,30,.45); animation:startButtonPulse .85s ease-in-out infinite alternate; }
+.local-scores-button { width:100%; margin-top:.55rem; padding:.55rem; color:#f4c04c; border:1px solid #665c4c; background:#0b0c0b; font:900 clamp(.55rem,.8vw,.75rem)/1 Arial,sans-serif; letter-spacing:.18em; cursor:pointer; }
+.local-scores-button:hover { color:#fff; border-color:var(--gold); background:#211b13; }
 .intro-versus-card>small { display:block; margin-top:.7rem; color:#77736b; text-align:center; font:800 clamp(.44rem,.62vw,.58rem)/1 Arial,sans-serif; letter-spacing:.16em; }
 @keyframes introFighterBreathe { from{transform:translateY(0) scale(1)} to{transform:translateY(-.7%) scale(1.008)} }
 @keyframes startButtonPulse { to{background:#ff3d30;box-shadow:0 6px 0 #72100b,0 0 28px rgba(255,62,39,.72)} }
@@ -467,11 +485,44 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .champion-copy h2 span { color:var(--gold); -webkit-text-stroke:2px #111; text-shadow:5px 6px var(--blood),9px 10px #000; }
 .champion-copy h3 { margin:.55rem 0 .45rem; padding:.22em .7em; color:#15120b; background:var(--gold); font:1000 clamp(.75rem,1.35vw,1.35rem)/1 Arial,sans-serif; letter-spacing:.15em; box-shadow:5px 6px #000; transform:skewX(-9deg); }
 .champion-copy .result-stats { margin:0; padding:.35rem 1rem; border-radius:4px; background:rgba(4,4,3,.56); backdrop-filter:blur(3px); }
+.win-scorecard { width:min(560px,56vw); margin:.1rem auto 0; padding:.65rem .9rem .75rem; color:#f3eee3; border:2px solid #806b43; border-top:5px solid var(--gold); background:linear-gradient(145deg,rgba(9,9,8,.94),rgba(28,19,10,.9)); box-shadow:8px 9px 0 #0008; pointer-events:auto; }
+.win-scorecard h3 { margin:0 0 .55rem; padding:0; color:var(--gold); background:none; box-shadow:none; transform:none; font:1000 clamp(.7rem,1.05vw,1rem)/1 Arial,sans-serif; letter-spacing:.2em; }
+.scorecard-grid { display:grid; grid-template-columns:1fr 1fr; gap:.28rem .8rem; }
+.scorecard-grid span,.scorecard-total { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; font-family:Arial,sans-serif; }
+.scorecard-grid span { padding:.25rem .35rem; border-bottom:1px solid #473d2d; }
+.scorecard-grid em,.scorecard-total em { color:#a7a095; font:800 clamp(.48rem,.65vw,.62rem)/1 Arial,sans-serif; letter-spacing:.1em; }
+.scorecard-grid strong { font:1000 clamp(.75rem,1.05vw,1rem)/1 Arial,sans-serif; }
+.scorecard-grid .score-penalty { color:#ff6257; }
+.scorecard-total { margin-top:.5rem; padding:.45rem .55rem; color:#111; background:var(--gold); }
+.scorecard-total em { color:#2b2110; }
+.scorecard-total strong { font:1000 clamp(1rem,1.45vw,1.45rem)/1 Arial,sans-serif; }
+.initials-entry { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:.45rem; margin-top:.55rem; }
+.initials-entry label { color:#fff; font:900 clamp(.47rem,.64vw,.62rem)/1.15 Arial,sans-serif; letter-spacing:.08em; text-align:left; }
+.initials-entry input { width:4.6ch; padding:.25rem .2rem; color:var(--gold); border:2px solid var(--gold); background:#030403; font:1000 1.25rem/1 "Arial Black",sans-serif; letter-spacing:.12em; text-align:center; text-transform:uppercase; }
+.initials-entry button,.view-scores-button { padding:.48rem .6rem; color:#fff; border:1px solid #ad8b44; background:#7c160f; font:900 .54rem/1 Arial,sans-serif; letter-spacing:.08em; cursor:pointer; }
+.initials-entry button:disabled { opacity:.38; cursor:not-allowed; }
+.view-scores-button { margin-top:.45rem; background:#15120e; }
+.score-saved { margin-top:.45rem; color:#ffcf4d; font:900 .55rem/1 Arial,sans-serif; letter-spacing:.1em; }
 .champion-copy .rematch-button { position:relative; z-index:20; pointer-events:auto; animation:rematchReveal .38s ease-out both; }
 .result-actions { position:absolute; z-index:20; left:50%; bottom:0; transform:translateX(-50%); width:min(760px,94vw); display:flex; justify-content:center; gap:.8rem; pointer-events:auto; }
 .result-actions .fight-button { width:min(340px,44vw); }
 .result-actions .menu-button { color:#eee7db; background:rgba(9,10,9,.94); border:2px solid #8a765a; box-shadow:0 6px 0 #030303; animation:rematchReveal .38s .08s ease-out both; }
 .result-actions .menu-button:hover { background:#29231b; border-color:var(--gold); box-shadow:0 8px 0 #030303; }
+.leaderboard-overlay { z-index:100; display:grid; place-items:center; padding:3vh 3vw; background:rgba(0,0,0,.88); pointer-events:auto; }
+.leaderboard-card { position:relative; width:min(520px,92vw); padding:clamp(1rem,2vw,1.6rem); color:#f0eadf; border:3px solid #816d48; border-top:8px solid var(--blood); background:linear-gradient(145deg,#171612,#050605); box-shadow:14px 16px 0 #000,0 0 35px rgba(244,176,42,.18); }
+.leaderboard-card>p { margin:0; color:var(--blood); font:1000 .6rem/1 Arial,sans-serif; letter-spacing:.2em; }
+.leaderboard-card h2 { margin:.25rem 0 .8rem; color:var(--gold); font-size:clamp(2rem,5vw,3.8rem); line-height:.9; text-shadow:4px 5px #000; }
+.leaderboard-close { position:absolute; top:.45rem; right:.55rem; width:38px; height:38px; color:#eee; border:1px solid #635a49; background:#0a0b0a; font:900 1.5rem/1 Arial,sans-serif; cursor:pointer; }
+.leaderboard-head,.leaderboard-card li { display:grid; grid-template-columns:55px 1fr 1.2fr; align-items:center; }
+.leaderboard-head { padding:.25rem .5rem; color:#8f897d; border-bottom:1px solid #5d503a; font:800 .5rem/1 Arial,sans-serif; letter-spacing:.12em; }
+.leaderboard-card ol { margin:.25rem 0 .65rem; padding:0; list-style:none; }
+.leaderboard-card li { min-height:27px; padding:.18rem .5rem; border-bottom:1px solid #292821; font-family:Arial,sans-serif; }
+.leaderboard-card li b { color:#8b8478; font-size:.65rem; }
+.leaderboard-card li strong { color:#f7efe1; font:1000 1rem/1 "Arial Black",sans-serif; letter-spacing:.18em; }
+.leaderboard-card li span { color:var(--gold); font-weight:900; text-align:right; }
+.leaderboard-card li.is-new-score { background:rgba(230,42,30,.24); animation:newScorePulse .55s ease-in-out infinite alternate; }
+.leaderboard-card>small { display:block; margin-bottom:.65rem; color:#777168; font:800 .48rem/1 Arial,sans-serif; letter-spacing:.14em; text-align:center; }
+.leaderboard-card .fight-button { width:100%; padding:.6rem; font-size:.85rem; }
 .gold-confetti { position:absolute; z-index:4; inset:0; pointer-events:none; }
 .gold-confetti i { position:absolute; top:-10%; left:calc((var(--n, 1) * 3.05%)); width:10px; height:20px; border-radius:2px; background:linear-gradient(90deg,#8c5510,#ffe783 45%,#d49019 72%,#6d3e09); box-shadow:0 0 8px rgba(255,198,55,.65),0 2px 4px #000; animation:confettiFall 2.35s linear infinite; animation-delay:calc(var(--n, 1) * -.11s); transform:rotate(calc(var(--n, 1) * 19deg)); }
 .gold-confetti i:nth-child(3n) { width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff0a0,#e2a325 48%,#7a450b 78%); }
@@ -483,6 +534,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes beltShimmer { from{filter:drop-shadow(0 18px 22px #000) brightness(.96) saturate(.96)} to{filter:drop-shadow(0 18px 25px #000) brightness(1.18) saturate(1.12)} }
 @keyframes sportsmanshipRise { from{transform:translateX(-50%) translateY(7%) scale(.94);opacity:0} to{transform:translateX(-50%);opacity:1} }
 @keyframes sportsmanshipRiseRight { from{transform:translateY(8%) scale(.94);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+@keyframes newScorePulse { from{filter:brightness(1)} to{filter:brightness(1.35)} }
 @keyframes heldBeltRise { from{transform:translateY(22%) scale(.9);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
 @keyframes heldBeltShimmer { from{filter:drop-shadow(0 18px 22px #000) brightness(.96) saturate(.96)} to{filter:drop-shadow(0 18px 25px #000) brightness(1.14) saturate(1.1)} }
 @keyframes speechPop { from{transform:rotate(2deg) scale(.65);opacity:0} to{transform:rotate(2deg) scale(1);opacity:1} }
@@ -714,6 +766,18 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .champion-copy h3 { margin:.35rem 0 .25rem; font-size:.68rem; }
   .champion-copy .result-stats { gap:1.1rem; padding:.25rem .65rem; }
   .champion-copy .result-stats strong { font-size:1rem; }
+  .win-scorecard { width:92vw; margin-top:0; padding:.45rem .55rem; }
+  .win-scorecard h3 { margin-bottom:.35rem; font-size:.58rem; }
+  .scorecard-grid { gap:.12rem .4rem; }
+  .scorecard-grid span { padding:.16rem .2rem; }
+  .scorecard-grid em,.scorecard-total em { font-size:.4rem; }
+  .scorecard-grid strong { font-size:.68rem; }
+  .scorecard-total { margin-top:.3rem; padding:.3rem .4rem; }
+  .scorecard-total strong { font-size:.92rem; }
+  .initials-entry { grid-template-columns:1fr auto; }
+  .initials-entry label { font-size:.43rem; }
+  .initials-entry button { grid-column:1/-1; width:100%; }
+  .view-scores-button { padding:.35rem .45rem; }
   .player-holds-belt { height:43%; bottom:19%; width:108%; left:-17%; right:auto; }
   .sportsmanship-group { right:-1%; top:30%; bottom:16%; width:60%; }
   .sportsmanship-group .sportsmanship-mohawk { right:-7%; width:88%; height:78%; bottom:0; }
@@ -743,9 +807,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .round-clock { padding:.18rem .45rem .28rem; min-width:70px; }
   .round-clock time { font-size:1.1rem; }
   .opponent-stage { width:min(54%,470px); height:84%; bottom:8%; }
-  .player-pose-art { width:74%; height:74%; bottom:-15%; }
-  .player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art,.player-left-uppercut .player-left-art,.player-right-hook .player-right-art,.player-haymaker .player-right-art { width:84%; height:84%; bottom:-15%; }
-  .player-body-hook .player-left-art,.player-block .player-pose-art { width:82%; height:82%; bottom:-12%; }
+  .player-pose-art { width:82%; height:82%; bottom:-20%; }
+  .player-jab-left .player-left-art,.player-power-jab .player-left-art,.player-cross-right .player-right-art,.player-left-uppercut .player-left-art,.player-right-hook .player-right-art,.player-haymaker .player-right-art { width:92%; height:92%; bottom:-18%; }
+  .player-body-hook .player-left-art,.player-block .player-pose-art { width:90%; height:90%; bottom:-16%; }
   .controls { bottom:max(1%,env(safe-area-inset-bottom)); }
   .controls button { min-width:56px; height:50px; }
   .controls button span { font-size:.44rem; }

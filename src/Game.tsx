@@ -67,17 +67,55 @@ type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
+type PunchStats = {
+  jab: number;
+  cross: number;
+  body: number;
+  leftUppercut: number;
+  rightHook: number;
+  powerJab: number;
+  haymaker: number;
+  specialUppercut: number;
+};
+type LeaderboardEntry = {
+  initials: string;
+  score: number;
+  date: string;
+  version: string;
+};
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const PLAYER_KNOCKDOWN_SCORE_PENALTY = 5000;
-const GAME_VERSION = "0.67.0";
+const PLAYER_KNOCKDOWN_SCORE_PENALTY = 3000;
+const TIME_BONUS_PER_SECOND = 200;
+const LEADERBOARD_STORAGE_KEY = "fighttime-local-leaderboard-v1";
+const EMPTY_PUNCH_STATS: PunchStats = {
+  jab: 0,
+  cross: 0,
+  body: 0,
+  leftUppercut: 0,
+  rightHook: 0,
+  powerJab: 0,
+  haymaker: 0,
+  specialUppercut: 0,
+};
+const PUNCH_POINTS: Record<keyof PunchStats, number> = {
+  jab: 100,
+  cross: 150,
+  body: 150,
+  leftUppercut: 200,
+  rightHook: 200,
+  powerJab: 250,
+  haymaker: 400,
+  specialUppercut: 750,
+};
+const GAME_VERSION = "0.68.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
-  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-contact.webp"),
+  asset("/opponent-overhand-contact.webp"),
   asset("/opponent-haymaker-right-contact.webp"), asset("/opponent-haymaker-left-contact.webp"),
   asset("/opponent-jab-contact.webp"), asset("/opponent-cross-contact.webp"),
   asset("/opponent-body-contact.webp"), asset("/opponent-uppercut-contact.webp"),
@@ -99,6 +137,22 @@ const POSE_ASSETS = [
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
+}
+
+function statKeyForPunch(kind: PunchKind): keyof PunchStats {
+  if (kind === "left") return "jab";
+  if (kind === "right") return "cross";
+  if (kind === "body") return "body";
+  if (kind === "left-uppercut") return "leftUppercut";
+  if (kind === "right-hook") return "rightHook";
+  if (kind === "power-jab") return "powerJab";
+  if (kind === "uppercut") return "specialUppercut";
+  return "haymaker";
+}
+
+function calculatePunchScore(stats: PunchStats) {
+  return (Object.keys(stats) as (keyof PunchStats)[])
+    .reduce((total, key) => total + stats[key] * PUNCH_POINTS[key], 0);
 }
 
 export default function Home() {
@@ -137,8 +191,13 @@ export default function Home() {
   const [haymakerCharging, setHaymakerCharging] = useState(false);
   const [jabCharging, setJabCharging] = useState(false);
   const [special, setSpecial] = useState(0);
-  const [overhandImpact, setOverhandImpact] = useState(false);
   const [kneeDepth, setKneeDepth] = useState<KneeDepth>("near");
+  const [punchStats, setPunchStats] = useState<PunchStats>(EMPTY_PUNCH_STATS);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [initials, setInitials] = useState("");
+  const [awaitingInitials, setAwaitingInitials] = useState(false);
+  const [leaderboardSubmitted, setLeaderboardSubmitted] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -170,6 +229,10 @@ export default function Home() {
   const jabChargeTimerRef = useRef(0);
   const jabChargingRef = useRef(false);
   const specialRef = useRef(0);
+  const timerRef = useRef(timer);
+  const scoreRef = useRef(0);
+  const punchStatsRef = useRef<PunchStats>(EMPTY_PUNCH_STATS);
+  const leaderboardRef = useRef<LeaderboardEntry[]>([]);
   const enemyAttackActionRef = useRef(0);
   const enemyQueueAttackRef = useRef<() => void>(() => undefined);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -185,6 +248,22 @@ export default function Home() {
   useEffect(() => void (dodgeRef.current = dodgeDirection), [dodgeDirection]);
   useEffect(() => void (poseRef.current = enemyPose), [enemyPose]);
   useEffect(() => void (specialRef.current = special), [special]);
+  useEffect(() => void (timerRef.current = timer), [timer]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(LEADERBOARD_STORAGE_KEY) || "[]") as LeaderboardEntry[];
+      const valid = stored
+        .filter((entry) => typeof entry?.initials === "string" && Number.isFinite(entry?.score))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      leaderboardRef.current = valid;
+      setLeaderboard(valid);
+    } catch {
+      leaderboardRef.current = [];
+      setLeaderboard([]);
+    }
+  }, []);
 
   useEffect(() => {
     if (!assetsReady) return;
@@ -358,6 +437,24 @@ export default function Home() {
 
   const finishMatch = useCallback((result: "won" | "lost", reason: ResultReason = "knockout") => {
     const resultActionId = ++playerActionRef.current;
+    if (result === "won") {
+      const finalScore = Math.max(
+        0,
+        calculatePunchScore(punchStatsRef.current)
+          + timerRef.current * TIME_BONUS_PER_SECOND
+          - playerKnockdownsRef.current * PLAYER_KNOCKDOWN_SCORE_PENALTY,
+      );
+      scoreRef.current = finalScore;
+      setScore(finalScore);
+      const currentBoard = leaderboardRef.current;
+      const qualifies = currentBoard.length < 10 || finalScore > currentBoard[currentBoard.length - 1].score;
+      setAwaitingInitials(qualifies);
+      setLeaderboardSubmitted(false);
+      setInitials("");
+    } else {
+      setAwaitingInitials(false);
+      setLeaderboardSubmitted(false);
+    }
     setResultReason(reason);
     matchRef.current = result;
     setMatchState(result);
@@ -411,7 +508,6 @@ export default function Home() {
     setJabCharging(false);
     specialRef.current = 0;
     setSpecial(0);
-    setOverhandImpact(false);
     setPaused(false);
     ++enemyAttackActionRef.current;
     setEnemyPoseSafe("idle");
@@ -422,6 +518,13 @@ export default function Home() {
     blockingRef.current = false;
     setCombo(0);
     setScore(0);
+    scoreRef.current = 0;
+    punchStatsRef.current = { ...EMPTY_PUNCH_STATS };
+    setPunchStats({ ...EMPTY_PUNCH_STATS });
+    setInitials("");
+    setAwaitingInitials(false);
+    setLeaderboardSubmitted(false);
+    setShowLeaderboard(false);
     setImpact(null);
     setHitStop(false);
     setSecondWind(false);
@@ -489,12 +592,38 @@ export default function Home() {
     setPlayerPose("idle");
     setEnemyPoseSafe("idle");
     setSecondWind(false);
-    setOverhandImpact(false);
     setImpact(null);
     setHitStop(false);
     setScreenShake(false);
     setCallout("");
+    setShowLeaderboard(false);
   }, [setEnemyPoseSafe]);
+
+  const submitLocalScore = useCallback(() => {
+    const cleanInitials = initials.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+    if (matchRef.current !== "won" || !awaitingInitials || cleanInitials.length !== 3) return;
+    const entry: LeaderboardEntry = {
+      initials: cleanInitials,
+      score: scoreRef.current,
+      date: new Date().toISOString(),
+      version: GAME_VERSION,
+    };
+    const nextBoard = [...leaderboardRef.current, entry]
+      .sort((a, b) => b.score - a.score || a.date.localeCompare(b.date))
+      .slice(0, 10);
+    leaderboardRef.current = nextBoard;
+    setLeaderboard(nextBoard);
+    try {
+      window.localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(nextBoard));
+    } catch {
+      // The current result remains visible even if private browsing blocks
+      // persistent storage.
+    }
+    setInitials(cleanInitials);
+    setAwaitingInitials(false);
+    setLeaderboardSubmitted(true);
+    setShowLeaderboard(true);
+  }, [awaitingInitials, initials]);
 
   const togglePause = useCallback(() => {
     if (matchRef.current === "fighting") {
@@ -542,7 +671,12 @@ export default function Home() {
       // Going down must matter even if the player gets back up and wins.
       // Apply the penalty immediately so the live score and final result
       // always agree.
-      setScore((value) => Math.max(0, value - PLAYER_KNOCKDOWN_SCORE_PENALTY));
+      const penalizedScore = Math.max(
+        0,
+        calculatePunchScore(punchStatsRef.current) - knockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY,
+      );
+      scoreRef.current = penalizedScore;
+      setScore(penalizedScore);
       // The first recovery is demanding, and every later knockdown requires
       // five additional taps: 15, 20, 25, 30, and so on.
       requiredGetUpTapsRef.current = 10 + knockdowns * 5;
@@ -869,7 +1003,6 @@ export default function Home() {
             counterReadyUntilRef.current = performance.now() + (powerShot ? 980 : 720);
             setCallout(directionalHaymaker ? `${move === "right" ? "LEFT" : "RIGHT"} SLIP — HAYMAKER PUNISH!` : style === "heavy" ? "OVERHAND MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
             setEnemyPoseSafe("stumble-back");
-            setScore((value) => value + 250);
             playSound("dodge");
             later(() => {
               if (matchRef.current === "fighting" && poseRef.current === "stumble-back") {
@@ -879,11 +1012,6 @@ export default function Home() {
               queueAttack();
             }, powerShot ? 850 : rage ? 340 : 480);
             return;
-          }
-
-          if (style === "heavy") {
-            setOverhandImpact(true);
-            window.setTimeout(() => setOverhandImpact(false), 190);
           }
 
           if (blockingRef.current && guardRef.current > 0) {
@@ -1072,8 +1200,18 @@ export default function Home() {
         const nextSpecial = clamp(specialRef.current + specialGain + (slipCounter ? 4 : 0));
         specialRef.current = nextSpecial;
         setSpecial(nextSpecial);
+        const statKey = statKeyForPunch(kind);
+        const nextStats = { ...punchStatsRef.current, [statKey]: punchStatsRef.current[statKey] + 1 };
+        punchStatsRef.current = nextStats;
+        setPunchStats(nextStats);
+        const nextScore = Math.max(
+          0,
+          calculatePunchScore(nextStats)
+            - playerKnockdownsRef.current * PLAYER_KNOCKDOWN_SCORE_PENALTY,
+        );
+        scoreRef.current = nextScore;
+        setScore(nextScore);
       }
-      setScore((value) => value + damage * 100 + (slipCounter ? 900 : enemyIsOpen ? 350 : isHaymaker && !enemyIsGuarding ? 1200 : 0));
       setImpact(
         enemyIsGuarding
           ? null
@@ -1355,7 +1493,10 @@ export default function Home() {
     const down = (event: KeyboardEvent) => {
       if (event.repeat) return;
       const key = event.key.toLowerCase();
-      if (key === "escape" && (matchRef.current === "fighting" || matchRef.current === "paused")) {
+      if (showLeaderboard) {
+        event.preventDefault();
+        if (key === "escape") setShowLeaderboard(false);
+      } else if (key === "escape" && (matchRef.current === "fighting" || matchRef.current === "paused")) {
         event.preventDefault();
         togglePause();
       } else if (matchRef.current === "paused") {
@@ -1391,9 +1532,14 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, punch, releaseCrossCharge, releaseJabCharge, startMatch, togglePause]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, punch, releaseCrossCharge, releaseJabCharge, showLeaderboard, startMatch, togglePause]);
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
+  const landedPunches = (Object.keys(punchStats) as (keyof PunchStats)[])
+    .reduce((total, key) => total + punchStats[key], 0);
+  const punchScore = calculatePunchScore(punchStats);
+  const timeBonus = matchState === "won" ? timer * TIME_BONUS_PER_SECOND : 0;
+  const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
     ? "RAPID FIRE"
@@ -1541,7 +1687,6 @@ export default function Home() {
           </div>
         )}
         {impact === "player" && <div className="hurt-flash" aria-hidden="true" />}
-        {overhandImpact && <img className="overhand-impact" src={asset("/opponent-overhand-impact.webp")} alt="" aria-hidden="true" draggable={false} />}
         {playerPose === "special-uppercut" && matchState === "fighting" && (
           <img className="special-uppercut-contact" src={asset("/player-special-uppercut-contact.webp")} alt="The player's right uppercut connecting beneath Mohawk's chin" draggable={false} />
         )}
@@ -1687,6 +1832,7 @@ export default function Home() {
                 <div><kbd>S</kbd><kbd>SPACE</kbd><span>BLOCK</span></div>
               </div>
               <button className="fight-button intro-fight-button" onClick={startMatch}>ENTER THE RING <i>›</i></button>
+              <button className="local-scores-button" onClick={() => setShowLeaderboard(true)}>LOCAL TOP 10</button>
               <small>1 ROUND · 90 SECONDS · SURVIVE THE STORM</small>
             </div>
           </div>
@@ -1744,22 +1890,70 @@ export default function Home() {
                 <img className="player-holds-belt" src={asset("/player-holds-belt.webp")} alt="The player holding the gold championship belt" draggable={false} />
                 <div className="champion-copy">
                   <h2 className="simple-win-title">YOU WIN!!!</h2>
-                  <div className="result-stats">
-                    <span><em>SCORE</em><strong>{score.toLocaleString()}</strong></span>
-                    <span><em>PLAYER KNOCKDOWNS</em><strong>{playerKnockdowns}</strong></span>
-                    <span><em>TIME</em><strong>{timerText}</strong></span>
+                  <div className="win-scorecard">
+                    <h3>OFFICIAL SCORECARD</h3>
+                    <div className="scorecard-grid">
+                      <span><em>LANDED PUNCHES</em><strong>{landedPunches}</strong></span>
+                      <span><em>PUNCH POINTS</em><strong>{punchScore.toLocaleString()}</strong></span>
+                      <span><em>TIME BONUS</em><strong>+{timeBonus.toLocaleString()}</strong></span>
+                      <span><em>KNOCKDOWNS</em><strong className="score-penalty">−{knockdownPenalty.toLocaleString()}</strong></span>
+                    </div>
+                    <div className="scorecard-total"><em>FINAL SCORE</em><strong>{score.toLocaleString()}</strong></div>
+                    {showRematch && awaitingInitials && (
+                      <form className="initials-entry" onSubmit={(event) => { event.preventDefault(); submitLocalScore(); }}>
+                        <label htmlFor="arcade-initials">NEW LOCAL HIGH SCORE — ENTER INITIALS</label>
+                        <input
+                          id="arcade-initials"
+                          value={initials}
+                          onChange={(event) => setInitials(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3))}
+                          maxLength={3}
+                          inputMode="text"
+                          autoComplete="off"
+                          autoFocus
+                          aria-label="Enter three initials"
+                        />
+                        <button type="submit" disabled={initials.length !== 3}>SAVE SCORE</button>
+                      </form>
+                    )}
+                    {leaderboardSubmitted && <div className="score-saved">SCORE SAVED TO LOCAL TOP 10</div>}
+                    <button className="view-scores-button" onClick={() => setShowLeaderboard(true)}>VIEW LOCAL TOP 10</button>
                   </div>
-                  {showRematch ? (
+                  {showRematch && !awaitingInitials ? (
                     <div className="result-actions">
                       <button className="fight-button rematch-button" onClick={startMatch}>DEFEND THE TITLE <i>↻</i></button>
                       <button className="fight-button menu-button" onClick={returnToMenu}>MAIN MENU <i>‹</i></button>
                     </div>
-                  ) : (
+                  ) : !showRematch ? (
                     <div className="victory-delay" role="status">THE CROWD ERUPTS...</div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {showLeaderboard && (
+          <div className="overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-labelledby="local-leaderboard-title">
+            <div className="leaderboard-card">
+              <button className="leaderboard-close" onClick={() => setShowLeaderboard(false)} aria-label="Close leaderboard">×</button>
+              <p>FIGHTTIME ARCADE RECORDS</p>
+              <h2 id="local-leaderboard-title">LOCAL TOP 10</h2>
+              <div className="leaderboard-head"><span>RANK</span><span>INITIALS</span><span>SCORE</span></div>
+              <ol>
+                {Array.from({ length: 10 }).map((_, index) => {
+                  const entry = leaderboard[index];
+                  return (
+                    <li key={`${entry?.date || "empty"}-${index}`} className={entry?.score === score && leaderboardSubmitted ? "is-new-score" : ""}>
+                      <b>{String(index + 1).padStart(2, "0")}</b>
+                      <strong>{entry?.initials || "---"}</strong>
+                      <span>{entry ? entry.score.toLocaleString() : "0"}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+              <small>SAVED ON THIS DEVICE</small>
+              <button className="fight-button" onClick={() => setShowLeaderboard(false)}>BACK <i>‹</i></button>
+            </div>
           </div>
         )}
 
