@@ -109,7 +109,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.74.0";
+const GAME_VERSION = "0.75.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -203,6 +203,7 @@ export default function Home() {
   const [ironJaw, setIronJaw] = useState(false);
   const [endlessFight, setEndlessFight] = useState(false);
   const [aura, setAura] = useState(false);
+  const [finisherEnabled, setFinisherEnabled] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
@@ -252,6 +253,7 @@ export default function Home() {
   const ironJawRef = useRef(false);
   const endlessFightRef = useRef(false);
   const auraRef = useRef(false);
+  const finisherEnabledRef = useRef(false);
   const secretBufferRef = useRef("");
   const secretConfirmationTimerRef = useRef(0);
   const finisherRunningRef = useRef(false);
@@ -270,6 +272,7 @@ export default function Home() {
   useEffect(() => void (ironJawRef.current = ironJaw), [ironJaw]);
   useEffect(() => void (endlessFightRef.current = endlessFight), [endlessFight]);
   useEffect(() => void (auraRef.current = aura), [aura]);
+  useEffect(() => void (finisherEnabledRef.current = finisherEnabled), [finisherEnabled]);
 
   const activateSecretCode = useCallback((rawCode: string) => {
     const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -290,6 +293,10 @@ export default function Home() {
       auraRef.current = true;
       setAura(true);
       confirmation = "AURA ACTIVATED";
+    } else if (code.endsWith("FATALITY")) {
+      finisherEnabledRef.current = true;
+      setFinisherEnabled(true);
+      confirmation = "FINISHER MODE ACTIVATED";
     }
     if (!confirmation) return false;
     setSecretCode("");
@@ -1369,7 +1376,7 @@ export default function Home() {
         const knockdowns = enemyKnockdownsRef.current + 1;
         enemyKnockdownsRef.current = knockdowns;
         setEnemyKnockdowns(knockdowns);
-        if (knockdowns >= 4 && !endlessFightRef.current) {
+        if (knockdowns >= 4 && finisherEnabledRef.current && !endlessFightRef.current) {
           ++playerActionRef.current;
           punchLockRef.current = false;
           bufferedPunchRef.current = null;
@@ -1389,7 +1396,9 @@ export default function Home() {
           ? { health: 75, min: 2, max: 4 }
           : knockdowns === 2
             ? { health: 75, min: 4, max: 6 }
-            : { health: 75, min: 6, max: 8 };
+            : knockdowns === 3
+              ? { health: 75, min: 6, max: 8 }
+              : undefined;
         const riseAt = plan ? plan.min + Math.floor(Math.random() * (plan.max - plan.min + 1)) : null;
         enemyRiseAtRef.current = riseAt;
         enemyRecoveryHealthRef.current = plan?.health ?? 0;
@@ -2009,12 +2018,13 @@ export default function Home() {
                 </form>
               )}
               {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
-              {(flamingHands || ironJaw || endlessFight || aura) && (
+              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled) && (
                 <div className="active-secrets" aria-label="Active secret powers">
                   {flamingHands && <span>🔥 FLAMING HANDS</span>}
                   {ironJaw && <span>◆ IRON JAW</span>}
                   {endlessFight && <span>∞ ENDLESS</span>}
                   {aura && <span>◉ AURA</span>}
+                  {finisherEnabled && <span>☠ FINISHER</span>}
                 </div>
               )}
               <small>1 ROUND · 90 SECONDS · SURVIVE THE STORM</small>
