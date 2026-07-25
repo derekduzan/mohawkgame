@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.50.0";
+const GAME_VERSION = "0.51.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -735,7 +735,16 @@ export default function Home() {
     const queueAttack = () => {
       if (cancelled || matchRef.current !== "fighting") return;
       const rage = enemyHealthRef.current <= 35;
-      const delay = rage ? 180 + Math.random() * 200 : 320 + Math.random() * 280;
+      const fightPhase = Math.min(enemyKnockdownsRef.current, 3);
+      const delay = fightPhase === 0
+        ? 170 + Math.random() * 180
+        : fightPhase === 1
+          ? 430 + Math.random() * 300
+          : fightPhase === 2
+            ? 250 + Math.random() * 220
+            : rage
+              ? 180 + Math.random() * 200
+              : 320 + Math.random() * 280;
       later(beginAttack, delay);
     };
 
@@ -910,14 +919,48 @@ export default function Home() {
         queueAttack();
         return;
       }
+      const fightPhase = Math.min(enemyKnockdownsRef.current, 3);
       const pattern = Math.random();
-      if (pattern < .13) throwStrike(["right", "left", "right", "left", "uppercut"], 0, "power-combo");
-      else if (pattern < .19) throwStrike(["right"], 0, "heavy");
-      else if (pattern < .235) throwStrike(["right"], 0, "haymaker");
-      else if (pattern < .28) throwStrike(["left"], 0, "haymaker");
-      else if (pattern < .44) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
-      else if (pattern < .58) throwStrike(["uppercut"], 0, "uppercut");
-      else throwStrike(chooseCombination(), 0);
+      if (fightPhase === 0) {
+        // Opening phase: Mohawk wins exchanges with relentless hand speed and
+        // volume rather than loading up on single power shots.
+        if (pattern < .48) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
+        else if (pattern < .72) throwStrike(["right", "left", "right", "left"], 0, "flurry");
+        else if (pattern < .92) throwStrike(["left", "right", "left"], 0);
+        else throwStrike(["uppercut"], 0, "uppercut");
+      } else if (fightPhase === 1) {
+        // After the first knee he becomes measured: cover up, read the player,
+        // then answer with shorter, safer combinations.
+        if (pattern < .3) {
+          setEnemyPoseSafe("guard");
+          setCallout("MOHAWK TIGHTENS HIS DEFENSE");
+          later(() => {
+            if (matchRef.current === "fighting" && poseRef.current === "guard") {
+              setEnemyPoseSafe("idle");
+              queueAttack();
+            }
+          }, 500 + Math.random() * 300);
+        } else if (pattern < .52) throwStrike(["left", "right"], 0);
+        else if (pattern < .7) throwStrike(["body", "right"], 0);
+        else if (pattern < .84) throwStrike(["right"], 0, "heavy");
+        else throwStrike(chooseCombination(), 0);
+      } else if (fightPhase === 2) {
+        // After the second knee, abandon caution and hunt with power.
+        if (pattern < .25) throwStrike(["right"], 0, "haymaker");
+        else if (pattern < .5) throwStrike(["left"], 0, "haymaker");
+        else if (pattern < .76) throwStrike(["uppercut"], 0, "uppercut");
+        else if (pattern < .92) throwStrike(["right", "left", "right", "left", "uppercut"], 0, "power-combo");
+        else throwStrike(["right"], 0, "heavy");
+      } else {
+        // Fourth phase: no readable identity—every established pattern is live.
+        if (pattern < .13) throwStrike(["right", "left", "right", "left", "uppercut"], 0, "power-combo");
+        else if (pattern < .19) throwStrike(["right"], 0, "heavy");
+        else if (pattern < .235) throwStrike(["right"], 0, "haymaker");
+        else if (pattern < .28) throwStrike(["left"], 0, "haymaker");
+        else if (pattern < .44) throwStrike(["left", "right", "left", "right", "left"], 0, "flurry");
+        else if (pattern < .58) throwStrike(["uppercut"], 0, "uppercut");
+        else throwStrike(chooseCombination(), 0);
+      }
     };
 
     later(queueAttack, 750);
@@ -962,7 +1005,10 @@ export default function Home() {
     // Mohawk reads obvious offense and actively closes his guard. A charged
     // haymaker is much easier for him to see coming unless he is stunned.
     const canReadPunch = poseRef.current === "idle" || poseRef.current === "taunt";
-    if (canReadPunch && Math.random() < (isHaymaker || kind === "uppercut" ? 0.4 : kind === "power-jab" ? 0.22 : 0.12)) {
+    const fightPhase = Math.min(enemyKnockdownsRef.current, 3);
+    const phaseGuardBonus = fightPhase === 1 ? .24 : fightPhase === 0 ? -.04 : 0;
+    const guardChance = clamp((isHaymaker || kind === "uppercut" ? .4 : kind === "power-jab" ? .22 : .12) + phaseGuardBonus, 0, .72);
+    if (canReadPunch && Math.random() < guardChance) {
       setEnemyPoseSafe("guard");
     }
 
@@ -982,11 +1028,10 @@ export default function Home() {
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
       const base = kind === "left" ? 4 : kind === "left-uppercut" ? 10 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "right-hook" ? 12 : kind === "body" ? 6 : kind === "uppercut" ? 72 : isHaymaker ? 43 : 43;
       const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (isHaymaker ? 1.25 : 2.1)) : base;
-      // Mohawk remains durable across four health bars, but the addition of
-      // active guarding made the former one-sixth scaling too restrictive.
-      // Reduce incoming damage so Mohawk's four-stage iron-jaw recovery lasts
-      // longer without making successful counters feel harmless.
-      const damage = fullDamage / 5;
+      // Normal punches should accumulate pressure rather than drop an
+      // iron-jawed champion like an ordinary opponent. Counters and charged
+      // power retain their multipliers, but all incoming damage is scaled.
+      const damage = fullDamage / 6;
       const nextHealth = clamp(enemyHealthRef.current - damage);
 
       if (slipCounter) counterReadyUntilRef.current = 0;
@@ -1111,7 +1156,9 @@ export default function Home() {
       window.setTimeout(() => {
         if (matchRef.current !== "fighting") return;
         const rage = enemyHealthRef.current <= 35;
-        if (Math.random() < (rage ? 0.26 : 0.17)) {
+        const currentFightPhase = Math.min(enemyKnockdownsRef.current, 3);
+        const postHitGuardChance = currentFightPhase === 1 ? .46 : currentFightPhase === 0 ? .1 : rage ? .24 : .15;
+        if (Math.random() < postHitGuardChance) {
           setEnemyPoseSafe("guard");
           window.setTimeout(() => {
             if (matchRef.current === "fighting" && poseRef.current === "guard") setEnemyPoseSafe("idle");
@@ -1350,6 +1397,13 @@ export default function Home() {
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
+  const opponentStyle = enemyKnockdowns === 0
+    ? "RAPID FIRE"
+    : enemyKnockdowns === 1
+      ? "CAUTIOUS DEFENSE"
+      : enemyKnockdowns === 2
+        ? "POWER HUNTER"
+        : "UNPREDICTABLE";
   const visionClass = playerHealth <= 20 ? "vision-critical" : playerHealth <= 40 ? "vision-hurt" : "";
   const loadingProgress = Math.round((loadedAssetCount / POSE_ASSETS.length) * 100);
   const opponentAsset = enemyPose === "windup-left"
@@ -1463,7 +1517,7 @@ export default function Home() {
           <div className={`fighter-card opponent-card ${rage ? "rage" : ""}`}>
             <div className="name-row"><strong>THE MOHAWK</strong><span>{Math.ceil(enemyHealth)}</span></div>
             <div className="health-track"><span style={{ width: `${enemyHealth}%` }} /></div>
-            <p>{rage ? "RAGE MODE" : "PRESSURE FIGHTER"}</p>
+            <p>{rage ? `RAGE · ${opponentStyle}` : opponentStyle}</p>
           </div>
         </header>
 
