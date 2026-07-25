@@ -280,7 +280,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .damage-tier-1 .facial-damage,.damage-tier-1 .facial-damage i { opacity:.62; }
 .damage-tier-2 .facial-damage,.damage-tier-2 .facial-damage i,.damage-tier-2 .facial-damage b { opacity:.82; }
 .damage-tier-3 .facial-damage,.damage-tier-3 .facial-damage i,.damage-tier-3 .facial-damage b,.damage-tier-3 .facial-damage em { opacity:1; }
-.opponent-stage:not(.pose-idle):not(.pose-guard):not(.pose-taunt) .facial-damage { opacity:0 !important; }
 .fight-countdown { position:absolute; z-index:62; inset:0; display:grid; place-items:center; pointer-events:none; background:radial-gradient(circle at center,rgba(246,173,42,.12),transparent 33%); }
 .fight-countdown strong { color:#f7f2e7; font:1000 clamp(8rem,25vw,22rem)/1 "Arial Black",sans-serif; -webkit-text-stroke:clamp(3px,.45vw,8px) #17110f; text-shadow:clamp(7px,1vw,18px) clamp(9px,1.3vw,24px) 0 #d52219,0 0 30px rgba(255,185,44,.7); animation:countdownPop .7s cubic-bezier(.12,.8,.2,1) both; }
 

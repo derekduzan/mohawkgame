@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.49.0";
+const GAME_VERSION = "0.50.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -140,6 +140,7 @@ export default function Home() {
   const [special, setSpecial] = useState(0);
   const [overhandImpact, setOverhandImpact] = useState(false);
   const [kneeDepth, setKneeDepth] = useState<KneeDepth>("near");
+  const [facialDamageTier, setFacialDamageTier] = useState(0);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -415,6 +416,7 @@ export default function Home() {
     setImpact(null);
     setHitStop(false);
     setSecondWind(false);
+    setFacialDamageTier(0);
     enemyKnockdownsRef.current = 0;
     enemyRiseAtRef.current = null;
     enemyRecoveryHealthRef.current = 0;
@@ -863,7 +865,7 @@ export default function Home() {
               : Math.max(1, clamp(guardRef.current - guardCost));
             guardRef.current = nextGuard;
             setGuard(nextGuard);
-            const chip = powerShot ? 7 : comboUppercut ? 5 : comboHaymaker ? 3 : style === "uppercut" ? 5 : style === "flurry" ? 1 : move === "body" ? 4 : 1;
+            const chip = powerShot ? 5 : comboUppercut ? 4 : comboHaymaker ? 2 : style === "uppercut" ? 4 : style === "flurry" ? .5 : move === "body" ? 3 : .5;
             takePlayerDamage(lateBlock ? chip + 4 : chip);
             setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : directionalHaymaker ? "HAYMAKER CRUSHES YOUR GUARD!" : style === "heavy" ? "OVERHAND CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
             if (nextGuard <= 0) {
@@ -872,7 +874,7 @@ export default function Home() {
               guardBrokenUntilRef.current = performance.now() + 700;
             }
           } else {
-            const damage = powerShot ? 31 : comboUppercut ? 20 : comboHaymaker ? 13 : style === "uppercut" ? 18 : style === "flurry" ? 5 : move === "body" ? 14 : rage ? 14 : 11;
+            const damage = powerShot ? 25 : comboUppercut ? 16 : comboHaymaker ? 10 : style === "uppercut" ? 14 : style === "flurry" ? 4 : move === "body" ? 11 : rage ? 11 : 9;
             takePlayerDamage(damage);
             setCallout(directionalHaymaker ? `MOHAWK ${move.toUpperCase()} HAYMAKER!` : style === "heavy" ? "MOHAWK OVERHAND!" : style === "uppercut" ? "UPPERCUT!" : move === "body" ? "LIVER SHOT!" : "CLEAN HIT");
           }
@@ -991,6 +993,8 @@ export default function Home() {
 
       enemyHealthRef.current = nextHealth;
       setEnemyHealth(nextHealth);
+      const reachedDamageTier = nextHealth <= 25 ? 3 : nextHealth <= 50 ? 2 : nextHealth <= 75 ? 1 : 0;
+      setFacialDamageTier((currentTier) => Math.max(currentTier, reachedDamageTier));
       setCombo((value) => enemyIsGuarding ? 0 : value + 1);
       enemyStunHitsRef.current = enemyIsGuarding ? 0 : enemyStunHitsRef.current + 1;
       const specialUppercutStun = kind === "uppercut" && !enemyIsGuarding && nextHealth > 0;
@@ -1346,7 +1350,6 @@ export default function Home() {
 
   const timerText = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
-  const damageTier = enemyHealth <= 25 ? 3 : enemyHealth <= 50 ? 2 : enemyHealth <= 75 ? 1 : 0;
   const visionClass = playerHealth <= 20 ? "vision-critical" : playerHealth <= 40 ? "vision-hurt" : "";
   const loadingProgress = Math.round((loadedAssetCount / POSE_ASSETS.length) * 100);
   const opponentAsset = enemyPose === "windup-left"
@@ -1473,7 +1476,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className={`opponent-stage pose-${enemyPose} damage-tier-${damageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
+        <div className={`opponent-stage pose-${enemyPose} damage-tier-${facialDamageTier} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
           <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
           <div className="damage-glow" aria-hidden="true" />
