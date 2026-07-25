@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
 const PLAYER_KNOCKDOWN_SCORE_PENALTY = 5000;
-const GAME_VERSION = "0.60.0";
+const GAME_VERSION = "0.61.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -1744,9 +1744,7 @@ export default function Home() {
                 </div>
                 <img className="player-holds-belt" src={asset("/player-holds-belt.webp")} alt="The player holding the gold championship belt" draggable={false} />
                 <div className="champion-copy">
-                  <p>MOHAWK COULD NOT RISE · TEN COUNT</p>
-                  <h2>YOU DEFEATED<br /><span>THE MOHAWK</span></h2>
-                  <h3>GRIT CITY CHAMPION</h3>
+                  <h2 className="simple-win-title">YOU WIN!!!</h2>
                   <div className="result-stats">
                     <span><em>SCORE</em><strong>{score.toLocaleString()}</strong></span>
                     <span><em>PLAYER KNOCKDOWNS</em><strong>{playerKnockdowns}</strong></span>
