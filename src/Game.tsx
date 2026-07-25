@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.53.0";
+const GAME_VERSION = "0.54.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -933,10 +933,14 @@ export default function Home() {
           setEnemyPoseSafe("guard");
           setCallout("MOHAWK TIGHTENS HIS DEFENSE");
           later(() => {
-            if (matchRef.current === "fighting" && poseRef.current === "guard") {
-              setEnemyPoseSafe("idle");
-              queueAttack();
-            }
+            if (matchRef.current !== "fighting") return;
+            // A player punch can replace the guard pose before this timer
+            // expires. The old pose-gated callback then never queued another
+            // attack, stranding Mohawk in a permanent idle loop.
+            if (poseRef.current === "guard") setEnemyPoseSafe("idle");
+            // Defense in this phase always leads to a deliberate counter;
+            // never roll immediately into another passive guard cycle.
+            later(() => throwStrike(Math.random() < .5 ? ["left", "right"] : ["body", "right"], 0), 120);
           }, 500 + Math.random() * 300);
         } else if (pattern < .52) throwStrike(["left", "right"], 0);
         else if (pattern < .7) throwStrike(["body", "right"], 0);
@@ -1029,7 +1033,7 @@ export default function Home() {
       // Normal punches should accumulate pressure rather than drop an
       // iron-jawed champion like an ordinary opponent. Counters and charged
       // power retain their multipliers, but all incoming damage is scaled.
-      const damage = fullDamage / 6;
+      const damage = fullDamage / 7;
       const nextHealth = clamp(enemyHealthRef.current - damage);
 
       if (slipCounter) counterReadyUntilRef.current = 0;
