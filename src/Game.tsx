@@ -109,7 +109,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.68.0";
+const GAME_VERSION = "0.70.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -124,7 +124,7 @@ const POSE_ASSETS = [
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
   asset("/opponent-knee-breathing.webp"), asset("/opponent-knee-rising.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
-  asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
+  asset("/player-guard-left-v2.webp"), asset("/player-guard-right-v2.webp"), asset("/player-jab-left-arm.webp"),
   asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
   asset("/player-haymaker-left-arm.webp"), asset("/player-haymaker-right-arm.webp"),
   asset("/player-left-uppercut-arm.webp"), asset("/player-right-hook-arm.webp"),
@@ -1611,6 +1611,8 @@ export default function Home() {
                             : enemyPose === "hit-body"
                               ? asset("/opponent-hit-body.webp")
               : asset("/opponent-guard.webp");
+  const guardLeftAsset = asset("/player-guard-left-v2.webp");
+  const guardRightAsset = asset("/player-guard-right-v2.webp");
   const leftArmAsset = playerPose === "left-haymaker"
     ? asset("/player-haymaker-left-arm.webp")
     : playerPose === "left-uppercut"
@@ -1619,14 +1621,14 @@ export default function Home() {
     ? asset("/player-jab-left-arm.webp")
     : playerPose === "body-hook"
       ? asset("/player-body-left-arm.webp")
-      : asset("/player-guard-left.webp");
+      : guardLeftAsset;
   const rightArmAsset = playerPose === "right-haymaker" || playerPose === "haymaker"
     ? asset("/player-haymaker-right-arm.webp")
     : playerPose === "right-hook"
       ? asset("/player-right-hook-arm.webp")
     : playerPose === "cross-right"
       ? asset("/player-cross-right-arm.webp")
-    : asset("/player-guard-right.webp");
+    : guardRightAsset;
 
   return (
     <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
@@ -1704,8 +1706,8 @@ export default function Home() {
               <img className="player-pose-art player-hit-art" src={asset("/player-hit.webp")} alt="" draggable={false} />
             ) : (
               <>
-                <img className="player-pose-art player-arm-art player-left-art" src={leftArmAsset} alt="" draggable={false} />
-                <img className="player-pose-art player-arm-art player-right-art" src={rightArmAsset} alt="" draggable={false} />
+                <img className={`player-pose-art player-arm-art player-left-art ${leftArmAsset === guardLeftAsset ? "player-guard-arm" : ""}`} src={leftArmAsset} alt="" draggable={false} />
+                <img className={`player-pose-art player-arm-art player-right-art ${rightArmAsset === guardRightAsset ? "player-guard-arm" : ""}`} src={rightArmAsset} alt="" draggable={false} />
               </>
             )}
             <img className="player-pose-art player-block-art" src={asset("/player-block.webp")} alt="" draggable={false} />
