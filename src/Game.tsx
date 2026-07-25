@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.55.0";
+const GAME_VERSION = "0.56.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -795,7 +795,7 @@ export default function Home() {
       const comboHaymaker = style === "power-combo" && !comboUppercut;
       const directionalHaymaker = style === "haymaker";
       const powerShot = style === "heavy" || directionalHaymaker;
-      const windup = powerShot ? 760
+      const windup = powerShot ? 520
         : comboUppercut ? 250
         : comboHaymaker ? firstPunch ? 430 : 115
         : style === "uppercut" ? 480
