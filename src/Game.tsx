@@ -109,7 +109,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.71.0";
+const GAME_VERSION = "0.72.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -198,6 +198,11 @@ export default function Home() {
   const [awaitingInitials, setAwaitingInitials] = useState(false);
   const [leaderboardSubmitted, setLeaderboardSubmitted] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [flamingHands, setFlamingHands] = useState(false);
+  const [ironJaw, setIronJaw] = useState(false);
+  const [showCodeEntry, setShowCodeEntry] = useState(false);
+  const [secretCode, setSecretCode] = useState("");
+  const [secretConfirmation, setSecretConfirmation] = useState("");
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -238,6 +243,10 @@ export default function Home() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const preloadStartedRef = useRef(false);
+  const flamingHandsRef = useRef(false);
+  const ironJawRef = useRef(false);
+  const secretBufferRef = useRef("");
+  const secretConfirmationTimerRef = useRef(0);
 
   useEffect(() => void (matchRef.current = matchState), [matchState]);
   useEffect(() => void (enemyHealthRef.current = enemyHealth), [enemyHealth]);
@@ -249,6 +258,42 @@ export default function Home() {
   useEffect(() => void (poseRef.current = enemyPose), [enemyPose]);
   useEffect(() => void (specialRef.current = special), [special]);
   useEffect(() => void (timerRef.current = timer), [timer]);
+  useEffect(() => void (flamingHandsRef.current = flamingHands), [flamingHands]);
+  useEffect(() => void (ironJawRef.current = ironJaw), [ironJaw]);
+
+  const activateSecretCode = useCallback((rawCode: string) => {
+    const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    let confirmation = "";
+    if (code.endsWith("FLAMEON")) {
+      flamingHandsRef.current = true;
+      setFlamingHands(true);
+      confirmation = "FLAMING HANDS ACTIVATED";
+    } else if (code.endsWith("IRONJAW")) {
+      ironJawRef.current = true;
+      setIronJaw(true);
+      confirmation = "IRON JAW ACTIVATED";
+    }
+    if (!confirmation) return false;
+    setSecretCode("");
+    secretBufferRef.current = "";
+    setSecretConfirmation(confirmation);
+    window.clearTimeout(secretConfirmationTimerRef.current);
+    secretConfirmationTimerRef.current = window.setTimeout(() => setSecretConfirmation(""), 2200);
+    return true;
+  }, []);
+
+  useEffect(() => {
+    const readSecretCode = (event: KeyboardEvent) => {
+      if (matchRef.current !== "intro" || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "INPUT") return;
+      if (!/^[a-z0-9]$/i.test(event.key)) return;
+      secretBufferRef.current = `${secretBufferRef.current}${event.key.toUpperCase()}`.slice(-16);
+      activateSecretCode(secretBufferRef.current);
+    };
+    window.addEventListener("keydown", readSecretCode);
+    return () => window.removeEventListener("keydown", readSecretCode);
+  }, [activateSecretCode]);
 
   useEffect(() => {
     try {
@@ -640,7 +685,8 @@ export default function Home() {
   }, []);
 
   const takePlayerDamage = useCallback((amount: number, preserveGuardPose = false) => {
-    const next = clamp(playerHealthRef.current - amount);
+    const appliedAmount = ironJawRef.current ? amount / 3 : amount;
+    const next = clamp(playerHealthRef.current - appliedAmount);
     const guardAbsorbedHit = preserveGuardPose && blockingRef.current && next > 0;
     const actionId = guardAbsorbedHit ? playerActionRef.current : ++playerActionRef.current;
     playerHealthRef.current = next;
@@ -1172,7 +1218,7 @@ export default function Home() {
         return;
       }
       const enemyIsOpen = poseRef.current === "stumble-back" || poseRef.current.startsWith("windup");
-      const enemyIsGuarding = poseRef.current === "guard";
+      const enemyIsGuarding = poseRef.current === "guard" && !flamingHandsRef.current;
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
       const base = kind === "left" ? 4 : kind === "left-uppercut" ? 10 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "right-hook" ? 12 : kind === "body" ? 6 : kind === "uppercut" ? 72 : isHaymaker ? 43 : 43;
       const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (isHaymaker ? 1.25 : 2.1)) : base;
@@ -1638,9 +1684,11 @@ export default function Home() {
         <div className="ceiling-lights" aria-hidden="true"><i /><i /><i /></div>
         <div className={`crowd ${secondWind ? "is-chanting" : ""}`} aria-hidden="true">
           {Array.from({ length: 18 }).map((_, index) => <i key={index} />)}
-          <div className="crowd-chant">
-            <span className="chant-mo">MO</span><span className="chant-hawk">—HAWK!</span>
-          </div>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div className={`crowd-chant crowd-chant-${index + 1}`} key={`chant-${index}`}>
+              <span className="chant-mo">MO</span><span className="chant-hawk">—HAWK!</span>
+            </div>
+          ))}
         </div>
         <div className="ring-post post-left" aria-hidden="true" />
         <div className="ring-post post-right" aria-hidden="true" />
@@ -1701,7 +1749,7 @@ export default function Home() {
         )}
 
         {matchState !== "won" && matchState !== "lost" && (
-          <div className={`first-person-body player-${playerPose}`} aria-hidden="true">
+          <div className={`first-person-body player-${playerPose} ${flamingHands ? "has-flaming-hands" : ""}`} aria-hidden="true">
             {playerPose === "hit" ? (
               <img className="player-pose-art player-hit-art" src={asset("/player-hit.webp")} alt="" draggable={false} />
             ) : (
@@ -1835,6 +1883,36 @@ export default function Home() {
               </div>
               <button className="fight-button intro-fight-button" onClick={startMatch}>ENTER THE RING <i>›</i></button>
               <button className="local-scores-button" onClick={() => setShowLeaderboard(true)}>LOCAL TOP 10</button>
+              <button className="secret-code-button" onClick={() => setShowCodeEntry((value) => !value)}>ENTER CODE</button>
+              {showCodeEntry && (
+                <form
+                  className="secret-code-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!activateSecretCode(secretCode)) {
+                      setSecretConfirmation("INVALID CODE");
+                      window.clearTimeout(secretConfirmationTimerRef.current);
+                      secretConfirmationTimerRef.current = window.setTimeout(() => setSecretConfirmation(""), 1400);
+                    }
+                  }}
+                >
+                  <input
+                    value={secretCode}
+                    onChange={(event) => setSecretCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16))}
+                    aria-label="Secret code"
+                    placeholder="ENTER SECRET CODE"
+                    autoComplete="off"
+                  />
+                  <button type="submit">ACTIVATE</button>
+                </form>
+              )}
+              {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
+              {(flamingHands || ironJaw) && (
+                <div className="active-secrets" aria-label="Active secret powers">
+                  {flamingHands && <span>🔥 FLAMING HANDS</span>}
+                  {ironJaw && <span>◆ IRON JAW</span>}
+                </div>
+              )}
               <small>1 ROUND · 90 SECONDS · SURVIVE THE STORM</small>
             </div>
           </div>
