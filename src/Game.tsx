@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
 const PLAYER_KNOCKDOWN_SCORE_PENALTY = 5000;
-const GAME_VERSION = "0.61.0";
+const GAME_VERSION = "0.67.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -815,7 +815,8 @@ export default function Home() {
         : move === "right" ? "attack-right-contact"
         : move === "body" ? "attack-body-contact"
         : "attack-uppercut-contact";
-      const resolutionDelay = powerShot ? 320
+      const resolutionDelay = style === "heavy" ? 16
+        : directionalHaymaker ? 320
         : comboUppercut ? 280
         : comboHaymaker ? 175
         : style === "uppercut" ? 280
@@ -1640,11 +1641,11 @@ export default function Home() {
             <div className="pause-card">
               <img className="pause-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
               <div className="pause-rules">
-                <section><strong>RAGE MODE</strong><span>Below 35% health, Mohawk attacks faster, hits harder, guards more often, and recovers sooner.</span></section>
+                <section><strong>RAGE MODE</strong><span>A red glow marks Rage Mode. When their health gets low, some fighters may attack faster, hit harder, guard more aggressively, and recover sooner.</span></section>
                 <section><strong>CHARGED SHOTS</strong><span>Hold J for a power jab. Hold K for a haymaker. A blocked haymaker invites a heavy counter.</span></section>
                 <section><strong>SPECIAL</strong><span>Landed punches fill the purple meter. At 100%, press U for the finishing uppercut.</span></section>
                 <section><strong>DEFENSE</strong><span>Hold Space to block. Slip with A/D; a successful slip powers up your next counter.</span></section>
-                <section><strong>MOHAWK&apos;S KNEES</strong><span>He does not fall flat. He may stumble or take a knee. From the third knee onward, every rise is a 50/50 fight.</span></section>
+                <section><strong>GUARD INDICATOR</strong><span>A gold halo flashes when an opponent raises their guard. Normal punches may be blocked until the guard opens.</span></section>
               </div>
               <button className="fight-button" onClick={togglePause}>RETURN TO FIGHT <i>›</i></button>
               <small>PRESS ESC TO RESUME</small>
@@ -1654,9 +1655,7 @@ export default function Home() {
 
         {matchState === "enemy-down" && (
           <div className="enemy-count-overlay" aria-live="assertive">
-            <p>MOHAWK TAKES A KNEE · {enemyKnockdowns}</p>
             <strong>{enemyCount}</strong>
-            <span>{enemyRiseAt === null ? "THE FINAL COUNT" : `CAN HE RISE?`}</span>
           </div>
         )}
 
