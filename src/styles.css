@@ -262,7 +262,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-hit-right { transform: translateX(-44%) rotate(9deg) scale(1.03); }
 .pose-hit-body { transform: translateX(-50%) translateY(4%) scale(1.03,.99); }
 .pose-hit-left .damage-glow,.pose-hit-right .damage-glow,.pose-hit-body .damage-glow { opacity:.7; }
-.pose-stunned { transform: translateX(-50%) translateY(2%) rotate(2deg) scale(.98); filter:brightness(1.12); animation:stunned .18s ease-in-out infinite alternate; }
+.pose-stunned { transform: translateX(-50%) translateY(1%) rotate(1deg) scale(.99); filter:brightness(1.06); animation:stunned .42s ease-in-out infinite alternate; }
+.stunned-breath-frame { opacity:0; animation:stunnedBreathFrame 1.4s steps(1,end) infinite; }
 .pose-stumble-back { animation:mohawkStumbleBack .72s cubic-bezier(.12,.74,.18,1) both; filter:brightness(1.06); }
 .knee-near { --knee-y:15%; --knee-scale:1.04; --knee-entry-scale:.96; --knee-bounce-scale:1.065; }
 .knee-far { --knee-y:22%; --knee-scale:.74; --knee-entry-scale:.68; --knee-bounce-scale:.76; }
@@ -546,6 +547,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes enemyBodyShoulder { 0%{transform:scaleX(-1) translate(-8%,42%) rotate(8deg)}42%{transform:scaleX(-1) translate(-13%,50%) rotate(2deg)}65%{transform:scaleX(-1) translate(15%,28%) rotate(-19deg) scale(1.08)}100%{transform:scaleX(-1) rotate(23deg)} }
 @keyframes enemyBodyForearm { 0%{transform:rotate(-72deg)}42%{transform:rotate(-86deg)}65%{transform:translate(30%,38%) rotate(-12deg) scale(2.25,1.45)}100%{transform:rotate(-64deg)} }
 @keyframes stunned { from{margin-left:-.7%}to{margin-left:.7%} }
+@keyframes stunnedBreathFrame { 0%,48%{opacity:0}49%,100%{opacity:1} }
 @keyframes mohawkStumbleBack { 0%{transform:translateX(-50%) scale(1)}30%{transform:translateX(-42%) translateY(-2%) rotate(8deg) scale(.94)}62%{transform:translateX(-56%) translateY(1%) rotate(-6deg) scale(.86)}100%{transform:translateX(-50%) translateY(2%) rotate(2deg) scale(.9)} }
 @keyframes mohawkKneeSettle { from{transform:translateX(-50%) translateY(calc(var(--knee-y) - 9%)) rotate(4deg) scale(var(--knee-entry-scale));opacity:.35}55%{transform:translateX(-53%) translateY(calc(var(--knee-y) + 2%)) rotate(-2deg) scale(var(--knee-bounce-scale));opacity:1}to{transform:translateX(-50%) translateY(var(--knee-y)) scale(var(--knee-scale));opacity:1} }
 @keyframes mohawkKneeBreathing { from{translate:0 0;scale:1 1}to{translate:0 1.1%;scale:1.008 .988;filter:brightness(.94) saturate(.9)} }

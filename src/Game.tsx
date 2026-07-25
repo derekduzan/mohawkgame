@@ -71,7 +71,7 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.56.0";
+const GAME_VERSION = "0.57.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -85,6 +85,7 @@ const POSE_ASSETS = [
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
+  asset("/opponent-stunned.webp"), asset("/opponent-stunned-breath.webp"),
   asset("/opponent-knee-breathing.webp"), asset("/opponent-knee-rising.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
@@ -1193,8 +1194,14 @@ export default function Home() {
         if (matchRef.current !== "fighting") return;
         const rage = enemyHealthRef.current <= 35;
         const currentFightPhase = Math.min(enemyKnockdownsRef.current, 3);
-        const postHitGuardChance = currentFightPhase === 1 ? .46 : currentFightPhase === 0 ? .1 : rage ? .24 : .15;
-        if (Math.random() < postHitGuardChance) {
+        const stillWinded = performance.now() < enemyWindedUntilRef.current;
+        const postHitGuardChance = stillWinded ? 0 : currentFightPhase === 1 ? .46 : currentFightPhase === 0 ? .1 : rage ? .24 : .15;
+        // A winded Mohawk can still recoil from every clean punch, but he
+        // always settles back into the stunned pose and cannot guard or fire
+        // back until the full stun timer has expired.
+        if (stillWinded) {
+          setEnemyPoseSafe("stunned");
+        } else if (Math.random() < postHitGuardChance) {
           setEnemyPoseSafe("guard");
           window.setTimeout(() => {
             if (matchRef.current === "fighting" && poseRef.current === "guard") setEnemyPoseSafe("idle");
@@ -1490,6 +1497,8 @@ export default function Home() {
                       ? asset("/opponent-uppercut.webp")
                       : enemyPose === "taunt"
                         ? asset("/opponent-taunt.webp")
+                        : enemyPose === "stunned"
+                          ? asset("/opponent-stunned.webp")
                         : enemyPose === "stumble-back"
                           ? asset("/opponent-hit-cross.webp")
                           : enemyPose === "rising" || enemyPose === "failed-rise"
@@ -1569,6 +1578,9 @@ export default function Home() {
         <div className={`opponent-stage pose-${enemyPose} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
           <div className="opponent-shadow" aria-hidden="true" />
           <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
+          {enemyPose === "stunned" && (
+            <img className="opponent-pose-art stunned-breath-frame" src={asset("/opponent-stunned-breath.webp")} alt="" aria-hidden="true" draggable={false} />
+          )}
           <div className="damage-glow" aria-hidden="true" />
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>
