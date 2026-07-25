@@ -70,7 +70,8 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.59.0";
+const PLAYER_KNOCKDOWN_SCORE_PENALTY = 5000;
+const GAME_VERSION = "0.60.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -538,6 +539,10 @@ export default function Home() {
       setEnemyPoseSafe("idle");
       const knockdowns = playerKnockdownsRef.current + 1;
       playerKnockdownsRef.current = knockdowns;
+      // Going down must matter even if the player gets back up and wins.
+      // Apply the penalty immediately so the live score and final result
+      // always agree.
+      setScore((value) => Math.max(0, value - PLAYER_KNOCKDOWN_SCORE_PENALTY));
       // The first recovery is demanding, and every later knockdown requires
       // five additional taps: 15, 20, 25, 30, and so on.
       requiredGetUpTapsRef.current = 10 + knockdowns * 5;
@@ -1712,7 +1717,7 @@ export default function Home() {
                   )}
                   <div className="result-stats">
                     <span><em>SCORE</em><strong>{score.toLocaleString()}</strong></span>
-                    <span><em>KNOCKDOWNS</em><strong>{playerKnockdowns}</strong></span>
+                    <span><em>PLAYER KNOCKDOWNS</em><strong>{playerKnockdowns}</strong></span>
                     <span><em>TIME</em><strong>{timerText}</strong></span>
                   </div>
                   {showRematch ? (
@@ -1744,7 +1749,7 @@ export default function Home() {
                   <h3>GRIT CITY CHAMPION</h3>
                   <div className="result-stats">
                     <span><em>SCORE</em><strong>{score.toLocaleString()}</strong></span>
-                    <span><em>KNEE COUNTS</em><strong>{enemyKnockdowns}</strong></span>
+                    <span><em>PLAYER KNOCKDOWNS</em><strong>{playerKnockdowns}</strong></span>
                     <span><em>TIME</em><strong>{timerText}</strong></span>
                   </div>
                   {showRematch ? (
