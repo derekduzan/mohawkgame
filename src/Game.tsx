@@ -70,15 +70,14 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.58.0";
+const GAME_VERSION = "0.59.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
-  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-windup.webp"), asset("/opponent-overhand-contact.webp"),
-  asset("/opponent-haymaker-right-windup.webp"), asset("/opponent-haymaker-right-contact.webp"),
-  asset("/opponent-haymaker-left-windup.webp"), asset("/opponent-haymaker-left-contact.webp"),
+  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-contact.webp"),
+  asset("/opponent-haymaker-right-contact.webp"), asset("/opponent-haymaker-left-contact.webp"),
   asset("/opponent-jab-contact.webp"), asset("/opponent-cross-contact.webp"),
   asset("/opponent-body-contact.webp"), asset("/opponent-uppercut-contact.webp"),
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
@@ -1055,7 +1054,7 @@ export default function Home() {
       setEnemyHealth(nextHealth);
       // Any clean player hit owns the next opponent pose. Invalidate every
       // pending windup/contact callback from the interrupted enemy attack so
-      // it cannot restore an extended fist over the stun or hit reaction.
+      // it cannot restore an extended fist over the current hit reaction.
       if (!enemyIsGuarding) {
         ++enemyAttackActionRef.current;
         window.setTimeout(() => enemyQueueAttackRef.current(), 0);
@@ -1420,11 +1419,11 @@ export default function Home() {
             : enemyPose === "attack-body"
               ? asset("/opponent-body-punch.webp")
               : enemyPose === "windup-heavy" || enemyPose === "windup-heavy-left"
-                ? asset("/opponent-overhand-windup.webp")
+                ? asset("/opponent-guard.webp")
                 : enemyPose === "windup-haymaker-right"
-                  ? asset("/opponent-haymaker-right-windup.webp")
+                  ? asset("/opponent-guard.webp")
                   : enemyPose === "windup-haymaker-left"
-                    ? asset("/opponent-haymaker-left-windup.webp")
+                    ? asset("/opponent-guard.webp")
                 : enemyPose === "attack-heavy" || enemyPose === "attack-heavy-left"
                   ? asset("/opponent-overhand-contact.webp")
                   : enemyPose === "attack-haymaker-right" || enemyPose === "attack-haymaker-right-contact"
