@@ -39,7 +39,6 @@ type FighterPose =
   | "hit-left"
   | "hit-right"
   | "hit-body"
-  | "stunned"
   | "stumble-back"
   | "rising"
   | "failed-rise"
@@ -71,13 +70,13 @@ type KneeDepth = "near" | "far";
 
 const MAX_HEALTH = 100;
 const ROUND_TIME = 90;
-const GAME_VERSION = "0.57.0";
+const GAME_VERSION = "0.58.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
-  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-windup.webp"), asset("/opponent-overhand-right.webp"), asset("/opponent-overhand-contact.webp"),
+  asset("/opponent-overhand-impact.webp"), asset("/opponent-overhand-windup.webp"), asset("/opponent-overhand-contact.webp"),
   asset("/opponent-haymaker-right-windup.webp"), asset("/opponent-haymaker-right-contact.webp"),
   asset("/opponent-haymaker-left-windup.webp"), asset("/opponent-haymaker-left-contact.webp"),
   asset("/opponent-jab-contact.webp"), asset("/opponent-cross-contact.webp"),
@@ -85,7 +84,6 @@ const POSE_ASSETS = [
   asset("/opponent-body-windup.webp"), asset("/opponent-body-punch.webp"),
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
-  asset("/opponent-stunned.webp"), asset("/opponent-stunned-breath.webp"),
   asset("/opponent-knee-breathing.webp"), asset("/opponent-knee-rising.webp"),
   asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left.webp"), asset("/player-guard-right.webp"), asset("/player-jab-left-arm.webp"),
@@ -172,8 +170,6 @@ export default function Home() {
   const jabChargeTimerRef = useRef(0);
   const jabChargingRef = useRef(false);
   const specialRef = useRef(0);
-  const enemyStunHitsRef = useRef(0);
-  const enemyWindedUntilRef = useRef(0);
   const enemyAttackActionRef = useRef(0);
   const enemyQueueAttackRef = useRef<() => void>(() => undefined);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -417,8 +413,6 @@ export default function Home() {
     setSpecial(0);
     setOverhandImpact(false);
     setPaused(false);
-    enemyStunHitsRef.current = 0;
-    enemyWindedUntilRef.current = 0;
     ++enemyAttackActionRef.current;
     setEnemyPoseSafe("idle");
     setPlayerPose("idle");
@@ -785,10 +779,6 @@ export default function Home() {
     ) => {
       if (cancelled || matchRef.current !== "fighting") return;
       if (sequenceId !== enemyAttackActionRef.current) return;
-      if (performance.now() < enemyWindedUntilRef.current) {
-        later(() => throwStrike(combination, index, style, sequenceId), 240);
-        return;
-      }
       const move = combination[index];
       const rage = enemyHealthRef.current <= 35;
       const firstPunch = index === 0;
@@ -834,19 +824,24 @@ export default function Home() {
 
       later(() => {
         if (matchRef.current !== "fighting" || sequenceId !== enemyAttackActionRef.current) return;
-        setEnemyPoseSafe(attackPose);
+        // The overhand is deliberately a two-frame attack: the retreating
+        // cock-back, followed directly by the fist-at-camera impact frame.
+        const visibleAttackPose = style === "heavy" ? contactPose : attackPose;
+        setEnemyPoseSafe(visibleAttackPose);
         // Every punch gets a dedicated foreshortened contact frame. Do not
         // show it when the player has already completed the correct slip.
-        later(() => {
-          if (matchRef.current !== "fighting" || sequenceId !== enemyAttackActionRef.current || poseRef.current !== attackPose) return;
-          const alreadyDodging = dodgeRef.current !== null &&
-            (directionalHaymaker
-              ? (move === "right" && dodgeRef.current === "left") || (move === "left" && dodgeRef.current === "right")
-              : style === "heavy" || move === "body" || move === "uppercut" ||
-                (move === "left" && dodgeRef.current === "right") ||
-                (move === "right" && dodgeRef.current === "left"));
-          if (!alreadyDodging) setEnemyPoseSafe(contactPose);
-        }, Math.max(35, resolutionDelay - contactLead));
+        if (style !== "heavy") {
+          later(() => {
+            if (matchRef.current !== "fighting" || sequenceId !== enemyAttackActionRef.current || poseRef.current !== attackPose) return;
+            const alreadyDodging = dodgeRef.current !== null &&
+              (directionalHaymaker
+                ? (move === "right" && dodgeRef.current === "left") || (move === "left" && dodgeRef.current === "right")
+                : move === "body" || move === "uppercut" ||
+                  (move === "left" && dodgeRef.current === "right") ||
+                  (move === "right" && dodgeRef.current === "left"));
+            if (!alreadyDodging) setEnemyPoseSafe(contactPose);
+          }, Math.max(35, resolutionDelay - contactLead));
+        }
         // Let the committed punch frame render before resolving contact.
         // This keeps the visual impact and damage event in the same sequence.
         later(() => {
@@ -854,7 +849,7 @@ export default function Home() {
           // A strike may only resolve while its matching punch frame is still
           // on screen. If the player interrupted Esteban during this window,
           // cancel the contact instead of applying invisible damage.
-          if (poseRef.current !== attackPose && poseRef.current !== contactPose) {
+          if (poseRef.current !== visibleAttackPose && poseRef.current !== contactPose) {
             queueAttack();
             return;
           }
@@ -868,11 +863,11 @@ export default function Home() {
           if (dodged) {
             counterReadyUntilRef.current = performance.now() + (powerShot ? 980 : 720);
             setCallout(directionalHaymaker ? `${move === "right" ? "LEFT" : "RIGHT"} SLIP — HAYMAKER PUNISH!` : style === "heavy" ? "OVERHAND MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
-            setEnemyPoseSafe("stunned");
+            setEnemyPoseSafe("stumble-back");
             setScore((value) => value + 250);
             playSound("dodge");
             later(() => {
-              if (matchRef.current === "fighting" && poseRef.current === "stunned") {
+              if (matchRef.current === "fighting" && poseRef.current === "stumble-back") {
                 setEnemyPoseSafe("idle");
                 setCallout(enemyHealthRef.current <= 35 ? "MOHAWK IS RAGING" : "STAY SHARP");
               }
@@ -928,17 +923,6 @@ export default function Home() {
 
     const beginAttack = () => {
       if (cancelled || matchRef.current !== "fighting") return;
-      if (performance.now() < enemyWindedUntilRef.current) {
-        later(beginAttack, 240);
-        return;
-      }
-      // A counter can leave the fighter in the stunned pose after the hit
-      // reaction completes. Never keep re-queuing against that pose forever:
-      // visibly recover, then resume offense from a clean idle state.
-      if (poseRef.current === "stunned") {
-        later(beginAttack, 240);
-        return;
-      }
       if (poseRef.current.startsWith("hit")) {
         queueAttack();
         return;
@@ -1034,8 +1018,7 @@ export default function Home() {
     }
     setPlayerPose(kind === "left" ? "jab-left" : kind === "left-uppercut" ? "left-uppercut" : kind === "power-jab" ? "power-jab" : kind === "right" ? "cross-right" : kind === "right-hook" ? "right-hook" : kind === "left-haymaker" ? "left-haymaker" : kind === "right-haymaker" ? "right-haymaker" : kind === "body" ? "body-hook" : kind === "uppercut" ? "special-uppercut" : "haymaker");
 
-    // Mohawk reads obvious offense and actively closes his guard. A charged
-    // haymaker is much easier for him to see coming unless he is stunned.
+    // Mohawk reads obvious offense and actively closes his guard.
     const canReadPunch = poseRef.current === "idle" || poseRef.current === "taunt";
     const fightPhase = Math.min(enemyKnockdownsRef.current, 3);
     const phaseGuardBonus = fightPhase === 1 ? .24 : fightPhase === 0 ? -.04 : 0;
@@ -1055,7 +1038,7 @@ export default function Home() {
         playSound("dodge");
         return;
       }
-      const enemyIsOpen = poseRef.current === "stunned" || poseRef.current.startsWith("windup");
+      const enemyIsOpen = poseRef.current === "stumble-back" || poseRef.current.startsWith("windup");
       const enemyIsGuarding = poseRef.current === "guard";
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
       const base = kind === "left" ? 4 : kind === "left-uppercut" ? 10 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "right-hook" ? 12 : kind === "body" ? 6 : kind === "uppercut" ? 72 : isHaymaker ? 43 : 43;
@@ -1078,17 +1061,7 @@ export default function Home() {
         window.setTimeout(() => enemyQueueAttackRef.current(), 0);
       }
       setCombo((value) => enemyIsGuarding ? 0 : value + 1);
-      enemyStunHitsRef.current = enemyIsGuarding ? 0 : enemyStunHitsRef.current + 1;
-      const specialUppercutStun = kind === "uppercut" && !enemyIsGuarding && nextHealth > 0;
-      const windedStunMs = specialUppercutStun ? 5000 + Math.floor(Math.random() * 3001) : 1650;
-      const triggersWindedStun = !enemyIsGuarding && nextHealth > 0 && (specialUppercutStun || enemyStunHitsRef.current >= 8);
-      const triggersStumble = !enemyIsGuarding && !triggersWindedStun && nextHealth > 0 && nextHealth <= 35 && Math.random() < (nextHealth <= 15 ? .38 : .2);
-      if (triggersWindedStun) {
-        enemyStunHitsRef.current = 0;
-        enemyWindedUntilRef.current = performance.now() + windedStunMs;
-      } else if (triggersStumble) {
-        enemyWindedUntilRef.current = performance.now() + 720;
-      }
+      const triggersStumble = !enemyIsGuarding && nextHealth > 0 && nextHealth <= 35 && Math.random() < (nextHealth <= 15 ? .38 : .2);
       if (!enemyIsGuarding) {
         const specialGain = kind === "left" ? 3 : kind === "left-uppercut" ? 4 : kind === "power-jab" ? 6 : kind === "right" ? 4 : kind === "right-hook" ? 5 : kind === "body" ? 5 : isHaymaker ? 7 : 0;
         const nextSpecial = clamp(specialRef.current + specialGain + (slipCounter ? 4 : 0));
@@ -1107,23 +1080,16 @@ export default function Home() {
       );
       setHitStop(true);
       setScreenShake(true);
-      setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersWindedStun ? "stunned" : triggersStumble ? "stumble-back" : kind === "left" || kind === "left-uppercut" || kind === "power-jab" || kind === "left-haymaker" ? "hit-right" : kind === "right" || kind === "right-hook" || kind === "right-haymaker" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
+      setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersStumble ? "stumble-back" : kind === "left" || kind === "left-uppercut" || kind === "power-jab" || kind === "left-haymaker" ? "hit-right" : kind === "right" || kind === "right-hook" || kind === "right-haymaker" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
       playSound("punch");
-      setCallout(enemyIsGuarding ? isHaymaker || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : specialUppercutStun ? "SPECIAL UPPERCUT — MOHAWK IS ROCKED!" : triggersWindedStun ? "MOHAWK IS WINDED!" : triggersStumble ? "MOHAWK STUMBLES BACK!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "left-uppercut" ? "LEFT UPPERCUT!" : kind === "right-hook" ? "RIGHT HOOK!" : isHaymaker ? `${kind === "left-haymaker" ? "LEFT" : "RIGHT"} HAYMAKER!` : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
+      setCallout(enemyIsGuarding ? isHaymaker || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : triggersStumble ? "MOHAWK STUMBLES BACK!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "left-uppercut" ? "LEFT UPPERCUT!" : kind === "right-hook" ? "RIGHT HOOK!" : isHaymaker ? `${kind === "left-haymaker" ? "LEFT" : "RIGHT"} HAYMAKER!` : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
       const heavyImpact = slipCounter || isHaymaker || kind === "uppercut" || kind === "power-jab";
       window.setTimeout(() => setHitStop(false), heavyImpact ? 88 : 52);
       window.setTimeout(() => setScreenShake(false), heavyImpact ? 135 : 82);
       window.setTimeout(() => setImpact(null), heavyImpact ? 180 : 120);
-      if (triggersWindedStun) {
+      if (triggersStumble) {
         window.setTimeout(() => {
-          if (matchRef.current === "fighting" && performance.now() >= enemyWindedUntilRef.current) {
-            setEnemyPoseSafe("idle");
-            setCallout("MOHAWK RECOVERS");
-          }
-        }, windedStunMs);
-      } else if (triggersStumble) {
-        window.setTimeout(() => {
-          if (matchRef.current === "fighting" && performance.now() >= enemyWindedUntilRef.current) setEnemyPoseSafe("idle");
+          if (matchRef.current === "fighting" && poseRef.current === "stumble-back") setEnemyPoseSafe("idle");
         }, 740);
       }
 
@@ -1132,9 +1098,9 @@ export default function Home() {
         // answers immediately with a damaging heavy counter animation.
         window.setTimeout(() => {
           if (matchRef.current !== "fighting") return;
-          setEnemyPoseSafe("attack-heavy");
+          setEnemyPoseSafe("attack-heavy-contact");
           window.setTimeout(() => {
-            if (matchRef.current !== "fighting" || poseRef.current !== "attack-heavy") return;
+            if (matchRef.current !== "fighting" || poseRef.current !== "attack-heavy-contact") return;
             setImpact("player");
             setScreenShake(true);
             takePlayerDamage(29);
@@ -1143,7 +1109,7 @@ export default function Home() {
             window.setTimeout(() => setImpact(null), 160);
             window.setTimeout(() => setScreenShake(false), 180);
             window.setTimeout(() => {
-              if (matchRef.current === "fighting" && poseRef.current === "attack-heavy") setEnemyPoseSafe("idle");
+              if (matchRef.current === "fighting" && poseRef.current === "attack-heavy-contact") setEnemyPoseSafe("idle");
             }, 260);
           }, 125);
         }, 110);
@@ -1194,30 +1160,14 @@ export default function Home() {
         if (matchRef.current !== "fighting") return;
         const rage = enemyHealthRef.current <= 35;
         const currentFightPhase = Math.min(enemyKnockdownsRef.current, 3);
-        const stillWinded = performance.now() < enemyWindedUntilRef.current;
-        const postHitGuardChance = stillWinded ? 0 : currentFightPhase === 1 ? .46 : currentFightPhase === 0 ? .1 : rage ? .24 : .15;
-        // A winded Mohawk can still recoil from every clean punch, but he
-        // always settles back into the stunned pose and cannot guard or fire
-        // back until the full stun timer has expired.
-        if (stillWinded) {
-          setEnemyPoseSafe("stunned");
-        } else if (Math.random() < postHitGuardChance) {
+        const postHitGuardChance = currentFightPhase === 1 ? .46 : currentFightPhase === 0 ? .1 : rage ? .24 : .15;
+        if (Math.random() < postHitGuardChance) {
           setEnemyPoseSafe("guard");
           window.setTimeout(() => {
             if (matchRef.current === "fighting" && poseRef.current === "guard") setEnemyPoseSafe("idle");
           }, rage ? 380 : 560);
         } else if (poseRef.current.startsWith("hit")) {
-          if (enemyIsOpen) {
-            setEnemyPoseSafe("stunned");
-            // Counter-stun is a short reward window, not a permanent AI state.
-            window.setTimeout(() => {
-              if (matchRef.current === "fighting" && poseRef.current === "stunned") {
-                setEnemyPoseSafe("idle");
-              }
-            }, 360);
-          } else {
-            setEnemyPoseSafe("idle");
-          }
+          setEnemyPoseSafe("idle");
         }
       }, enemyIsOpen ? 220 : kind === "left" ? 145 : kind === "left-uppercut" ? 210 : kind === "power-jab" ? 210 : kind === "right" ? 210 : kind === "right-hook" ? 230 : isHaymaker || kind === "uppercut" ? 300 : 220);
     }, kind === "left" ? 72 : kind === "left-uppercut" ? 105 : kind === "power-jab" ? 112 : kind === "right" ? 98 : kind === "right-hook" ? 115 : isHaymaker ? 155 : kind === "uppercut" ? 145 : 105);
@@ -1476,7 +1426,7 @@ export default function Home() {
                   : enemyPose === "windup-haymaker-left"
                     ? asset("/opponent-haymaker-left-windup.webp")
                 : enemyPose === "attack-heavy" || enemyPose === "attack-heavy-left"
-                  ? asset("/opponent-overhand-right.webp")
+                  ? asset("/opponent-overhand-contact.webp")
                   : enemyPose === "attack-haymaker-right" || enemyPose === "attack-haymaker-right-contact"
                     ? asset("/opponent-haymaker-right-contact.webp")
                     : enemyPose === "attack-haymaker-left" || enemyPose === "attack-haymaker-left-contact"
@@ -1497,8 +1447,6 @@ export default function Home() {
                       ? asset("/opponent-uppercut.webp")
                       : enemyPose === "taunt"
                         ? asset("/opponent-taunt.webp")
-                        : enemyPose === "stunned"
-                          ? asset("/opponent-stunned.webp")
                         : enemyPose === "stumble-back"
                           ? asset("/opponent-hit-cross.webp")
                           : enemyPose === "rising" || enemyPose === "failed-rise"
@@ -1575,12 +1523,9 @@ export default function Home() {
           </div>
         )}
 
+        <div className={`opponent-shadow ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `shadow-knee-${kneeDepth}` : ""}`} aria-hidden="true" />
         <div className={`opponent-stage pose-${enemyPose} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
-          <div className="opponent-shadow" aria-hidden="true" />
           <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
-          {enemyPose === "stunned" && (
-            <img className="opponent-pose-art stunned-breath-frame" src={asset("/opponent-stunned-breath.webp")} alt="" aria-hidden="true" draggable={false} />
-          )}
           <div className="damage-glow" aria-hidden="true" />
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>

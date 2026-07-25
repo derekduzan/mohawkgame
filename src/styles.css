@@ -222,7 +222,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-attack-body .enemy-limb-right { z-index:12; }
 .pose-attack-body .enemy-limb-right .enemy-fist-art { animation:incomingBodyFist .38s cubic-bezier(.12,.75,.18,1); }
 .pose-attack-body .enemy-limb-right .enemy-forearm-segment { animation:incomingBodyForearm .38s cubic-bezier(.12,.75,.18,1); }
-.opponent-shadow { position:absolute; left:20%; right:20%; bottom:-1%; height:7%; border-radius:50%; background:#000; filter:blur(11px); opacity:.9; }
+.opponent-shadow { position:absolute; z-index:5; left:50%; bottom:7%; width:min(32vw,480px); height:3.5%; transform:translateX(-50%); border-radius:50%; background:#000; filter:blur(13px); opacity:.52; pointer-events:none; }
+.opponent-shadow.shadow-knee-near { bottom:3%; width:min(35vw,520px); }
+.opponent-shadow.shadow-knee-far { bottom:8%; width:min(24vw,360px); opacity:.42; }
 .damage-glow { position:absolute; z-index:3; inset:8% 18% 8%; opacity:0; background:radial-gradient(circle at 50% 35%,#fff 0 3%,#ff2818 4%,transparent 33%); mix-blend-mode:screen; pointer-events:none; }
 .rage-aura { position:absolute; z-index:1; inset:8% 6% 4%; background:radial-gradient(ellipse,#f21d121c 0 46%,transparent 68%); filter:blur(10px); animation:rageAura .4s ease-in-out infinite alternate; }
 .is-raging .opponent-torso { filter: drop-shadow(0 0 12px rgba(255,44,22,.6)) drop-shadow(0 14px 14px #000) saturate(1.2) contrast(1.1); }
@@ -262,13 +264,12 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pose-hit-right { transform: translateX(-44%) rotate(9deg) scale(1.03); }
 .pose-hit-body { transform: translateX(-50%) translateY(4%) scale(1.03,.99); }
 .pose-hit-left .damage-glow,.pose-hit-right .damage-glow,.pose-hit-body .damage-glow { opacity:.7; }
-.pose-stunned { transform: translateX(-50%) translateY(1%) rotate(1deg) scale(.99); filter:brightness(1.06); animation:stunned .42s ease-in-out infinite alternate; }
-.stunned-breath-frame { opacity:0; animation:stunnedBreathFrame 1.4s steps(1,end) infinite; }
 .pose-stumble-back { animation:mohawkStumbleBack .72s cubic-bezier(.12,.74,.18,1) both; filter:brightness(1.06); }
 .knee-near { --knee-y:15%; --knee-scale:1.04; --knee-entry-scale:.96; --knee-bounce-scale:1.065; }
 .knee-far { --knee-y:22%; --knee-scale:.74; --knee-entry-scale:.68; --knee-bounce-scale:.76; }
 .pose-knockdown-knee { animation:mohawkKneeSettle .46s cubic-bezier(.18,.76,.22,1) both,mohawkKneeBreathing .8s .46s ease-in-out infinite alternate; filter:brightness(.88) saturate(.92); }
-.pose-rising,.pose-failed-rise { transform:translateX(-50%) translateY(calc(var(--knee-y) - 7%)) scale(var(--knee-scale)); animation:none; transition:none; }
+.pose-rising,.pose-failed-rise { transform:translateX(-50%) translateY(var(--knee-y)) scale(var(--knee-scale)); animation:none; transition:none; }
+.pose-rising .opponent-pose-art,.pose-failed-rise .opponent-pose-art { transform:translateY(8.2%); }
 .pose-returning { animation:mohawkReturnToRange .48s cubic-bezier(.12,.78,.18,1) both; }
 .pose-guard { transform: translateX(-50%) translateY(-1%) scale(1.04); filter:brightness(.78); }
 .pose-guard::before { content:""; position:absolute; z-index:5; left:50%; top:27%; width:42%; aspect-ratio:1.25; transform:translateX(-50%); border:4px solid rgba(255,190,49,.8); border-top-color:rgba(255,242,176,.95); border-bottom-color:transparent; border-radius:50%; filter:drop-shadow(0 0 9px rgba(255,170,24,.8)); pointer-events:none; animation:mohawkGuardFlash .42s ease-out both; }
@@ -546,8 +547,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes enemyFistRush { 0%,32%{filter:blur(0)}58%{filter:blur(.2px)}100%{filter:blur(0)} }
 @keyframes enemyBodyShoulder { 0%{transform:scaleX(-1) translate(-8%,42%) rotate(8deg)}42%{transform:scaleX(-1) translate(-13%,50%) rotate(2deg)}65%{transform:scaleX(-1) translate(15%,28%) rotate(-19deg) scale(1.08)}100%{transform:scaleX(-1) rotate(23deg)} }
 @keyframes enemyBodyForearm { 0%{transform:rotate(-72deg)}42%{transform:rotate(-86deg)}65%{transform:translate(30%,38%) rotate(-12deg) scale(2.25,1.45)}100%{transform:rotate(-64deg)} }
-@keyframes stunned { from{margin-left:-.7%}to{margin-left:.7%} }
-@keyframes stunnedBreathFrame { 0%,48%{opacity:0}49%,100%{opacity:1} }
 @keyframes mohawkStumbleBack { 0%{transform:translateX(-50%) scale(1)}30%{transform:translateX(-42%) translateY(-2%) rotate(8deg) scale(.94)}62%{transform:translateX(-56%) translateY(1%) rotate(-6deg) scale(.86)}100%{transform:translateX(-50%) translateY(2%) rotate(2deg) scale(.9)} }
 @keyframes mohawkKneeSettle { from{transform:translateX(-50%) translateY(calc(var(--knee-y) - 9%)) rotate(4deg) scale(var(--knee-entry-scale));opacity:.35}55%{transform:translateX(-53%) translateY(calc(var(--knee-y) + 2%)) rotate(-2deg) scale(var(--knee-bounce-scale));opacity:1}to{transform:translateX(-50%) translateY(var(--knee-y)) scale(var(--knee-scale));opacity:1} }
 @keyframes mohawkKneeBreathing { from{translate:0 0;scale:1 1}to{translate:0 1.1%;scale:1.008 .988;filter:brightness(.94) saturate(.9)} }
