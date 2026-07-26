@@ -67,7 +67,8 @@ type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
 type MohawkFinisherFrame =
   | "walk" | "emerge" | "turn" | "ground-strike" | "bite" | "elbow-bite"
-  | "chair-slide" | "chair-charge" | "chair-impact" | "chair-aftermath";
+  | "chair-slide" | "chair-charge" | "chair-impact" | "chair-aftermath"
+  | "brotality-slide" | "brotality-charge" | "brotality-dropkick" | "brotality-victory";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
 type PunchStats = {
@@ -112,7 +113,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.85.3";
+const GAME_VERSION = "0.85.4";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -147,6 +148,8 @@ const POSE_ASSETS = [
   asset("/mohawk-finisher-elbow-bite.png"),
   asset("/mohawk-finisher-chair-slide.png"), asset("/mohawk-finisher-chair-charge.png"),
   asset("/mohawk-finisher-chair-impact.png"), asset("/mohawk-finisher-chair-aftermath.png"),
+  asset("/mohawk-finisher-brotality-slide.webp"), asset("/mohawk-finisher-brotality-charge.webp"),
+  asset("/mohawk-finisher-brotality-dropkick.webp"), asset("/mohawk-finisher-brotality-victory.webp"),
   asset("/ponch-crowd-shout.png"),
 ];
 
@@ -219,6 +222,7 @@ export default function Home() {
   const [endlessFight, setEndlessFight] = useState(false);
   const [aura, setAura] = useState(false);
   const [finisherEnabled, setFinisherEnabled] = useState(false);
+  const [brotalityEnabled, setBrotalityEnabled] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
@@ -277,6 +281,7 @@ export default function Home() {
   const endlessFightRef = useRef(false);
   const auraRef = useRef(false);
   const finisherEnabledRef = useRef(false);
+  const brotalityEnabledRef = useRef(false);
   const secretBufferRef = useRef("");
   const secretConfirmationTimerRef = useRef(0);
   const finisherRunningRef = useRef(false);
@@ -299,6 +304,7 @@ export default function Home() {
   useEffect(() => void (endlessFightRef.current = endlessFight), [endlessFight]);
   useEffect(() => void (auraRef.current = aura), [aura]);
   useEffect(() => void (finisherEnabledRef.current = finisherEnabled), [finisherEnabled]);
+  useEffect(() => void (brotalityEnabledRef.current = brotalityEnabled), [brotalityEnabled]);
 
   const activateSecretCode = useCallback((rawCode: string) => {
     const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -324,7 +330,11 @@ export default function Home() {
     } else if (code.endsWith("FATALITY")) {
       finisherEnabledRef.current = true;
       setFinisherEnabled(true);
-      confirmation = "FINISHER MODE ACTIVATED";
+      confirmation = "FATALITY MODE ACTIVATED";
+    } else if (code.endsWith("BROTALITY")) {
+      brotalityEnabledRef.current = true;
+      setBrotalityEnabled(true);
+      confirmation = "BROTALITY MODE ACTIVATED";
     }
     if (!confirmation) return false;
     setSecretCode("");
@@ -552,6 +562,7 @@ export default function Home() {
         || endlessFightRef.current
         || auraRef.current
         || finisherEnabledRef.current
+        || brotalityEnabledRef.current
       );
       const qualifies = leaderboardEligible
         && (currentBoard.length < 10 || finalScore > currentBoard[currentBoard.length - 1].score);
@@ -670,7 +681,9 @@ export default function Home() {
 
   const startMohawkFinisher = useCallback((reason: ResultReason = "knockout") => {
     if (mohawkFinisherRunningRef.current || matchRef.current === "mohawk-finisher") return;
-    if (!finisherEnabledRef.current) {
+    const fatalityActive = finisherEnabledRef.current;
+    const brotalityActive = brotalityEnabledRef.current;
+    if (!fatalityActive && !brotalityActive) {
       finishMatch("lost", reason);
       return;
     }
@@ -681,9 +694,16 @@ export default function Home() {
     setResultReason(reason);
     setBlocking(false);
     blockingRef.current = false;
-    const chairFinisher = Math.random() < .5;
-    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : "walk");
-    setCallout(chairFinisher ? "WAIT—SOMEBODY'S IN THE RING!" : "MOHAWK WINS!");
+    const category = fatalityActive && brotalityActive
+      ? (Math.random() < .5 ? "fatality" : "brotality")
+      : fatalityActive ? "fatality" : "brotality";
+    const brotalityKind = category === "brotality"
+      ? (Math.random() < .5 ? "chair" : "dropkick")
+      : null;
+    const chairFinisher = brotalityKind === "chair";
+    const dropkickFinisher = brotalityKind === "dropkick";
+    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : dropkickFinisher ? "brotality-slide" : "walk");
+    setCallout(category === "fatality" ? "MOHAWK WINS!" : "WAIT—SOMEBODY'S IN THE RING!");
     playSound(reason === "time" ? "bell" : "hurt");
     if (chairFinisher) {
       window.setTimeout(() => {
@@ -711,6 +731,34 @@ export default function Home() {
         mohawkFinisherRunningRef.current = false;
         finishMatch("lost", reason);
       }, 3300);
+      return;
+    }
+    if (dropkickFinisher) {
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setMohawkFinisherFrame("brotality-charge");
+        setCallout("HE'S CHARGING!");
+      }, 700);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setMohawkFinisherFrame("brotality-dropkick");
+        setCallout("BROTALITY!");
+        setImpact("player");
+        setScreenShake(true);
+        playSound("ko");
+      }, 1400);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setImpact(null);
+        setScreenShake(false);
+        setMohawkFinisherFrame("brotality-victory");
+        setCallout("MOHAWK WINS!");
+      }, 2150);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        mohawkFinisherRunningRef.current = false;
+        finishMatch("lost", reason);
+      }, 3500);
       return;
     }
     window.setTimeout(() => {
@@ -881,7 +929,8 @@ export default function Home() {
       || ironJawRef.current
       || endlessFightRef.current
       || auraRef.current
-      || finisherEnabledRef.current;
+      || finisherEnabledRef.current
+      || brotalityEnabledRef.current;
     if (codesActive || matchRef.current !== "won" || !awaitingInitials || cleanInitials.length !== 3) return;
     const entry: LeaderboardEntry = {
       initials: cleanInitials,
@@ -1897,7 +1946,7 @@ export default function Home() {
   const comboDamageDisplay = combo < 3 ? 1 : Math.min(1.25, 1.05 + (combo - 3) * .025);
   const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
-  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled;
+  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
     ? "RAPID FIRE"
@@ -2172,7 +2221,7 @@ export default function Home() {
         {matchState === "mohawk-finisher" && (
           <div className={`mohawk-finisher-sequence frame-${mohawkFinisherFrame}`} aria-live="assertive">
             <img
-              src={asset(`/mohawk-finisher-${mohawkFinisherFrame}.png`)}
+              src={asset(`/mohawk-finisher-${mohawkFinisherFrame}.${mohawkFinisherFrame.startsWith("brotality-") ? "webp" : "png"}`)}
               alt=""
               draggable={false}
             />
@@ -2271,13 +2320,14 @@ export default function Home() {
                 </form>
               )}
               {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
-              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled) && (
+              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled) && (
                 <div className="active-secrets" aria-label="Active secret powers">
                   {flamingHands && <span>🔥 FLAMING HANDS</span>}
                   {ironJaw && <span>◆ IRON JAW</span>}
                   {endlessFight && <span>∞ TIMELESS</span>}
                   {aura && <span>◉ AURA</span>}
-                  {finisherEnabled && <span>☠ FINISHER</span>}
+                  {finisherEnabled && <span>☠ FATALITY</span>}
+                  {brotalityEnabled && <span>★ BROTALITY</span>}
                 </div>
               )}
               <small>{endlessFight ? "1 ROUND · INFINITE TIME · FIGHT FOREVER" : "1 ROUND · 90 SECONDS · SURVIVE THE STORM"}</small>

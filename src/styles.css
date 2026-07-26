@@ -345,6 +345,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
 .mohawk-finisher-sequence.frame-chair-aftermath img { width:min(88vw,1080px); animation:chairAftermath .48s cubic-bezier(.12,.72,.2,1) both; }
+.mohawk-finisher-sequence.frame-brotality-slide img { width:min(74vw,850px); animation:chairSlide .55s cubic-bezier(.08,.82,.16,1) both; }
+.mohawk-finisher-sequence.frame-brotality-charge img { width:min(82vw,940px); animation:chairCharge .52s cubic-bezier(.08,.82,.16,1) both; }
+.mohawk-finisher-sequence.frame-brotality-dropkick img { width:min(126vw,1500px); height:110%; bottom:-5%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
+.mohawk-finisher-sequence.frame-brotality-victory img { width:min(78vw,920px); height:94%; animation:mohawkFinisherEnter .46s cubic-bezier(.1,.78,.18,1) both; }
 .finish-him-lockup { position:absolute; z-index:3; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:clamp(1rem,5vh,4rem); text-align:center; pointer-events:auto; }
 .finish-him-lockup strong { color:#f7c620; font:1000 clamp(3.2rem,10vw,9rem)/.86 "Arial Black",sans-serif; letter-spacing:-.06em; -webkit-text-stroke:clamp(2px,.35vw,6px) #1a0704; text-shadow:clamp(5px,.75vw,12px) clamp(7px,1vw,16px) 0 #c51810,0 0 26px rgba(255,44,16,.65); animation:finishHimPulse .42s ease-in-out infinite alternate; }
 .finish-him-lockup span { margin-top:.9rem; padding:.55rem 1rem; color:#fff5de; background:rgba(8,4,3,.8); border-left:4px solid #f0b927; font:900 clamp(.72rem,1.4vw,1.05rem)/1.15 system-ui,sans-serif; letter-spacing:.12em; }
@@ -901,6 +905,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:175vw; max-width:none; height:105%; }
   .mohawk-finisher-sequence.frame-chair-slide img,.mohawk-finisher-sequence.frame-chair-charge img,.mohawk-finisher-sequence.frame-chair-aftermath img { width:145vw; max-width:none; height:92%; }
   .mohawk-finisher-sequence.frame-chair-impact img { width:190vw; max-width:none; height:108%; }
+  .mohawk-finisher-sequence.frame-brotality-slide img,.mohawk-finisher-sequence.frame-brotality-charge img,.mohawk-finisher-sequence.frame-brotality-victory img { width:145vw; max-width:none; height:92%; }
+  .mohawk-finisher-sequence.frame-brotality-dropkick img { width:190vw; max-width:none; height:108%; }
   .finish-him-lockup { padding-top:5vh; }
   .finish-him-lockup strong { font-size:14vw; }
   .finish-him-lockup span { margin-top:.45rem; font-size:.55rem; }
