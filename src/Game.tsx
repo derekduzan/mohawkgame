@@ -112,7 +112,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.84.0";
+const GAME_VERSION = "0.85.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -207,6 +207,7 @@ export default function Home() {
   const [special, setSpecial] = useState(0);
   const [kneeDepth, setKneeDepth] = useState<KneeDepth>("near");
   const [punchStats, setPunchStats] = useState<PunchStats>(EMPTY_PUNCH_STATS);
+  const [comboScoreBonus, setComboScoreBonus] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [initials, setInitials] = useState("");
   const [awaitingInitials, setAwaitingInitials] = useState(false);
@@ -261,6 +262,8 @@ export default function Home() {
   const specialRef = useRef(0);
   const timerRef = useRef(timer);
   const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+  const comboScoreBonusRef = useRef(0);
   const punchStatsRef = useRef<PunchStats>(EMPTY_PUNCH_STATS);
   const leaderboardRef = useRef<LeaderboardEntry[]>([]);
   const enemyAttackActionRef = useRef(0);
@@ -277,6 +280,7 @@ export default function Home() {
   const secretConfirmationTimerRef = useRef(0);
   const finisherRunningRef = useRef(false);
   const mohawkFinisherRunningRef = useRef(false);
+  const ponchShownRef = useRef(false);
 
   useEffect(() => void (matchRef.current = matchState), [matchState]);
   useEffect(() => void (enemyHealthRef.current = enemyHealth), [enemyHealth]);
@@ -288,6 +292,7 @@ export default function Home() {
   useEffect(() => void (poseRef.current = enemyPose), [enemyPose]);
   useEffect(() => void (specialRef.current = special), [special]);
   useEffect(() => void (timerRef.current = timer), [timer]);
+  useEffect(() => void (comboRef.current = combo), [combo]);
   useEffect(() => void (flamingHandsRef.current = flamingHands), [flamingHands]);
   useEffect(() => void (ironJawRef.current = ironJaw), [ironJaw]);
   useEffect(() => void (endlessFightRef.current = endlessFight), [endlessFight]);
@@ -533,6 +538,7 @@ export default function Home() {
       const finalScore = Math.max(
         0,
         calculatePunchScore(punchStatsRef.current)
+          + comboScoreBonusRef.current
           + timerRef.current * TIME_BONUS_PER_SECOND
           - playerKnockdownsRef.current * PLAYER_KNOCKDOWN_SCORE_PENALTY,
       );
@@ -768,8 +774,11 @@ export default function Home() {
     setBlocking(false);
     blockingRef.current = false;
     setCombo(0);
+    comboRef.current = 0;
     setScore(0);
     scoreRef.current = 0;
+    comboScoreBonusRef.current = 0;
+    setComboScoreBonus(0);
     punchStatsRef.current = { ...EMPTY_PUNCH_STATS };
     setPunchStats({ ...EMPTY_PUNCH_STATS });
     setInitials("");
@@ -801,6 +810,7 @@ export default function Home() {
     setFinisherFrame("wobble");
     setMohawkFinisherFrame("walk");
     setShowPonchCameo(false);
+    ponchShownRef.current = false;
     bufferedPunchRef.current = null;
     guardBrokenUntilRef.current = 0;
     setFightCountdown(3);
@@ -911,6 +921,7 @@ export default function Home() {
     playerHealthRef.current = next;
     setPlayerHealth(next);
     setCombo(0);
+    comboRef.current = 0;
     setImpact("player");
     setScreenShake(true);
     if (!guardAbsorbedHit) setPlayerPose("hit");
@@ -938,7 +949,9 @@ export default function Home() {
       // always agree.
       const penalizedScore = Math.max(
         0,
-        calculatePunchScore(punchStatsRef.current) - knockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY,
+        calculatePunchScore(punchStatsRef.current)
+          + comboScoreBonusRef.current
+          - knockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY,
       );
       scoreRef.current = penalizedScore;
       setScore(penalizedScore);
@@ -1004,13 +1017,10 @@ export default function Home() {
     if (matchState !== "enemy-down") return;
     let count = 1;
     let resolutionTimer: number | undefined;
-    let ponchTimer: number | undefined;
     const attemptTimers: number[] = [];
-    const ponchAppears = Math.random() < .35;
+    const ponchAppears = !ponchShownRef.current && Math.random() < .35;
+    if (ponchAppears) ponchShownRef.current = true;
     setShowPonchCameo(ponchAppears);
-    if (ponchAppears) {
-      ponchTimer = window.setTimeout(() => setShowPonchCameo(false), 3800);
-    }
     const riseAtForSequence = enemyRiseAtRef.current;
     const targetAttempts = 2 + Math.floor(Math.random() * 3);
     const failedAttemptsNeeded = targetAttempts - (riseAtForSequence === null ? 0 : 1);
@@ -1099,11 +1109,15 @@ export default function Home() {
     return () => {
       window.clearInterval(countTimer);
       if (resolutionTimer) window.clearTimeout(resolutionTimer);
-      if (ponchTimer) window.clearTimeout(ponchTimer);
-      setShowPonchCameo(false);
       attemptTimers.forEach((attemptTimer) => window.clearTimeout(attemptTimer));
     };
   }, [finishMatch, matchState, playSound, setEnemyPoseSafe]);
+
+  useEffect(() => {
+    if (!showPonchCameo) return;
+    const timer = window.setTimeout(() => setShowPonchCameo(false), 3800);
+    return () => window.clearTimeout(timer);
+  }, [showPonchCameo]);
 
   useEffect(() => {
     if (matchState !== "fighting") return;
@@ -1446,6 +1460,7 @@ export default function Home() {
       // swing, but cannot damage or interrupt him until he lunges back in.
       if (poseRef.current === "windup-heavy") {
         setCombo(0);
+        comboRef.current = 0;
         setCallout("OUT OF RANGE!");
         playSound("dodge");
         return;
@@ -1455,10 +1470,14 @@ export default function Home() {
       const slipCounter = performance.now() <= counterReadyUntilRef.current;
       const base = kind === "left" ? 4 : kind === "left-uppercut" ? 10 : kind === "power-jab" ? 12 : kind === "right" ? 7 : kind === "right-hook" ? 12 : kind === "body" ? 6 : kind === "uppercut" ? 72 : isHaymaker ? 43 : 43;
       const fullDamage = enemyIsGuarding ? 0 : slipCounter ? Math.round(base * 3.6) : enemyIsOpen ? Math.round(base * (isHaymaker ? 1.25 : 2.1)) : base;
+      const nextCombo = enemyIsGuarding ? 0 : comboRef.current + 1;
+      const comboDamageMultiplier = nextCombo < 3
+        ? 1
+        : Math.min(1.25, 1.05 + (nextCombo - 3) * .025);
       // Normal punches should accumulate pressure rather than drop an
       // iron-jawed champion like an ordinary opponent. Counters and charged
       // power retain their multipliers, but all incoming damage is scaled.
-      const damage = fullDamage / 7;
+      const damage = (fullDamage / 7) * comboDamageMultiplier;
       // TIMELESS controls only the clock. It must not alter Mohawk's health,
       // knee behavior, or eligibility for a finishing sequence.
       const nextHealth = clamp(enemyHealthRef.current - damage);
@@ -1474,7 +1493,8 @@ export default function Home() {
         ++enemyAttackActionRef.current;
         window.setTimeout(() => enemyQueueAttackRef.current(), 0);
       }
-      setCombo((value) => enemyIsGuarding ? 0 : value + 1);
+      comboRef.current = nextCombo;
+      setCombo(nextCombo);
       const triggersStumble = !enemyIsGuarding && nextHealth > 0 && nextHealth <= 35 && Math.random() < (nextHealth <= 15 ? .38 : .2);
       if (!enemyIsGuarding) {
         const specialGain = kind === "left" ? 3 : kind === "left-uppercut" ? 4 : kind === "power-jab" ? 6 : kind === "right" ? 4 : kind === "right-hook" ? 5 : kind === "body" ? 5 : isHaymaker ? 7 : 0;
@@ -1485,9 +1505,16 @@ export default function Home() {
         const nextStats = { ...punchStatsRef.current, [statKey]: punchStatsRef.current[statKey] + 1 };
         punchStatsRef.current = nextStats;
         setPunchStats(nextStats);
+        const comboScoreMultiplier = nextCombo < 3
+          ? 1
+          : Math.min(2, 1.1 + (nextCombo - 3) * .1);
+        const comboBonus = Math.round(PUNCH_POINTS[statKey] * (comboScoreMultiplier - 1));
+        comboScoreBonusRef.current += comboBonus;
+        setComboScoreBonus(comboScoreBonusRef.current);
         const nextScore = Math.max(
           0,
           calculatePunchScore(nextStats)
+            + comboScoreBonusRef.current
             - playerKnockdownsRef.current * PLAYER_KNOCKDOWN_SCORE_PENALTY,
         );
         scoreRef.current = nextScore;
@@ -1853,6 +1880,7 @@ export default function Home() {
   const landedPunches = (Object.keys(punchStats) as (keyof PunchStats)[])
     .reduce((total, key) => total + punchStats[key], 0);
   const punchScore = calculatePunchScore(punchStats);
+  const comboDamageDisplay = combo < 3 ? 1 : Math.min(1.25, 1.05 + (combo - 3) * .025);
   const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
@@ -1959,7 +1987,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-        {showPonchCameo && matchState === "enemy-down" && (
+        {showPonchCameo && (
           <aside className="ponch-cameo" aria-live="polite">
             <img src={asset("/ponch-crowd-shout.png")} alt="Ponch rises from the crowd to shout encouragement" draggable={false} />
             <div className="ponch-shout">
@@ -1993,7 +2021,12 @@ export default function Home() {
           </div>
         </header>
 
-        {combo >= 3 && matchState === "fighting" && <div className="combo-counter"><strong>{combo}</strong><span>HIT COMBO</span></div>}
+        {combo >= 3 && matchState === "fighting" && (
+          <div className="combo-counter">
+            <strong>{combo}</strong>
+            <span>HIT COMBO · {comboDamageDisplay.toFixed(2)}× DAMAGE</span>
+          </div>
+        )}
         {matchState === "fighting" && <div className="score">SCORE {score.toLocaleString()}</div>}
         {matchState === "fighting" && <button className="pause-trigger" onClick={togglePause} aria-label="Pause fight">Ⅱ</button>}
         {matchState === "countdown" && (
@@ -2292,6 +2325,7 @@ export default function Home() {
                     <div className="scorecard-grid">
                       <span><em>LANDED PUNCHES</em><strong>{landedPunches}</strong></span>
                       <span><em>PUNCH POINTS</em><strong>{punchScore.toLocaleString()}</strong></span>
+                      <span><em>COMBO BONUS</em><strong className="score-bonus">+{comboScoreBonus.toLocaleString()}</strong></span>
                       <span><em>TIME BONUS</em><strong>+{timeBonus.toLocaleString()}</strong></span>
                       <span><em>KNOCKDOWNS</em><strong className="score-penalty">{knockdownPenalty === 0 ? "0" : `−${knockdownPenalty.toLocaleString()}`}</strong></span>
                     </div>
