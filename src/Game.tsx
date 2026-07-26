@@ -65,7 +65,9 @@ type PlayerPose =
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
-type MohawkFinisherFrame = "walk" | "emerge" | "turn" | "ground-strike" | "bite" | "elbow-bite";
+type MohawkFinisherFrame =
+  | "walk" | "emerge" | "turn" | "ground-strike" | "bite" | "elbow-bite"
+  | "chair-slide" | "chair-charge" | "chair-impact" | "chair-aftermath";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
 type PunchStats = {
@@ -110,7 +112,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.83.0";
+const GAME_VERSION = "0.84.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -142,6 +144,9 @@ const POSE_ASSETS = [
   asset("/mohawk-finisher-emerge.png"), asset("/mohawk-finisher-turn.png"),
   asset("/mohawk-finisher-ground-strike.png"), asset("/mohawk-finisher-bite.png"),
   asset("/mohawk-finisher-elbow-bite.png"),
+  asset("/mohawk-finisher-chair-slide.png"), asset("/mohawk-finisher-chair-charge.png"),
+  asset("/mohawk-finisher-chair-impact.png"), asset("/mohawk-finisher-chair-aftermath.png"),
+  asset("/ponch-crowd-shout.png"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -222,6 +227,7 @@ export default function Home() {
   >("wobble");
   const [finisherRunning, setFinisherRunning] = useState(false);
   const [mohawkFinisherFrame, setMohawkFinisherFrame] = useState<MohawkFinisherFrame>("walk");
+  const [showPonchCameo, setShowPonchCameo] = useState(false);
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -649,6 +655,10 @@ export default function Home() {
 
   const startMohawkFinisher = useCallback((reason: ResultReason = "knockout") => {
     if (mohawkFinisherRunningRef.current || matchRef.current === "mohawk-finisher") return;
+    if (!finisherEnabledRef.current) {
+      finishMatch("lost", reason);
+      return;
+    }
     mohawkFinisherRunningRef.current = true;
     ++playerActionRef.current;
     matchRef.current = "mohawk-finisher";
@@ -656,9 +666,38 @@ export default function Home() {
     setResultReason(reason);
     setBlocking(false);
     blockingRef.current = false;
-    setMohawkFinisherFrame("walk");
-    setCallout("MOHAWK WINS!");
+    const chairFinisher = Math.random() < .5;
+    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : "walk");
+    setCallout(chairFinisher ? "WAIT—SOMEBODY'S IN THE RING!" : "MOHAWK WINS!");
     playSound(reason === "time" ? "bell" : "hurt");
+    if (chairFinisher) {
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setMohawkFinisherFrame("chair-charge");
+        setCallout("WATCH THE CHAIR!");
+      }, 650);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setMohawkFinisherFrame("chair-impact");
+        setCallout("STEEL CHAIR!");
+        setImpact("player");
+        setScreenShake(true);
+        playSound("ko");
+      }, 1350);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setImpact(null);
+        setScreenShake(false);
+        setMohawkFinisherFrame("chair-aftermath");
+        setCallout("MOHAWK WINS!");
+      }, 2050);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        mohawkFinisherRunningRef.current = false;
+        finishMatch("lost", reason);
+      }, 3300);
+      return;
+    }
     window.setTimeout(() => {
       if (matchRef.current !== "mohawk-finisher") return;
       setMohawkFinisherFrame("emerge");
@@ -761,6 +800,7 @@ export default function Home() {
     setFinisherRunning(false);
     setFinisherFrame("wobble");
     setMohawkFinisherFrame("walk");
+    setShowPonchCameo(false);
     bufferedPunchRef.current = null;
     guardBrokenUntilRef.current = 0;
     setFightCountdown(3);
@@ -964,7 +1004,13 @@ export default function Home() {
     if (matchState !== "enemy-down") return;
     let count = 1;
     let resolutionTimer: number | undefined;
+    let ponchTimer: number | undefined;
     const attemptTimers: number[] = [];
+    const ponchAppears = Math.random() < .35;
+    setShowPonchCameo(ponchAppears);
+    if (ponchAppears) {
+      ponchTimer = window.setTimeout(() => setShowPonchCameo(false), 3800);
+    }
     const riseAtForSequence = enemyRiseAtRef.current;
     const targetAttempts = 2 + Math.floor(Math.random() * 3);
     const failedAttemptsNeeded = targetAttempts - (riseAtForSequence === null ? 0 : 1);
@@ -1053,9 +1099,11 @@ export default function Home() {
     return () => {
       window.clearInterval(countTimer);
       if (resolutionTimer) window.clearTimeout(resolutionTimer);
+      if (ponchTimer) window.clearTimeout(ponchTimer);
+      setShowPonchCameo(false);
       attemptTimers.forEach((attemptTimer) => window.clearTimeout(attemptTimer));
     };
-  }, [finishMatch, matchState, playSound, setEnemyPoseSafe, timer]);
+  }, [finishMatch, matchState, playSound, setEnemyPoseSafe]);
 
   useEffect(() => {
     if (matchState !== "fighting") return;
@@ -1911,6 +1959,15 @@ export default function Home() {
             </div>
           ))}
         </div>
+        {showPonchCameo && matchState === "enemy-down" && (
+          <aside className="ponch-cameo" aria-live="polite">
+            <img src={asset("/ponch-crowd-shout.png")} alt="Ponch rises from the crowd to shout encouragement" draggable={false} />
+            <div className="ponch-shout">
+              <b>PONCH</b>
+              <span>“GRAB HIS #!$&amp; AND TWIST IT!!”</span>
+            </div>
+          </aside>
+        )}
         <div className="ring-post post-left" aria-hidden="true" />
         <div className="ring-post post-right" aria-hidden="true" />
         <div className="ropes" aria-hidden="true"><i /><i /><i /></div>

@@ -130,6 +130,12 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .crowd i:nth-child(16) { left: 91%; transform: scale(1.06); animation-delay: -.5s; }
 .crowd i:nth-child(17) { left: 96%; transform: scale(.9); }
 .crowd i:nth-child(18) { left: -4%; transform: scale(1.1); }
+.ponch-cameo { position:absolute; z-index:7; top:27%; left:3%; width:min(22vw,310px); height:38%; pointer-events:none; transform-origin:center bottom; animation:ponchRiseAndSit 3.8s ease-in-out both; }
+.ponch-cameo>img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 10px 13px #000) brightness(.82); }
+.ponch-shout { position:absolute; z-index:2; left:74%; top:-5%; width:max-content; max-width:min(32vw,430px); padding:.65rem .85rem .75rem; border:3px solid #17110b; border-radius:52% 48% 48% 44%; color:#17110b; background:#f7efe0; box-shadow:7px 8px 0 #0008; transform:rotate(-3deg); text-align:center; animation:ponchWords 3.8s ease-in-out both; }
+.ponch-shout::after { content:""; position:absolute; left:8%; bottom:-19px; border:13px solid transparent; border-top-color:#17110b; transform:rotate(24deg); }
+.ponch-shout b { display:block; margin-bottom:.25rem; color:#c51f16; font:1000 clamp(.62rem,1.1vw,.9rem)/1 "Arial Black",sans-serif; letter-spacing:.16em; }
+.ponch-shout span { display:block; font:1000 clamp(.72rem,1.35vw,1.08rem)/1.08 "Arial Black",sans-serif; }
 
 .ring-floor {
   position: absolute;
@@ -334,6 +340,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:min(88vw,1100px); }
 .mohawk-finisher-sequence.frame-ground-strike img { width:min(94vw,1180px); animation:mohawkGroundStrike .55s cubic-bezier(.08,.8,.12,1) both; }
 .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:min(112vw,1450px); height:104%; bottom:-2%; animation:dragonLunge .48s cubic-bezier(.04,.88,.1,1) both; }
+.mohawk-finisher-sequence.frame-chair-slide img { width:min(76vw,900px); animation:chairSlide .58s cubic-bezier(.08,.82,.16,1) both; }
+.mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
+.mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
+.mohawk-finisher-sequence.frame-chair-aftermath img { width:min(88vw,1080px); animation:chairAftermath .48s cubic-bezier(.12,.72,.2,1) both; }
 .finish-him-lockup { position:absolute; z-index:3; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:clamp(1rem,5vh,4rem); text-align:center; pointer-events:auto; }
 .finish-him-lockup strong { color:#f7c620; font:1000 clamp(3.2rem,10vw,9rem)/.86 "Arial Black",sans-serif; letter-spacing:-.06em; -webkit-text-stroke:clamp(2px,.35vw,6px) #1a0704; text-shadow:clamp(5px,.75vw,12px) clamp(7px,1vw,16px) 0 #c51810,0 0 26px rgba(255,44,16,.65); animation:finishHimPulse .42s ease-in-out infinite alternate; }
 .finish-him-lockup span { margin-top:.9rem; padding:.55rem 1rem; color:#fff5de; background:rgba(8,4,3,.8); border-left:4px solid #f0b927; font:900 clamp(.72rem,1.4vw,1.05rem)/1.15 system-ui,sans-serif; letter-spacing:.12em; }
@@ -624,6 +634,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes crowdBob { to{transform:translateY(-4%) scale(var(--s,1));} }
 @keyframes crowdChant { from{translate:0 5%;scale:var(--s,1)} to{translate:0 -9%;scale:var(--s,1)} }
 @keyframes crowdArms { from{transform:rotate(-42deg) translateY(6%)} to{transform:rotate(-12deg) translateY(-10%)} }
+@keyframes ponchRiseAndSit { 0%{opacity:0;transform:translateY(62%) scale(.72)} 14%{opacity:1;transform:translateY(0) scale(1)} 69%{opacity:1;transform:translateY(0) scale(1)} 84%{opacity:.82;transform:translateY(30%) scale(.9)} 100%{opacity:0;transform:translateY(64%) scale(.72)} }
+@keyframes ponchWords { 0%,13%{opacity:0;transform:translateY(12px) rotate(-3deg) scale(.8)} 20%,66%{opacity:1;transform:translateY(0) rotate(-3deg) scale(1)} 78%,100%{opacity:0;transform:translateY(8px) rotate(-3deg) scale(.86)} }
 @keyframes chantMoReveal { 0%,10%{opacity:0;filter:brightness(1)} 11%,72%{opacity:1;filter:brightness(1.45)} 73%,100%{opacity:0} }
 @keyframes chantHawkReveal { 0%,30%{opacity:0;filter:brightness(1)} 31%,72%{opacity:1;filter:brightness(1.55)} 73%,100%{opacity:0} }
 @keyframes countdownPop { 0%{opacity:0;transform:scale(1.65)}18%{opacity:1;transform:scale(1)}72%{opacity:1;transform:scale(.94)}100%{opacity:0;transform:scale(.72)} }
@@ -761,6 +773,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes mohawkFinisherEnter { from{transform:translateX(-50%) scale(.92);opacity:.2;filter:brightness(1.8) blur(2px)} to{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
 @keyframes mohawkGroundStrike { 0%{transform:translateX(-50%) translateY(-8%) scale(.96)} 62%{transform:translateX(-50%) translateY(1%) scale(1.03);filter:brightness(1.7)} 100%{transform:translateX(-50%) translateY(0) scale(1)} }
 @keyframes dragonLunge { 0%{transform:translateX(-50%) scale(.68);opacity:.25;filter:brightness(2.2) blur(2px)} 58%{transform:translateX(-50%) scale(1.08);opacity:1;filter:brightness(1.65)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
+@keyframes chairSlide { 0%{transform:translateX(-95%) translateY(22%) rotate(-8deg) scale(.72);opacity:.2} 72%{transform:translateX(-47%) translateY(0) rotate(2deg) scale(1.03);opacity:1} 100%{transform:translateX(-50%) scale(1);opacity:1} }
+@keyframes chairCharge { 0%{transform:translateX(-50%) translateY(5%) scale(.76);opacity:.3;filter:blur(2px)} 72%{transform:translateX(-50%) translateY(-1%) scale(1.08);opacity:1;filter:blur(0)} 100%{transform:translateX(-50%) scale(1);opacity:1} }
+@keyframes chairImpact { 0%{transform:translateX(-50%) scale(.64);opacity:.25;filter:brightness(2.2) blur(3px)} 55%{transform:translateX(-50%) scale(1.13);opacity:1;filter:brightness(1.8)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
+@keyframes chairAftermath { from{transform:translateX(-50%) translateY(5%) scale(.94);opacity:.4} to{transform:translateX(-50%) translateY(0) scale(1);opacity:1} }
 @keyframes finishHimPulse { from{transform:scale(.96);filter:brightness(.92)} to{transform:scale(1.025);filter:brightness(1.18)} }
 @keyframes haymakerFill { from{width:0} to{width:100%} }
 @keyframes mohawkGuardFlash { from{opacity:0;transform:translateX(-50%) scale(.72)} 35%{opacity:1} to{opacity:.38;transform:translateX(-50%) scale(1.08)} }
@@ -836,6 +852,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .crowd-chant-1 { left:5%; }
   .crowd-chant-2 { left:36%; top:48%; }
   .crowd-chant-3 { right:5%; left:auto; top:15%; }
+  .ponch-cameo { top:31%; left:1%; width:38vw; height:27%; }
+  .ponch-shout { left:54%; top:-24%; max-width:56vw; padding:.45rem .55rem .55rem; }
+  .ponch-shout b { font-size:.55rem; }
+  .ponch-shout span { font-size:clamp(.58rem,2.6vw,.78rem); }
   .player-dodge-left { transform:translateX(-10%) translateY(-18dvh) scale(1.22); }
   .player-dodge-right { transform:translateX(10%) translateY(-18dvh) scale(1.22); }
   .controls { bottom:max(1.2%,env(safe-area-inset-bottom)); left:max(2%,env(safe-area-inset-left)); right:max(2%,env(safe-area-inset-right)); gap:.4rem; }
@@ -873,6 +893,8 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .mohawk-finisher-sequence img,.mohawk-finisher-sequence.frame-walk img,.mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:128vw; max-width:none; height:88%; }
   .mohawk-finisher-sequence.frame-ground-strike img { width:138vw; max-width:none; height:92%; }
   .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:175vw; max-width:none; height:105%; }
+  .mohawk-finisher-sequence.frame-chair-slide img,.mohawk-finisher-sequence.frame-chair-charge img,.mohawk-finisher-sequence.frame-chair-aftermath img { width:145vw; max-width:none; height:92%; }
+  .mohawk-finisher-sequence.frame-chair-impact img { width:190vw; max-width:none; height:108%; }
   .finish-him-lockup { padding-top:5vh; }
   .finish-him-lockup strong { font-size:14vw; }
   .finish-him-lockup span { margin-top:.45rem; font-size:.55rem; }
