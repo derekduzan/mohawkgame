@@ -112,7 +112,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.85.2";
+const GAME_VERSION = "0.85.3";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -132,7 +132,8 @@ const POSE_ASSETS = [
   asset("/player-haymaker-left-arm.webp"), asset("/player-haymaker-right-arm.webp"),
   asset("/player-left-uppercut-arm.webp"), asset("/player-right-hook-arm.webp"),
   asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"), asset("/player-special-uppercut-contact.webp"),
-  asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
+  asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"),
+  asset("/player-knockdown-arms.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
   asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
   asset("/fighttime-logo.png"), asset("/finisher-wobble.png"),
@@ -2077,7 +2078,9 @@ export default function Home() {
           <>
           {aura && <div className="player-aura-effect" aria-hidden="true"><i /><i /></div>}
           <div className={`first-person-body player-${playerPose} ${flamingHands ? "has-flaming-hands" : ""}`} aria-hidden="true">
-            {playerPose === "hit" ? (
+            {matchState === "player-down" ? (
+              <img className="player-pose-art player-knockdown-art" src={asset("/player-knockdown-arms.webp")} alt="" draggable={false} />
+            ) : playerPose === "hit" ? (
               <img className="player-pose-art player-hit-art" src={asset("/player-hit.webp")} alt="" draggable={false} />
             ) : (
               <>

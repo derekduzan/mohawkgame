@@ -24,3 +24,11 @@ npm run dev
 ```
 
 Open the local address printed in the terminal.
+
+## Player-arm asset rules
+
+- The player must always have one anatomically correct left arm and one anatomically correct right arm.
+- Never reuse a right-hand sprite as the left hand without verifying and correcting the thumb, palm, wrist, elbow, lighting, and punch direction.
+- Mirroring an image does not by itself guarantee correct anatomy.
+- In first-person poses, verify both thumbs are on the correct sides and both fists point away from the player toward the opponent.
+- Before accepting any guard, punch, hit-reaction, knockdown, finisher, or victory pose, inspect the two hands together and confirm they belong to the same body and camera perspective.
