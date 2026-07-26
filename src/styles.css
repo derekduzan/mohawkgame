@@ -287,16 +287,24 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-arm-art { -webkit-mask-image:linear-gradient(to top,transparent 0,#000 4%,#000 100%); mask-image:linear-gradient(to top,transparent 0,#000 4%,#000 100%); }
 .player-guard-arm { width:94%; height:83%; bottom:-2%; }
 .has-flaming-hands .player-arm-art { animation:flamingHandsPulse .18s ease-in-out infinite alternate; }
-.hand-flames { position:absolute; z-index:4; width:12%; height:21%; bottom:39%; pointer-events:none; filter:drop-shadow(0 0 10px #ffad18) drop-shadow(0 0 18px #e62f0c); animation:flameBody .22s ease-in-out infinite alternate; }
-.hand-flames.flame-left { left:26%; transform:rotate(-7deg); }
-.hand-flames.flame-right { right:25%; bottom:46%; transform:rotate(8deg); }
-.hand-flames::before,.hand-flames::after,.hand-flames i { content:""; position:absolute; bottom:0; border-radius:52% 48% 60% 40% / 70% 70% 30% 30%; clip-path:polygon(50% 0,68% 28%,88% 50%,100% 82%,76% 100%,25% 100%,0 80%,14% 45%,34% 59%); transform-origin:center bottom; mix-blend-mode:screen; }
-.hand-flames::before { inset:0; background:radial-gradient(ellipse at 50% 82%,#fffbd0 0 11%,#ffd33e 26%,#ff4b10 58%,transparent 72%); animation:flameTongue .18s ease-in-out infinite alternate; }
-.hand-flames::after { left:18%; right:16%; height:88%; background:radial-gradient(ellipse at 50% 80%,#fff 0 8%,#ffe46b 23%,#ff6518 54%,transparent 70%); animation:flameTongue .24s .08s ease-in-out infinite alternate-reverse; }
-.hand-flames i { width:34%; height:72%; background:linear-gradient(to top,#ffb51c,#ff3510 58%,transparent); }
-.hand-flames i:nth-child(1) { left:3%; animation:flameTongue .16s .04s ease-in-out infinite alternate; }
-.hand-flames i:nth-child(2) { left:34%; height:100%; animation:flameTongue .21s .1s ease-in-out infinite alternate-reverse; }
-.hand-flames i:nth-child(3) { right:1%; height:76%; animation:flameTongue .19s ease-in-out infinite alternate; }
+.hand-flames { position:absolute; z-index:4; width:16%; height:27%; bottom:34%; opacity:.78; pointer-events:none; transform-origin:50% 78%; filter:drop-shadow(0 0 9px rgba(255,221,96,.72)) drop-shadow(0 0 22px rgba(255,65,18,.62)); mix-blend-mode:screen; animation:flameAuraBreathe .28s ease-in-out infinite alternate; transition:left .08s,right .08s,bottom .08s,width .08s,height .08s; }
+.hand-flames.flame-left { left:23%; --flame-tilt:-7deg; }
+.hand-flames.flame-right { right:22%; bottom:40%; --flame-tilt:8deg; }
+.hand-flames::before,.hand-flames::after,.hand-flames i { content:""; position:absolute; transform-origin:center bottom; pointer-events:none; mix-blend-mode:screen; }
+.hand-flames::before { inset:5% 0 0; border-radius:48% 52% 45% 55%; background:radial-gradient(ellipse at 50% 72%,transparent 0 22%,rgba(255,250,197,.34) 30%,rgba(255,190,38,.42) 43%,rgba(255,67,16,.34) 60%,transparent 76%); box-shadow:0 0 20px rgba(255,98,21,.5),inset 0 0 15px rgba(255,230,111,.28); animation:flameHalo .32s ease-in-out infinite alternate; }
+.hand-flames::after { left:9%; right:9%; bottom:3%; height:96%; border-radius:50% 50% 40% 42%; clip-path:polygon(4% 100%,8% 67%,21% 41%,25% 5%,42% 35%,51% 0,60% 37%,78% 12%,75% 49%,94% 66%,97% 100%); background:linear-gradient(to top,rgba(255,60,12,.2),rgba(255,159,24,.42) 48%,rgba(255,240,151,.25) 74%,transparent); animation:flameTongue .24s .05s ease-in-out infinite alternate; }
+.hand-flames i { bottom:8%; width:29%; height:68%; border-radius:52% 48% 38% 42%; clip-path:polygon(50% 0,71% 34%,100% 68%,79% 100%,19% 100%,0 67%,28% 39%); background:linear-gradient(to top,rgba(255,65,13,.16),rgba(255,184,31,.48) 57%,rgba(255,247,191,.22)); }
+.hand-flames i:nth-child(1) { left:4%; height:70%; animation:flameTongue .18s .03s ease-in-out infinite alternate; }
+.hand-flames i:nth-child(2) { left:36%; height:98%; animation:flameTongue .25s .1s ease-in-out infinite alternate-reverse; }
+.hand-flames i:nth-child(3) { right:3%; height:76%; animation:flameTongue .21s ease-in-out infinite alternate; }
+/* Follow the active fist instead of leaving the aura at the neutral guard. */
+.player-jab-left .flame-left,.player-power-jab .flame-left { left:43%; bottom:61%; width:18%; height:30%; }
+.player-cross-right .flame-right { right:41%; bottom:61%; width:18%; height:30%; }
+.player-body-hook .flame-left { left:48%; bottom:45%; width:18%; height:27%; }
+.player-left-uppercut .flame-left { left:42%; bottom:63%; width:18%; height:31%; }
+.player-right-hook .flame-right { right:43%; bottom:55%; width:18%; height:29%; }
+.player-haymaker .flame-right,.player-right-haymaker .flame-right { right:40%; bottom:58%; width:20%; height:32%; }
+.player-left-haymaker .flame-left { left:40%; bottom:58%; width:20%; height:32%; }
 .player-aura-effect { position:absolute; z-index:13; left:50%; bottom:-31%; width:min(105vw,1200px); aspect-ratio:1.25; transform:translateX(-50%); border:clamp(3px,.42vw,7px) solid rgba(105,235,255,.68); border-radius:50%; pointer-events:none; box-shadow:inset 0 0 34px rgba(70,205,255,.22),0 0 22px rgba(74,214,255,.72),0 0 65px rgba(95,102,255,.34); animation:auraShield 1.1s ease-in-out infinite alternate; }
 .player-aura-effect::before,.player-aura-effect::after,.player-aura-effect i { content:""; position:absolute; border-radius:50%; pointer-events:none; }
 .player-aura-effect::before { inset:3%; border:2px solid rgba(218,252,255,.72); box-shadow:0 0 20px rgba(128,238,255,.7); }
@@ -304,15 +312,23 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-aura-effect i { width:7px; height:7px; background:#e5fdff; box-shadow:0 0 12px #5fe9ff; animation:auraSpark 1.3s linear infinite; }
 .player-aura-effect i:first-child { left:11%; top:39%; }
 .player-aura-effect i:last-child { right:12%; top:30%; animation-delay:-.7s; }
-.is-finisher .opponent-stage,.is-finisher .opponent-shadow,.is-finisher .first-person-body,.is-finisher .player-aura-effect { opacity:0; }
+.is-finisher .opponent-stage,.is-finisher .opponent-shadow,.is-finisher .first-person-body,.is-finisher .player-aura-effect,
+.is-mohawk-finisher .opponent-stage,.is-mohawk-finisher .opponent-shadow,.is-mohawk-finisher .first-person-body,.is-mohawk-finisher .player-aura-effect { opacity:0; }
 .finisher-sequence { position:absolute; z-index:48; inset:7% 0 0; display:grid; place-items:center; pointer-events:none; overflow:hidden; background:radial-gradient(circle at 50% 48%,rgba(118,12,6,.32),transparent 47%); }
 .finisher-sequence img { position:absolute; left:50%; bottom:0; width:min(76vw,880px); height:90%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 18px 22px rgba(0,0,0,.72)); }
 .finisher-sequence.frame-wobble img { bottom:0; transform:translateX(-50%); transform-origin:50% 100%; animation:none; }
-.finisher-sequence.frame-kick img { width:min(82vw,940px); animation:finisherKick .65s cubic-bezier(.08,.8,.18,1) both; }
-.finisher-sequence.frame-lift img { width:min(92vw,1040px); animation:finisherLift .8s cubic-bezier(.12,.72,.18,1) both; }
-.finisher-sequence.frame-slam img { width:min(96vw,1120px); animation:finisherSlam .75s cubic-bezier(.08,.78,.14,1) both; }
+.finisher-sequence.frame-powerbomb-lift img { width:min(96vw,1180px); height:96%; animation:finisherLift .8s cubic-bezier(.12,.72,.18,1) both; }
+.finisher-sequence.frame-powerbomb-impact img { width:min(100vw,1240px); height:96%; animation:finisherSlam .75s cubic-bezier(.08,.78,.14,1) both; }
 .finisher-sequence.frame-groin-kick img,.finisher-sequence.frame-groin-knee img { width:min(92vw,1020px); animation:finisherKick .52s cubic-bezier(.08,.8,.18,1) both; }
 .finisher-sequence.frame-groin-recoil img,.finisher-sequence.frame-groin-kneel img { width:min(78vw,860px); }
+.finisher-sequence.frame-groin-down img { width:min(88vw,980px); animation:finisherSlam .62s cubic-bezier(.08,.78,.14,1) both; }
+.mohawk-finisher-sequence { position:absolute; z-index:49; inset:5% 0 0; overflow:hidden; pointer-events:none; background:radial-gradient(circle at 50% 48%,rgba(255,205,44,.2),rgba(53,17,0,.2) 44%,transparent 72%); }
+.mohawk-finisher-sequence::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 48%,transparent 28%,rgba(0,0,0,.48) 88%); pointer-events:none; }
+.mohawk-finisher-sequence img { position:absolute; z-index:1; left:50%; bottom:0; width:min(86vw,1080px); height:94%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 20px 26px rgba(0,0,0,.8)); animation:mohawkFinisherEnter .42s cubic-bezier(.1,.78,.18,1) both; }
+.mohawk-finisher-sequence.frame-walk img { width:min(70vw,820px); }
+.mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:min(88vw,1100px); }
+.mohawk-finisher-sequence.frame-ground-strike img { width:min(94vw,1180px); animation:mohawkGroundStrike .55s cubic-bezier(.08,.8,.12,1) both; }
+.mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:min(112vw,1450px); height:104%; bottom:-2%; animation:dragonLunge .48s cubic-bezier(.04,.88,.1,1) both; }
 .finish-him-lockup { position:absolute; z-index:3; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:clamp(1rem,5vh,4rem); text-align:center; pointer-events:auto; }
 .finish-him-lockup strong { color:#f7c620; font:1000 clamp(3.2rem,10vw,9rem)/.86 "Arial Black",sans-serif; letter-spacing:-.06em; -webkit-text-stroke:clamp(2px,.35vw,6px) #1a0704; text-shadow:clamp(5px,.75vw,12px) clamp(7px,1vw,16px) 0 #c51810,0 0 26px rgba(255,44,16,.65); animation:finishHimPulse .42s ease-in-out infinite alternate; }
 .finish-him-lockup span { margin-top:.9rem; padding:.55rem 1rem; color:#fff5de; background:rgba(8,4,3,.8); border-left:4px solid #f0b927; font:900 clamp(.72rem,1.4vw,1.05rem)/1.15 system-ui,sans-serif; letter-spacing:.12em; }
@@ -369,7 +385,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .impact-left { transform:translate(-68%,-50%); }.impact-right{transform:translate(-32%,-50%)}.impact-body{top:57%;}
 .hurt-flash { position:absolute; z-index:16; inset:0; background:radial-gradient(circle,transparent 25%,rgba(196,0,0,.72)); animation:hurtFlash .22s ease-out forwards; pointer-events:none; }
 .is-special-contact-hidden,.first-person-body.player-special-uppercut { opacity:0; }
-.special-uppercut-contact { position:absolute; z-index:34; left:50%; bottom:-8%; width:min(84%,1070px); height:102%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 17px 18px #000c); pointer-events:none; animation:specialContactDrive 330ms cubic-bezier(.06,.74,.1,1) both; }
+.special-uppercut-contact { position:absolute; z-index:34; left:50%; bottom:-8%; width:min(84%,1070px); height:102%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 17px 18px #000c); pointer-events:none; animation:specialContactDrive 330ms cubic-bezier(.06,.74,.1,1) both; -webkit-mask-image:linear-gradient(to top,transparent 0,#000 12%,#000 100%); mask-image:linear-gradient(to top,transparent 0,#000 12%,#000 100%); }
 .vision-damage { position:absolute; z-index:16; inset:0; pointer-events:none; opacity:0; transition:opacity .5s; }
 .vision-damage::before,.vision-damage::after { content:""; position:absolute; left:-3%; right:-3%; height:18%; background:linear-gradient(#050000 12%,rgba(35,0,0,.88) 44%,transparent); filter:blur(5px); }
 .vision-damage::before { top:-2%; }
@@ -711,6 +727,14 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   from { filter:drop-shadow(0 0 7px #ffbd22) drop-shadow(0 -5px 10px #f14616) brightness(1.08); }
   to { filter:drop-shadow(0 0 13px #fff09a) drop-shadow(0 -11px 19px #ff3618) brightness(1.22) saturate(1.18); }
 }
+@keyframes flameAuraBreathe {
+  from { opacity:.62; transform:rotate(var(--flame-tilt,0deg)) scale(.92,1); }
+  to { opacity:.84; transform:rotate(var(--flame-tilt,0deg)) scale(1.1,1.16); }
+}
+@keyframes flameHalo {
+  from { transform:scale(.92,.96); opacity:.65; }
+  to { transform:scale(1.08,1.12); opacity:.9; }
+}
 @keyframes flameBody { from{ opacity:.78; scale:.92 1; } to{ opacity:1; scale:1.08 1.16; } }
 @keyframes flameTongue { from{ transform:translateY(4%) rotate(-5deg) scale(.88,1); } to{ transform:translateY(-8%) rotate(6deg) scale(1.06,1.18); } }
 @keyframes auraShield { from{ opacity:.62; transform:translateX(-50%) scale(.985); } to{ opacity:1; transform:translateX(-50%) scale(1.015); } }
@@ -719,6 +743,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes finisherKick { 0%{transform:translateX(-50%) scale(.86);filter:brightness(.82) blur(1px)} 35%{transform:translateX(-50%) scale(1.03);filter:brightness(1.45)} 100%{transform:translateX(-50%) scale(1);filter:brightness(1)} }
 @keyframes finisherLift { from{transform:translateX(-50%) translateY(20%) scale(.88)} to{transform:translateX(-50%) translateY(-2%) scale(1.04)} }
 @keyframes finisherSlam { 0%{transform:translateX(-50%) translateY(-19%) scale(.96);filter:brightness(1.4)} 42%{transform:translateX(-50%) translateY(3%) scale(1.08);filter:brightness(1.8)} 100%{transform:translateX(-50%) translateY(0) scale(1);filter:brightness(.9)} }
+@keyframes mohawkFinisherEnter { from{transform:translateX(-50%) scale(.92);opacity:.2;filter:brightness(1.8) blur(2px)} to{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
+@keyframes mohawkGroundStrike { 0%{transform:translateX(-50%) translateY(-8%) scale(.96)} 62%{transform:translateX(-50%) translateY(1%) scale(1.03);filter:brightness(1.7)} 100%{transform:translateX(-50%) translateY(0) scale(1)} }
+@keyframes dragonLunge { 0%{transform:translateX(-50%) scale(.68);opacity:.25;filter:brightness(2.2) blur(2px)} 58%{transform:translateX(-50%) scale(1.08);opacity:1;filter:brightness(1.65)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
 @keyframes finishHimPulse { from{transform:scale(.96);filter:brightness(.92)} to{transform:scale(1.025);filter:brightness(1.18)} }
 @keyframes haymakerFill { from{width:0} to{width:100%} }
 @keyframes mohawkGuardFlash { from{opacity:0;transform:translateX(-50%) scale(.72)} 35%{opacity:1} to{opacity:.38;transform:translateX(-50%) scale(1.08)} }
@@ -767,6 +794,19 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   /* Keep the portrait camera rig fixed so the guarding hand never jumps with
      the punching hand. Only the active arm rises toward Mohawk's chin. */
   .first-person-body { transform:translateY(-18dvh) scale(1.22); transform-origin:center bottom; }
+  /* Portrait uses a taller camera crop. Re-anchor the fire to the fists
+     instead of inheriting the desktop coordinates, which placed it above
+     the guard. The existing arm pulse remains active underneath this aura. */
+  .has-flaming-hands .hand-flames { width:19%; height:21%; bottom:22%; }
+  .has-flaming-hands .flame-left { left:19%; bottom:22%; }
+  .has-flaming-hands .flame-right { right:18%; bottom:24%; }
+  .player-jab-left .flame-left,.player-power-jab .flame-left { left:41%; bottom:50%; width:21%; height:25%; }
+  .player-cross-right .flame-right { right:39%; bottom:50%; width:21%; height:25%; }
+  .player-body-hook .flame-left { left:46%; bottom:34%; width:20%; height:23%; }
+  .player-left-uppercut .flame-left { left:40%; bottom:52%; width:21%; height:26%; }
+  .player-right-hook .flame-right { right:40%; bottom:46%; width:21%; height:25%; }
+  .player-haymaker .flame-right,.player-right-haymaker .flame-right { right:37%; bottom:48%; width:22%; height:27%; }
+  .player-left-haymaker .flame-left { left:37%; bottom:48%; width:22%; height:27%; }
   .player-jab-left .player-left-art,
   .player-power-jab .player-left-art,
   .player-cross-right .player-right-art,
@@ -813,7 +853,11 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .enemy-count-overlay { inset:14% 0 auto; }
   .enemy-count-overlay strong { font-size:30vw; }
   .finisher-sequence { inset:11% 0 0; }
-  .finisher-sequence img,.finisher-sequence.frame-kick img,.finisher-sequence.frame-lift img,.finisher-sequence.frame-slam img { width:138vw; max-width:none; height:84%; }
+  .finisher-sequence img,.finisher-sequence.frame-powerbomb-lift img,.finisher-sequence.frame-powerbomb-impact img { width:138vw; max-width:none; height:84%; }
+  .mohawk-finisher-sequence { inset:10% 0 0; }
+  .mohawk-finisher-sequence img,.mohawk-finisher-sequence.frame-walk img,.mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:128vw; max-width:none; height:88%; }
+  .mohawk-finisher-sequence.frame-ground-strike img { width:138vw; max-width:none; height:92%; }
+  .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:175vw; max-width:none; height:105%; }
   .finish-him-lockup { padding-top:5vh; }
   .finish-him-lockup strong { font-size:14vw; }
   .finish-him-lockup span { margin-top:.45rem; font-size:.55rem; }

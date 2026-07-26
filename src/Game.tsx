@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-type MatchState = "intro" | "countdown" | "fighting" | "paused" | "player-down" | "enemy-down" | "finisher" | "won" | "lost";
+type MatchState = "intro" | "countdown" | "fighting" | "paused" | "player-down" | "enemy-down" | "finisher" | "mohawk-finisher" | "won" | "lost";
 type FighterPose =
   | "idle"
   | "windup-left"
@@ -65,6 +65,7 @@ type PlayerPose =
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
+type MohawkFinisherFrame = "walk" | "emerge" | "turn" | "ground-strike" | "bite" | "elbow-bite";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
 type PunchStats = {
@@ -109,7 +110,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.78.0";
+const GAME_VERSION = "0.82.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -132,10 +133,14 @@ const POSE_ASSETS = [
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"), asset("/opponent-victory.webp"),
   asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
   asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
-  asset("/fighttime-logo.png"), asset("/finisher-wobble.png"), asset("/finisher-kick.png"),
-  asset("/finisher-lift.png"), asset("/finisher-slam.png"),
+  asset("/fighttime-logo.png"), asset("/finisher-wobble.png"),
   asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
-  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"),
+  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"), asset("/finisher-groin-down.png"),
+  asset("/finisher-powerbomb-lift.png"), asset("/finisher-powerbomb-impact.png"),
+  asset("/mohawk-finisher-walk.png"),
+  asset("/mohawk-finisher-emerge.png"), asset("/mohawk-finisher-turn.png"),
+  asset("/mohawk-finisher-ground-strike.png"), asset("/mohawk-finisher-bite.png"),
+  asset("/mohawk-finisher-elbow-bite.png"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -210,10 +215,12 @@ export default function Home() {
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
   const [finisherFrame, setFinisherFrame] = useState<
-    "wobble" | "kick" | "lift" | "slam" |
-    "groin-kick" | "groin-recoil" | "groin-kneel" | "groin-knee"
+    "wobble" |
+    "powerbomb-lift" | "powerbomb-impact" |
+    "groin-kick" | "groin-recoil" | "groin-kneel" | "groin-knee" | "groin-down"
   >("wobble");
   const [finisherRunning, setFinisherRunning] = useState(false);
+  const [mohawkFinisherFrame, setMohawkFinisherFrame] = useState<MohawkFinisherFrame>("walk");
 
   const matchRef = useRef(matchState);
   const enemyHealthRef = useRef(enemyHealth);
@@ -262,6 +269,7 @@ export default function Home() {
   const secretBufferRef = useRef("");
   const secretConfirmationTimerRef = useRef(0);
   const finisherRunningRef = useRef(false);
+  const mohawkFinisherRunningRef = useRef(false);
 
   useEffect(() => void (matchRef.current = matchState), [matchState]);
   useEffect(() => void (enemyHealthRef.current = enemyHealth), [enemyHealth]);
@@ -290,10 +298,10 @@ export default function Home() {
       ironJawRef.current = true;
       setIronJaw(true);
       confirmation = "IRON JAW ACTIVATED";
-    } else if (code.endsWith("ENDLESS")) {
+    } else if (code.endsWith("TIMELESS") || code.endsWith("ENDLESS")) {
       endlessFightRef.current = true;
       setEndlessFight(true);
-      confirmation = "ENDLESS FIGHT ACTIVATED";
+      confirmation = "TIMELESS FIGHT ACTIVATED";
     } else if (code.endsWith("AURA")) {
       auraRef.current = true;
       setAura(true);
@@ -566,29 +574,23 @@ export default function Home() {
     finisherRunningRef.current = true;
     setFinisherRunning(true);
     setCallout("FINISHER!");
-    setFinisherFrame("kick");
-    setImpact("right");
-    setScreenShake(true);
-    playSound("hurt");
+    setFinisherFrame("powerbomb-lift");
+    setCallout("POWERBOMB!");
+    setImpact(null);
+    setScreenShake(false);
     window.setTimeout(() => {
-      setImpact(null);
-      setScreenShake(false);
-      setFinisherFrame("lift");
-      setCallout("POWERBOMB!");
-    }, 650);
-    window.setTimeout(() => {
-      setFinisherFrame("slam");
+      setFinisherFrame("powerbomb-impact");
       setImpact("right");
       setScreenShake(true);
       playSound("ko");
-    }, 1450);
+    }, 850);
     window.setTimeout(() => {
       setImpact(null);
       setScreenShake(false);
       finisherRunningRef.current = false;
       setFinisherRunning(false);
       finishMatch("won");
-    }, 2450);
+    }, 1900);
   }, [finishMatch, playSound]);
 
   const executeGroinFinisher = useCallback(() => {
@@ -619,10 +621,67 @@ export default function Home() {
     window.setTimeout(() => {
       setImpact(null);
       setScreenShake(false);
+      setFinisherFrame("groin-down");
+      setCallout("MOHAWK IS DOWN!");
+    }, 2250);
+    window.setTimeout(() => {
+      setImpact(null);
+      setScreenShake(false);
       finisherRunningRef.current = false;
       setFinisherRunning(false);
       finishMatch("won");
-    }, 2450);
+    }, 3200);
+  }, [finishMatch, playSound]);
+
+  const startMohawkFinisher = useCallback((reason: ResultReason = "knockout") => {
+    if (mohawkFinisherRunningRef.current || matchRef.current === "mohawk-finisher") return;
+    mohawkFinisherRunningRef.current = true;
+    ++playerActionRef.current;
+    matchRef.current = "mohawk-finisher";
+    setMatchState("mohawk-finisher");
+    setResultReason(reason);
+    setBlocking(false);
+    blockingRef.current = false;
+    setMohawkFinisherFrame("walk");
+    setCallout("MOHAWK WINS!");
+    playSound(reason === "time" ? "bell" : "hurt");
+    window.setTimeout(() => {
+      if (matchRef.current !== "mohawk-finisher") return;
+      setMohawkFinisherFrame("emerge");
+      setCallout("THE DRAGON AWAKENS!");
+    }, 700);
+    window.setTimeout(() => {
+      if (matchRef.current !== "mohawk-finisher") return;
+      setMohawkFinisherFrame("turn");
+      setCallout("FACE THE DRAGON!");
+    }, 1450);
+    window.setTimeout(() => {
+      if (matchRef.current !== "mohawk-finisher") return;
+      setMohawkFinisherFrame("ground-strike");
+      setImpact("player");
+      setScreenShake(true);
+      playSound("hurt");
+    }, 2150);
+    window.setTimeout(() => {
+      if (matchRef.current !== "mohawk-finisher") return;
+      setImpact(null);
+      setScreenShake(false);
+      setMohawkFinisherFrame("bite");
+    }, 2850);
+    window.setTimeout(() => {
+      if (matchRef.current !== "mohawk-finisher") return;
+      setMohawkFinisherFrame("elbow-bite");
+      setImpact("player");
+      setScreenShake(true);
+      playSound("ko");
+    }, 3300);
+    window.setTimeout(() => {
+      if (matchRef.current !== "mohawk-finisher") return;
+      setImpact(null);
+      setScreenShake(false);
+      mohawkFinisherRunningRef.current = false;
+      finishMatch("lost", reason);
+    }, 4300);
   }, [finishMatch, playSound]);
 
   const startMatch = useCallback(() => {
@@ -684,8 +743,10 @@ export default function Home() {
     setKnockdownCount(1);
     setShowRematch(false);
     finisherRunningRef.current = false;
+    mohawkFinisherRunningRef.current = false;
     setFinisherRunning(false);
     setFinisherFrame("wobble");
+    setMohawkFinisherFrame("walk");
     bufferedPunchRef.current = null;
     guardBrokenUntilRef.current = 0;
     setFightCountdown(3);
@@ -875,7 +936,7 @@ export default function Home() {
       if (count >= 10) {
         window.clearInterval(countTimer);
         countOutTimer = window.setTimeout(() => {
-          if (matchRef.current === "player-down") finishMatch("lost");
+          if (matchRef.current === "player-down") startMohawkFinisher("knockout");
         }, 650);
       }
     }, 800);
@@ -883,7 +944,7 @@ export default function Home() {
       window.clearInterval(countTimer);
       if (countOutTimer) window.clearTimeout(countOutTimer);
     };
-  }, [finishMatch, matchState]);
+  }, [matchState, startMohawkFinisher]);
 
   useEffect(() => {
     if (matchState !== "enemy-down") return;
@@ -1805,7 +1866,7 @@ export default function Home() {
 
   return (
     <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
-      <section className={`arena ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""}`} aria-label="Bare knuckle boxing ring">
+      <section className={`arena ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""} ${matchState === "mohawk-finisher" ? "is-mohawk-finisher" : ""}`} aria-label="Bare knuckle boxing ring">
         <div className="grain" aria-hidden="true" />
         <div className="vision-damage" aria-hidden="true"><i /><b /></div>
         <div className="ceiling-lights" aria-hidden="true"><i /><i /><i /></div>
@@ -1968,6 +2029,16 @@ export default function Home() {
           </div>
         )}
 
+        {matchState === "mohawk-finisher" && (
+          <div className={`mohawk-finisher-sequence frame-${mohawkFinisherFrame}`} aria-live="assertive">
+            <img
+              src={asset(`/mohawk-finisher-${mohawkFinisherFrame}.png`)}
+              alt=""
+              draggable={false}
+            />
+          </div>
+        )}
+
         {matchState === "player-down" && (
           <div className="overlay knockdown-overlay" role="dialog" aria-label={`Referee count ${knockdownCount}`}>
             <p>REFEREE COUNT · KNOCKDOWN {playerKnockdowns}</p>
@@ -2064,12 +2135,12 @@ export default function Home() {
                 <div className="active-secrets" aria-label="Active secret powers">
                   {flamingHands && <span>🔥 FLAMING HANDS</span>}
                   {ironJaw && <span>◆ IRON JAW</span>}
-                  {endlessFight && <span>∞ ENDLESS</span>}
+                  {endlessFight && <span>∞ TIMELESS</span>}
                   {aura && <span>◉ AURA</span>}
                   {finisherEnabled && <span>☠ FINISHER</span>}
                 </div>
               )}
-              <small>1 ROUND · 90 SECONDS · SURVIVE THE STORM</small>
+              <small>{endlessFight ? "1 ROUND · INFINITE TIME · FIGHT FOREVER" : "1 ROUND · 90 SECONDS · SURVIVE THE STORM"}</small>
             </div>
           </div>
         )}
