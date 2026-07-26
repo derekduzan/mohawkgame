@@ -109,7 +109,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.75.0";
+const GAME_VERSION = "0.78.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -134,6 +134,8 @@ const POSE_ASSETS = [
   asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
   asset("/fighttime-logo.png"), asset("/finisher-wobble.png"), asset("/finisher-kick.png"),
   asset("/finisher-lift.png"), asset("/finisher-slam.png"),
+  asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
+  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"),
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -207,7 +209,10 @@ export default function Home() {
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
-  const [finisherFrame, setFinisherFrame] = useState<"wobble" | "kick" | "lift" | "slam">("wobble");
+  const [finisherFrame, setFinisherFrame] = useState<
+    "wobble" | "kick" | "lift" | "slam" |
+    "groin-kick" | "groin-recoil" | "groin-kneel" | "groin-knee"
+  >("wobble");
   const [finisherRunning, setFinisherRunning] = useState(false);
 
   const matchRef = useRef(matchState);
@@ -577,6 +582,40 @@ export default function Home() {
       setScreenShake(true);
       playSound("ko");
     }, 1450);
+    window.setTimeout(() => {
+      setImpact(null);
+      setScreenShake(false);
+      finisherRunningRef.current = false;
+      setFinisherRunning(false);
+      finishMatch("won");
+    }, 2450);
+  }, [finishMatch, playSound]);
+
+  const executeGroinFinisher = useCallback(() => {
+    if (matchRef.current !== "finisher" || finisherRunningRef.current) return;
+    finisherRunningRef.current = true;
+    setFinisherRunning(true);
+    setCallout("LOW BLOW!");
+    setFinisherFrame("groin-kick");
+    setImpact("right");
+    setScreenShake(true);
+    playSound("hurt");
+    window.setTimeout(() => {
+      setImpact(null);
+      setScreenShake(false);
+      setFinisherFrame("groin-recoil");
+      setCallout("THAT HURT!");
+    }, 520);
+    window.setTimeout(() => {
+      setFinisherFrame("groin-kneel");
+      setCallout("RUNNING KNEE!");
+    }, 1050);
+    window.setTimeout(() => {
+      setFinisherFrame("groin-knee");
+      setImpact("right");
+      setScreenShake(true);
+      playSound("ko");
+    }, 1580);
     window.setTimeout(() => {
       setImpact(null);
       setScreenShake(false);
@@ -1381,8 +1420,6 @@ export default function Home() {
           punchLockRef.current = false;
           bufferedPunchRef.current = null;
           setPlayerPose("idle");
-          specialRef.current = 100;
-          setSpecial(100);
           setFinisherFrame("wobble");
           finisherRunningRef.current = false;
           setFinisherRunning(false);
@@ -1636,6 +1673,7 @@ export default function Home() {
       } else if (matchRef.current === "finisher") {
         event.preventDefault();
         if (key === "u" || key === "enter" || key === " ") executeFinisher();
+        else if (key === "l") executeGroinFinisher();
       } else if (matchRef.current === "intro" && (key === "enter" || key === " ")) {
         event.preventDefault();
         startMatch();
@@ -1664,7 +1702,7 @@ export default function Home() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, executeFinisher, punch, releaseCrossCharge, releaseJabCharge, showLeaderboard, startMatch, togglePause]);
+  }, [attemptGetUp, beginBlock, beginCrossCharge, beginJabCharge, beginSlip, endBlock, endSlip, executeFinisher, executeGroinFinisher, punch, releaseCrossCharge, releaseJabCharge, showLeaderboard, startMatch, togglePause]);
 
   const displayTimer = Math.max(0, Math.ceil(timer));
   const timerText = endlessFight
@@ -1920,8 +1958,11 @@ export default function Home() {
             {finisherFrame === "wobble" && (
               <div className="finish-him-lockup">
                 <strong>FINISH HIM!</strong>
-                <span>PRESS <kbd>U</kbd> FOR THE SPECIAL FINISHER</span>
-                <button onClick={executeFinisher}>UNLEASH FINISHER</button>
+                <span><kbd>U</kbd> TABLE FINISHER · <kbd>L</kbd> BODY FINISHER</span>
+                <div className="finisher-actions">
+                  <button onClick={executeFinisher}>TABLE FINISHER</button>
+                  <button onClick={executeGroinFinisher}>BODY FINISHER</button>
+                </div>
               </div>
             )}
           </div>
@@ -1954,6 +1995,7 @@ export default function Home() {
                 <section><strong>GUARD INDICATOR</strong><span>A gold halo flashes when an opponent raises their guard. Normal punches may be blocked until the guard opens.</span></section>
               </div>
               <button className="fight-button" onClick={togglePause}>RETURN TO FIGHT <i>›</i></button>
+              <button className="quit-fight-button" onClick={returnToMenu}>QUIT TO MAIN MENU</button>
               <small>PRESS ESC TO RESUME</small>
             </div>
           </div>

@@ -307,15 +307,18 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .is-finisher .opponent-stage,.is-finisher .opponent-shadow,.is-finisher .first-person-body,.is-finisher .player-aura-effect { opacity:0; }
 .finisher-sequence { position:absolute; z-index:48; inset:7% 0 0; display:grid; place-items:center; pointer-events:none; overflow:hidden; background:radial-gradient(circle at 50% 48%,rgba(118,12,6,.32),transparent 47%); }
 .finisher-sequence img { position:absolute; left:50%; bottom:0; width:min(76vw,880px); height:90%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 18px 22px rgba(0,0,0,.72)); }
-.finisher-sequence.frame-wobble img { animation:finisherWobble .65s ease-in-out infinite alternate; }
+.finisher-sequence.frame-wobble img { bottom:0; transform:translateX(-50%); transform-origin:50% 100%; animation:none; }
 .finisher-sequence.frame-kick img { width:min(82vw,940px); animation:finisherKick .65s cubic-bezier(.08,.8,.18,1) both; }
 .finisher-sequence.frame-lift img { width:min(92vw,1040px); animation:finisherLift .8s cubic-bezier(.12,.72,.18,1) both; }
 .finisher-sequence.frame-slam img { width:min(96vw,1120px); animation:finisherSlam .75s cubic-bezier(.08,.78,.14,1) both; }
+.finisher-sequence.frame-groin-kick img,.finisher-sequence.frame-groin-knee img { width:min(92vw,1020px); animation:finisherKick .52s cubic-bezier(.08,.8,.18,1) both; }
+.finisher-sequence.frame-groin-recoil img,.finisher-sequence.frame-groin-kneel img { width:min(78vw,860px); }
 .finish-him-lockup { position:absolute; z-index:3; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:clamp(1rem,5vh,4rem); text-align:center; pointer-events:auto; }
 .finish-him-lockup strong { color:#f7c620; font:1000 clamp(3.2rem,10vw,9rem)/.86 "Arial Black",sans-serif; letter-spacing:-.06em; -webkit-text-stroke:clamp(2px,.35vw,6px) #1a0704; text-shadow:clamp(5px,.75vw,12px) clamp(7px,1vw,16px) 0 #c51810,0 0 26px rgba(255,44,16,.65); animation:finishHimPulse .42s ease-in-out infinite alternate; }
 .finish-him-lockup span { margin-top:.9rem; padding:.55rem 1rem; color:#fff5de; background:rgba(8,4,3,.8); border-left:4px solid #f0b927; font:900 clamp(.72rem,1.4vw,1.05rem)/1.15 system-ui,sans-serif; letter-spacing:.12em; }
 .finish-him-lockup button { margin-top:.8rem; padding:.9rem 1.4rem; border:2px solid #ffc12b; color:#fff; background:#bd1711; font:1000 clamp(.8rem,1.5vw,1.1rem)/1 "Arial Black",sans-serif; letter-spacing:.08em; cursor:pointer; box-shadow:0 7px 0 #50100c; }
 .finish-him-lockup button:active { transform:translateY(5px); box-shadow:0 2px 0 #50100c; }
+.finisher-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.7rem; }
 .player-body-hook .player-left-art {
   -webkit-mask-image:linear-gradient(to right,transparent 0,#000 11%,#000 100%),linear-gradient(to top,transparent 0,#000 4%,#000 100%);
   -webkit-mask-composite:source-in;
@@ -578,6 +581,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .pause-rules strong { display:block;margin-bottom:.35rem;color:#ffbe2e;font:1000 .68rem/1 Arial,sans-serif;letter-spacing:.12em; }
 .pause-rules span { display:block;color:#ccc4b7;font:700 .72rem/1.35 Arial,sans-serif; }
 .pause-card .fight-button { margin:1.1rem auto .6rem; }
+.quit-fight-button { width:100%; margin:0 auto .7rem; padding:.72rem 1rem; border:2px solid #625d53; color:#d6d0c5; background:#10110f; font:900 clamp(.72rem,1.15vw,.95rem)/1 Arial,sans-serif; letter-spacing:.12em; cursor:pointer; transition:.14s; }
+.quit-fight-button:hover { color:#fff; border-color:#d63a30; background:#2a0d0a; }
+.quit-fight-button:active { transform:translateY(2px); }
 .pause-card small { display:block;color:#8f8c84;font:800 .55rem/1 Arial,sans-serif;letter-spacing:.16em; }
 .knockdown-overlay>p { margin:0; color:var(--gold); font:900 clamp(.7rem,1.2vw,1rem)/1 Arial,sans-serif; letter-spacing:.24em; }
 .knockdown-overlay>strong { color:#fff; font:1000 clamp(7rem,22vw,18rem)/.8 "Arial Black",Arial,sans-serif; text-shadow:8px 10px var(--blood),14px 16px #000; transform:rotate(-3deg); }
