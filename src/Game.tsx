@@ -110,7 +110,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.82.0";
+const GAME_VERSION = "0.83.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -136,6 +136,7 @@ const POSE_ASSETS = [
   asset("/fighttime-logo.png"), asset("/finisher-wobble.png"),
   asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
   asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"), asset("/finisher-groin-down.png"),
+  asset("/finisher-powerbomb-kick.png"), asset("/finisher-powerbomb-head-pull.png"),
   asset("/finisher-powerbomb-lift.png"), asset("/finisher-powerbomb-impact.png"),
   asset("/mohawk-finisher-walk.png"),
   asset("/mohawk-finisher-emerge.png"), asset("/mohawk-finisher-turn.png"),
@@ -216,7 +217,7 @@ export default function Home() {
   const [secretConfirmation, setSecretConfirmation] = useState("");
   const [finisherFrame, setFinisherFrame] = useState<
     "wobble" |
-    "powerbomb-lift" | "powerbomb-impact" |
+    "powerbomb-kick" | "powerbomb-head-pull" | "powerbomb-lift" | "powerbomb-impact" |
     "groin-kick" | "groin-recoil" | "groin-kneel" | "groin-knee" | "groin-down"
   >("wobble");
   const [finisherRunning, setFinisherRunning] = useState(false);
@@ -305,6 +306,8 @@ export default function Home() {
     } else if (code.endsWith("AURA")) {
       auraRef.current = true;
       setAura(true);
+      guardRef.current = 100;
+      setGuard(100);
       confirmation = "AURA ACTIVATED";
     } else if (code.endsWith("FATALITY")) {
       finisherEnabledRef.current = true;
@@ -574,23 +577,34 @@ export default function Home() {
     finisherRunningRef.current = true;
     setFinisherRunning(true);
     setCallout("FINISHER!");
-    setFinisherFrame("powerbomb-lift");
+    setFinisherFrame("powerbomb-kick");
     setCallout("POWERBOMB!");
-    setImpact(null);
-    setScreenShake(false);
+    setImpact("body");
+    setScreenShake(true);
+    playSound("punch");
+    window.setTimeout(() => {
+      setImpact(null);
+      setScreenShake(false);
+      setFinisherFrame("powerbomb-head-pull");
+      setCallout("SET HIM UP!");
+    }, 430);
+    window.setTimeout(() => {
+      setFinisherFrame("powerbomb-lift");
+      setCallout("LIFT!");
+    }, 920);
     window.setTimeout(() => {
       setFinisherFrame("powerbomb-impact");
       setImpact("right");
       setScreenShake(true);
       playSound("ko");
-    }, 850);
+    }, 1780);
     window.setTimeout(() => {
       setImpact(null);
       setScreenShake(false);
       finisherRunningRef.current = false;
       setFinisherRunning(false);
       finishMatch("won");
-    }, 1900);
+    }, 2920);
   }, [finishMatch, playSound]);
 
   const executeGroinFinisher = useCallback(() => {
@@ -1071,7 +1085,10 @@ export default function Home() {
           return next;
         });
       }
-      if (!blockingRef.current) {
+      if (auraRef.current) {
+        guardRef.current = 100;
+        setGuard(100);
+      } else if (!blockingRef.current) {
         setGuard((value) => {
           const next = clamp(value + 3.5);
           guardRef.current = next;
@@ -1233,14 +1250,16 @@ export default function Home() {
             const canBreakGuard = powerShot || comboUppercut || comboHaymaker || style === "uppercut";
             // Ordinary jabs, crosses, and flurry punches can pressure a guard,
             // but only a designated power shot can actually break through it.
-            const nextGuard = canBreakGuard
-              ? clamp(guardRef.current - guardCost)
-              : Math.max(1, clamp(guardRef.current - guardCost));
+            const nextGuard = auraRef.current
+              ? 100
+              : canBreakGuard
+                ? clamp(guardRef.current - guardCost)
+                : Math.max(1, clamp(guardRef.current - guardCost));
             guardRef.current = nextGuard;
             setGuard(nextGuard);
             const chip = powerShot ? 5 : comboUppercut ? 4 : comboHaymaker ? 2 : style === "uppercut" ? 4 : style === "flurry" ? .5 : move === "body" ? 3 : .5;
             takePlayerDamage(lateBlock ? chip + 4 : chip, nextGuard > 0);
-            setCallout(nextGuard <= 0 ? "GUARD BROKEN!" : directionalHaymaker ? "HAYMAKER CRUSHES YOUR GUARD!" : style === "heavy" ? "OVERHAND CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
+            setCallout(auraRef.current ? "AURA BLOCK!" : nextGuard <= 0 ? "GUARD BROKEN!" : directionalHaymaker ? "HAYMAKER CRUSHES YOUR GUARD!" : style === "heavy" ? "OVERHAND CRUSHES YOUR GUARD!" : lateBlock ? "LATE BLOCK" : "BLOCKED");
             if (nextGuard <= 0) {
               setBlocking(false);
               blockingRef.current = false;
@@ -1392,9 +1411,9 @@ export default function Home() {
       // iron-jawed champion like an ordinary opponent. Counters and charged
       // power retain their multipliers, but all incoming damage is scaled.
       const damage = fullDamage / 7;
-      const nextHealth = endlessFightRef.current
-        ? Math.max(1, clamp(enemyHealthRef.current - damage))
-        : clamp(enemyHealthRef.current - damage);
+      // TIMELESS controls only the clock. It must not alter Mohawk's health,
+      // knee behavior, or eligibility for a finishing sequence.
+      const nextHealth = clamp(enemyHealthRef.current - damage);
 
       if (slipCounter) counterReadyUntilRef.current = 0;
 
@@ -1476,7 +1495,7 @@ export default function Home() {
         const knockdowns = enemyKnockdownsRef.current + 1;
         enemyKnockdownsRef.current = knockdowns;
         setEnemyKnockdowns(knockdowns);
-        if (knockdowns >= 4 && finisherEnabledRef.current && !endlessFightRef.current) {
+        if (knockdowns >= 4 && finisherEnabledRef.current) {
           ++playerActionRef.current;
           punchLockRef.current = false;
           bufferedPunchRef.current = null;
@@ -1549,14 +1568,14 @@ export default function Home() {
       if (matchRef.current === "fighting" && !blockingRef.current && playerActionRef.current === actionId) {
         setPlayerPose("idle");
       }
-    }, kind === "left" ? 145 : kind === "left-uppercut" ? 215 : kind === "power-jab" ? 220 : kind === "right-hook" ? 235 : isHaymaker ? 310 : kind === "uppercut" ? 330 : 175);
+    }, kind === "left" ? 145 : kind === "left-uppercut" ? 215 : kind === "power-jab" ? 220 : kind === "right-hook" ? 175 : isHaymaker ? 310 : kind === "uppercut" ? 330 : 175);
 
     window.setTimeout(() => {
       punchLockRef.current = false;
       const buffered = bufferedPunchRef.current;
       bufferedPunchRef.current = null;
       if (buffered && matchRef.current === "fighting" && !blockingRef.current) punchRef.current(buffered);
-    }, kind === "left" ? 205 : kind === "left-uppercut" ? 275 : kind === "power-jab" ? 285 : kind === "right-hook" ? 295 : kind === "haymaker" ? 390 : kind === "uppercut" ? 420 : 235);
+    }, kind === "left" ? 205 : kind === "left-uppercut" ? 275 : kind === "power-jab" ? 285 : kind === "right-hook" ? 235 : kind === "haymaker" ? 390 : kind === "uppercut" ? 420 : 235);
   }, [playSound, setEnemyPoseSafe, takePlayerDamage]);
 
   useEffect(() => void (punchRef.current = punch), [punch]);
@@ -1718,6 +1737,13 @@ export default function Home() {
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT" ||
+        target?.isContentEditable
+      ) return;
       if (event.repeat) return;
       const key = event.key.toLowerCase();
       if (showLeaderboard) {
@@ -1750,6 +1776,13 @@ export default function Home() {
       }
     };
     const up = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT" ||
+        target?.isContentEditable
+      ) return;
       const key = event.key.toLowerCase();
       if (key === " " || key === "s") endBlock();
       else if (key === "k") releaseCrossCharge();
@@ -1887,9 +1920,9 @@ export default function Home() {
           <div className="fighter-card player-card">
             <div className="name-row"><strong>YOU</strong><span>{Math.ceil(playerHealth)}</span></div>
             <div className="health-track"><span style={{ width: `${playerHealth}%` }} /></div>
-            <div className="mini-meter"><em>STAMINA</em><i style={{ width: `${stamina}%` }} /></div>
-            <div className="mini-meter guard-meter"><em>GUARD</em><i style={{ width: `${guard}%` }} /></div>
-            <div className={`mini-meter special-meter ${special >= 100 ? "is-ready" : ""}`}><em>{special >= 100 ? "SPECIAL READY" : "SPECIAL"}</em><i style={{ width: `${special}%` }} /></div>
+            <div className="mini-meter"><em>STAMINA</em><span><i style={{ width: `${stamina}%` }} /></span></div>
+            <div className={`mini-meter guard-meter ${aura ? "is-aura-guard" : ""}`}><em>{aura ? "AURA GUARD" : "GUARD"}</em><span><i style={{ width: `${aura ? 100 : guard}%` }} /></span></div>
+            <div className={`mini-meter special-meter ${special >= 100 ? "is-ready" : ""}`}><em>{special >= 100 ? "SPECIAL READY" : "SPECIAL"}</em><span><i style={{ width: `${special}%` }} /></span></div>
           </div>
 
           <div className="round-clock">
