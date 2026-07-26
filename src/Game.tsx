@@ -68,7 +68,7 @@ type ResultReason = "knockout" | "time";
 type MohawkFinisherFrame =
   | "walk" | "emerge" | "turn" | "ground-strike" | "bite" | "elbow-bite"
   | "chair-slide" | "chair-charge" | "chair-impact" | "chair-aftermath"
-  | "brotality-slide" | "brotality-charge" | "brotality-dropkick" | "brotality-victory";
+  | "brotality-enter" | "brotality-run" | "brotality-windup" | "brotality-impact" | "brotality-victory";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
 type PunchStats = {
@@ -113,7 +113,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.85.7";
+const GAME_VERSION = "0.86.1";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -148,8 +148,9 @@ const POSE_ASSETS = [
   asset("/mohawk-finisher-elbow-bite.png"),
   asset("/mohawk-finisher-chair-slide.png"), asset("/mohawk-finisher-chair-charge.png"),
   asset("/mohawk-finisher-chair-impact.png"), asset("/mohawk-finisher-chair-aftermath.png"),
-  asset("/mohawk-finisher-brotality-slide.webp"), asset("/mohawk-finisher-brotality-charge.webp"),
-  asset("/mohawk-finisher-brotality-dropkick.webp"), asset("/mohawk-finisher-brotality-victory.webp"),
+  asset("/mohawk-finisher-brotality-enter.webp"), asset("/mohawk-finisher-brotality-run.webp"),
+  asset("/mohawk-finisher-brotality-windup.webp"), asset("/mohawk-finisher-brotality-impact.webp"),
+  asset("/mohawk-finisher-brotality-victory.webp"),
   asset("/ponch-crowd-shout.png"),
 ];
 
@@ -223,6 +224,10 @@ export default function Home() {
   const [aura, setAura] = useState(false);
   const [finisherEnabled, setFinisherEnabled] = useState(false);
   const [brotalityEnabled, setBrotalityEnabled] = useState(false);
+  const [slowMo, setSlowMo] = useState(false);
+  const [arcadeMode, setArcadeMode] = useState(false);
+  const [rumble, setRumble] = useState(false);
+  const [slowMoActive, setSlowMoActive] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
@@ -282,6 +287,10 @@ export default function Home() {
   const auraRef = useRef(false);
   const finisherEnabledRef = useRef(false);
   const brotalityEnabledRef = useRef(false);
+  const slowMoRef = useRef(false);
+  const arcadeModeRef = useRef(false);
+  const rumbleRef = useRef(false);
+  const slowMoTimerRef = useRef(0);
   const secretBufferRef = useRef("");
   const secretConfirmationTimerRef = useRef(0);
   const finisherRunningRef = useRef(false);
@@ -305,6 +314,9 @@ export default function Home() {
   useEffect(() => void (auraRef.current = aura), [aura]);
   useEffect(() => void (finisherEnabledRef.current = finisherEnabled), [finisherEnabled]);
   useEffect(() => void (brotalityEnabledRef.current = brotalityEnabled), [brotalityEnabled]);
+  useEffect(() => void (slowMoRef.current = slowMo), [slowMo]);
+  useEffect(() => void (arcadeModeRef.current = arcadeMode), [arcadeMode]);
+  useEffect(() => void (rumbleRef.current = rumble), [rumble]);
 
   const activateSecretCode = useCallback((rawCode: string) => {
     const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -335,6 +347,18 @@ export default function Home() {
       brotalityEnabledRef.current = true;
       setBrotalityEnabled(true);
       confirmation = "BROTALITY MODE ACTIVATED";
+    } else if (code.endsWith("SLOWMO")) {
+      slowMoRef.current = true;
+      setSlowMo(true);
+      confirmation = "SLOW-MO COUNTERS ACTIVATED";
+    } else if (code.endsWith("ARCADE")) {
+      arcadeModeRef.current = true;
+      setArcadeMode(true);
+      confirmation = "ARCADE VISUALS ACTIVATED";
+    } else if (code.endsWith("RUMBLE")) {
+      rumbleRef.current = true;
+      setRumble(true);
+      confirmation = "RUMBLE IMPACTS ACTIVATED";
     }
     if (!confirmation) return false;
     setSecretCode("");
@@ -543,6 +567,18 @@ export default function Home() {
     osc.stop(now + (kind === "ko" ? 0.9 : 0.15));
   }, []);
 
+  const triggerRumble = useCallback((heavy = false) => {
+    if (!rumbleRef.current || typeof navigator === "undefined" || !navigator.vibrate) return;
+    navigator.vibrate(heavy ? [45, 24, 90] : 28);
+  }, []);
+
+  const triggerSlowMo = useCallback((duration = 650) => {
+    if (!slowMoRef.current) return;
+    setSlowMoActive(true);
+    window.clearTimeout(slowMoTimerRef.current);
+    slowMoTimerRef.current = window.setTimeout(() => setSlowMoActive(false), duration);
+  }, []);
+
   const finishMatch = useCallback((result: "won" | "lost", reason: ResultReason = "knockout") => {
     const resultActionId = ++playerActionRef.current;
     if (result === "won") {
@@ -698,11 +734,11 @@ export default function Home() {
       ? (Math.random() < .5 ? "fatality" : "brotality")
       : fatalityActive ? "fatality" : "brotality";
     const brotalityKind = category === "brotality"
-      ? (Math.random() < .5 ? "chair" : "dropkick")
+      ? (Math.random() < .5 ? "chair" : "headbutt")
       : null;
     const chairFinisher = brotalityKind === "chair";
-    const dropkickFinisher = brotalityKind === "dropkick";
-    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : dropkickFinisher ? "brotality-slide" : "walk");
+    const headbuttFinisher = brotalityKind === "headbutt";
+    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : headbuttFinisher ? "brotality-enter" : "walk");
     setCallout(category === "fatality" ? "MOHAWK WINS!" : "WAIT—SOMEBODY'S IN THE RING!");
     playSound(reason === "time" ? "bell" : "hurt");
     if (chairFinisher) {
@@ -717,6 +753,7 @@ export default function Home() {
         setCallout("STEEL CHAIR!");
         setImpact("player");
         setScreenShake(true);
+        triggerRumble(true);
         playSound("ko");
       }, 1350);
       window.setTimeout(() => {
@@ -733,32 +770,38 @@ export default function Home() {
       }, 3300);
       return;
     }
-    if (dropkickFinisher) {
+    if (headbuttFinisher) {
       window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("brotality-charge");
-        setCallout("HE'S CHARGING!");
-      }, 700);
+        setMohawkFinisherFrame("brotality-run");
+        setCallout("JOVAN'S CHARGING!");
+      }, 600);
       window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("brotality-dropkick");
+        setMohawkFinisherFrame("brotality-windup");
+        setCallout("LOOK OUT!");
+      }, 1150);
+      window.setTimeout(() => {
+        if (matchRef.current !== "mohawk-finisher") return;
+        setMohawkFinisherFrame("brotality-impact");
         setCallout("BROTALITY!");
         setImpact("player");
         setScreenShake(true);
+        triggerRumble(true);
         playSound("ko");
-      }, 1400);
+      }, 1700);
       window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setImpact(null);
         setScreenShake(false);
         setMohawkFinisherFrame("brotality-victory");
         setCallout("MOHAWK WINS!");
-      }, 2150);
+      }, 2350);
       window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         mohawkFinisherRunningRef.current = false;
         finishMatch("lost", reason);
-      }, 3500);
+      }, 3650);
       return;
     }
     window.setTimeout(() => {
@@ -798,7 +841,7 @@ export default function Home() {
       mohawkFinisherRunningRef.current = false;
       finishMatch("lost", reason);
     }, 4300);
-  }, [finishMatch, playSound]);
+  }, [finishMatch, playSound, triggerRumble]);
 
   const startMatch = useCallback(() => {
     if (!assetsReady) return;
@@ -919,6 +962,8 @@ export default function Home() {
     setImpact(null);
     setHitStop(false);
     setScreenShake(false);
+    setSlowMoActive(false);
+    window.clearTimeout(slowMoTimerRef.current);
     setCallout("");
     setShowLeaderboard(false);
   }, [setEnemyPoseSafe]);
@@ -930,7 +975,10 @@ export default function Home() {
       || endlessFightRef.current
       || auraRef.current
       || finisherEnabledRef.current
-      || brotalityEnabledRef.current;
+      || brotalityEnabledRef.current
+      || slowMoRef.current
+      || arcadeModeRef.current
+      || rumbleRef.current;
     if (codesActive || matchRef.current !== "won" || !awaitingInitials || cleanInitials.length !== 3) return;
     const entry: LeaderboardEntry = {
       initials: cleanInitials,
@@ -987,6 +1035,7 @@ export default function Home() {
     comboRef.current = 0;
     setImpact("player");
     setScreenShake(true);
+    triggerRumble(appliedAmount >= 18);
     if (!guardAbsorbedHit) setPlayerPose("hit");
     playSound("hurt");
     window.setTimeout(() => setImpact(null), 170);
@@ -1030,7 +1079,7 @@ export default function Home() {
       matchRef.current = "player-down";
       setMatchState("player-down");
     }
-  }, [playSound, setEnemyPoseSafe]);
+  }, [playSound, setEnemyPoseSafe, triggerRumble]);
 
   const attemptGetUp = useCallback(() => {
     if (matchRef.current !== "player-down") return;
@@ -1354,7 +1403,9 @@ export default function Home() {
                 (move === "right" && dodgeRef.current === "left"));
 
           if (dodged) {
-            counterReadyUntilRef.current = performance.now() + (powerShot ? 980 : 720);
+            const slowMoBonus = slowMoRef.current ? 650 : 0;
+            counterReadyUntilRef.current = performance.now() + (powerShot ? 980 : 720) + slowMoBonus;
+            triggerSlowMo(powerShot ? 820 : 650);
             setCallout(directionalHaymaker ? `${move === "right" ? "LEFT" : "RIGHT"} SLIP — HAYMAKER PUNISH!` : style === "heavy" ? "OVERHAND MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
             setEnemyPoseSafe("stumble-back");
             playSound("dodge");
@@ -1364,7 +1415,7 @@ export default function Home() {
                 setCallout(enemyHealthRef.current <= 35 ? "MOHAWK IS RAGING" : "STAY SHARP");
               }
               queueAttack();
-            }, powerShot ? 850 : rage ? 340 : 480);
+            }, (powerShot ? 850 : rage ? 340 : 480) + slowMoBonus);
             return;
           }
 
@@ -1473,7 +1524,7 @@ export default function Home() {
       enemyQueueAttackRef.current = () => undefined;
       timers.forEach(window.clearTimeout);
     };
-  }, [matchState, playSound, setEnemyPoseSafe, takePlayerDamage]);
+  }, [matchState, playSound, setEnemyPoseSafe, takePlayerDamage, triggerSlowMo]);
 
   const punch = useCallback((requestedKind: PunchKind): void => {
     if (matchRef.current !== "fighting" || blockingRef.current) return;
@@ -1545,7 +1596,10 @@ export default function Home() {
       // knee behavior, or eligibility for a finishing sequence.
       const nextHealth = clamp(enemyHealthRef.current - damage);
 
-      if (slipCounter) counterReadyUntilRef.current = 0;
+      if (slipCounter) {
+        counterReadyUntilRef.current = 0;
+        triggerSlowMo(430);
+      }
 
       enemyHealthRef.current = nextHealth;
       setEnemyHealth(nextHealth);
@@ -1594,10 +1648,11 @@ export default function Home() {
       );
       setHitStop(true);
       setScreenShake(true);
+      const heavyImpact = slipCounter || isHaymaker || kind === "uppercut" || kind === "power-jab";
+      triggerRumble(heavyImpact);
       setEnemyPoseSafe(enemyIsGuarding ? "guard" : triggersStumble ? "stumble-back" : kind === "left" || kind === "left-uppercut" || kind === "power-jab" || kind === "left-haymaker" ? "hit-right" : kind === "right" || kind === "right-hook" || kind === "right-haymaker" || kind === "haymaker" || kind === "uppercut" ? "hit-left" : "hit-body");
       playSound("punch");
       setCallout(enemyIsGuarding ? isHaymaker || kind === "uppercut" ? "POWER SHOT BLOCKED!" : "MOHAWK BLOCKS!" : triggersStumble ? "MOHAWK STUMBLES BACK!" : slipCounter ? `SLIP COUNTER +${damage}` : enemyIsOpen ? `COUNTER +${damage}` : kind === "uppercut" ? "SPECIAL UPPERCUT!" : kind === "left-uppercut" ? "LEFT UPPERCUT!" : kind === "right-hook" ? "RIGHT HOOK!" : isHaymaker ? `${kind === "left-haymaker" ? "LEFT" : "RIGHT"} HAYMAKER!` : kind === "power-jab" ? "POWER JAB!" : kind === "body" ? "BODY SHOT" : "CONNECTS");
-      const heavyImpact = slipCounter || isHaymaker || kind === "uppercut" || kind === "power-jab";
       window.setTimeout(() => setHitStop(false), heavyImpact ? 88 : 52);
       window.setTimeout(() => setScreenShake(false), heavyImpact ? 135 : 82);
       window.setTimeout(() => setImpact(null), heavyImpact ? 180 : 120);
@@ -1714,7 +1769,7 @@ export default function Home() {
       bufferedPunchRef.current = null;
       if (buffered && matchRef.current === "fighting" && !blockingRef.current) punchRef.current(buffered);
     }, kind === "left" ? 205 : kind === "left-uppercut" ? 275 : kind === "power-jab" ? 285 : kind === "right-hook" ? 195 : kind === "haymaker" ? 390 : kind === "uppercut" ? 420 : 235);
-  }, [playSound, setEnemyPoseSafe, takePlayerDamage]);
+  }, [playSound, setEnemyPoseSafe, takePlayerDamage, triggerRumble, triggerSlowMo]);
 
   useEffect(() => void (punchRef.current = punch), [punch]);
 
@@ -1946,7 +2001,7 @@ export default function Home() {
   const comboDamageDisplay = combo < 3 ? 1 : Math.min(1.25, 1.05 + (combo - 3) * .025);
   const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
-  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled;
+  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
     ? "RAPID FIRE"
@@ -2038,7 +2093,7 @@ export default function Home() {
     : guardRightAsset;
 
   return (
-    <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${visionClass}`}>
+    <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${slowMoActive ? "is-slowmo-active" : ""} ${arcadeMode ? "is-arcade" : ""} ${rumble ? "is-rumble" : ""} ${visionClass}`}>
       <section className={`arena ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""} ${matchState === "mohawk-finisher" ? "is-mohawk-finisher" : ""}`} aria-label="Bare knuckle boxing ring">
         <div className="grain" aria-hidden="true" />
         <div className="vision-damage" aria-hidden="true"><i /><b /></div>
@@ -2320,7 +2375,7 @@ export default function Home() {
                 </form>
               )}
               {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
-              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled) && (
+              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble) && (
                 <div className="active-secrets" aria-label="Active secret powers">
                   {flamingHands && <span>🔥 FLAMING HANDS</span>}
                   {ironJaw && <span>◆ IRON JAW</span>}
@@ -2328,6 +2383,9 @@ export default function Home() {
                   {aura && <span>◉ AURA</span>}
                   {finisherEnabled && <span>☠ FATALITY</span>}
                   {brotalityEnabled && <span>★ BROTALITY</span>}
+                  {slowMo && <span>◷ SLOWMO</span>}
+                  {arcadeMode && <span>▦ ARCADE</span>}
+                  {rumble && <span>〰 RUMBLE</span>}
                 </div>
               )}
               <small>{endlessFight ? "1 ROUND · INFINITE TIME · FIGHT FOREVER" : "1 ROUND · 90 SECONDS · SURVIVE THE STORM"}</small>
