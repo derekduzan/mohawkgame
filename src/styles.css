@@ -345,7 +345,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
 .mohawk-finisher-sequence.frame-chair-aftermath img { width:min(88vw,1080px); animation:chairAftermath .48s cubic-bezier(.12,.72,.2,1) both; }
-.mohawk-finisher-sequence.frame-brotality-slide img { width:min(74vw,850px); animation:chairSlide .55s cubic-bezier(.08,.82,.16,1) both; }
+.mohawk-finisher-sequence.frame-brotality-slide img { width:min(74vw,850px); animation:none; }
 .mohawk-finisher-sequence.frame-brotality-charge img { width:min(82vw,940px); animation:chairCharge .52s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-brotality-dropkick img { width:min(126vw,1500px); height:110%; bottom:-5%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
 .mohawk-finisher-sequence.frame-brotality-victory img { width:min(78vw,920px); height:94%; animation:mohawkFinisherEnter .46s cubic-bezier(.1,.78,.18,1) both; }
