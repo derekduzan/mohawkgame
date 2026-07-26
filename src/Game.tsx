@@ -112,7 +112,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.85.0";
+const GAME_VERSION = "0.85.2";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 const POSE_ASSETS = [
@@ -545,7 +545,15 @@ export default function Home() {
       scoreRef.current = finalScore;
       setScore(finalScore);
       const currentBoard = leaderboardRef.current;
-      const qualifies = currentBoard.length < 10 || finalScore > currentBoard[currentBoard.length - 1].score;
+      const leaderboardEligible = !(
+        flamingHandsRef.current
+        || ironJawRef.current
+        || endlessFightRef.current
+        || auraRef.current
+        || finisherEnabledRef.current
+      );
+      const qualifies = leaderboardEligible
+        && (currentBoard.length < 10 || finalScore > currentBoard[currentBoard.length - 1].score);
       setAwaitingInitials(qualifies);
       setLeaderboardSubmitted(false);
       setInitials("");
@@ -868,7 +876,12 @@ export default function Home() {
 
   const submitLocalScore = useCallback(() => {
     const cleanInitials = initials.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
-    if (matchRef.current !== "won" || !awaitingInitials || cleanInitials.length !== 3) return;
+    const codesActive = flamingHandsRef.current
+      || ironJawRef.current
+      || endlessFightRef.current
+      || auraRef.current
+      || finisherEnabledRef.current;
+    if (codesActive || matchRef.current !== "won" || !awaitingInitials || cleanInitials.length !== 3) return;
     const entry: LeaderboardEntry = {
       initials: cleanInitials,
       score: scoreRef.current,
@@ -1643,14 +1656,14 @@ export default function Home() {
       if (matchRef.current === "fighting" && !blockingRef.current && playerActionRef.current === actionId) {
         setPlayerPose("idle");
       }
-    }, kind === "left" ? 145 : kind === "left-uppercut" ? 215 : kind === "power-jab" ? 220 : kind === "right-hook" ? 175 : isHaymaker ? 310 : kind === "uppercut" ? 330 : 175);
+    }, kind === "left" ? 145 : kind === "left-uppercut" ? 215 : kind === "power-jab" ? 220 : kind === "right-hook" ? 130 : isHaymaker ? 310 : kind === "uppercut" ? 330 : 175);
 
     window.setTimeout(() => {
       punchLockRef.current = false;
       const buffered = bufferedPunchRef.current;
       bufferedPunchRef.current = null;
       if (buffered && matchRef.current === "fighting" && !blockingRef.current) punchRef.current(buffered);
-    }, kind === "left" ? 205 : kind === "left-uppercut" ? 275 : kind === "power-jab" ? 285 : kind === "right-hook" ? 235 : kind === "haymaker" ? 390 : kind === "uppercut" ? 420 : 235);
+    }, kind === "left" ? 205 : kind === "left-uppercut" ? 275 : kind === "power-jab" ? 285 : kind === "right-hook" ? 195 : kind === "haymaker" ? 390 : kind === "uppercut" ? 420 : 235);
   }, [playSound, setEnemyPoseSafe, takePlayerDamage]);
 
   useEffect(() => void (punchRef.current = punch), [punch]);
@@ -1883,6 +1896,7 @@ export default function Home() {
   const comboDamageDisplay = combo < 3 ? 1 : Math.min(1.25, 1.05 + (combo - 3) * .025);
   const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
+  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
     ? "RAPID FIRE"
@@ -2347,6 +2361,7 @@ export default function Home() {
                       </form>
                     )}
                     {leaderboardSubmitted && <div className="score-saved">SCORE SAVED TO LOCAL TOP 10</div>}
+                    {codesActive && <div className="score-ineligible">CODES ACTIVE · SCORE NOT ELIGIBLE FOR LOCAL TOP 10</div>}
                     <button className="view-scores-button" onClick={() => setShowLeaderboard(true)}>VIEW LOCAL TOP 10</button>
                   </div>
                   {showRematch && !awaitingInitials ? (
