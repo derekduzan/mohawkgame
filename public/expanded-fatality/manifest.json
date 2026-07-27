@@ -1,0 +1,10 @@
+{
+  "name": "FightTime Expanded Dragon Fatality",
+  "version": "1.0.0",
+  "files": [
+    "power.webp",
+    "command.webp",
+    "rush.webp",
+    "victory.webp"
+  ]
+}
