@@ -1,0 +1,29 @@
+FIGHTTIME v0.86.4 — GITHUB PAGES UPLOAD
+
+1. Extract the ZIP.
+2. Open the root of the GitHub repository:
+   https://github.com/derekduzan/mohawkgame
+3. Choose Add file > Upload files.
+4. Upload everything INSIDE the extracted folder.
+5. Allow files with the same names to be replaced.
+6. Commit directly to main.
+7. Wait for the newest GitHub Actions deployment to show a green check.
+8. Open:
+   https://derekduzan.github.io/mohawkgame/?build=0.86.4
+
+The package includes all updated source code and game assets. Do not upload the
+ZIP itself.
+
+NEW LOCATION UNLOCK CODES
+SUMMIT       Mountain Summit
+BLUEBRIDGE   Grand Rapids Blue Bridge
+WATERTOWER   Tulip Street / Water Tower
+TULIPST      Mohawk's Old Tulip Street Driveway
+WORLDCHAMP   World Championship Boxing Arena
+
+OTHER NEW/UPDATED CODE
+ZUPERMAN     Activates all player-benefit powers
+FATALITY     Enables the expanded 21-frame golden-dragon fatality
+
+Locked location names remain hidden in the game until unlocked. Location
+unlocks are saved in the browser on that device.

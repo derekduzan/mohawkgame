@@ -44,7 +44,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .game-shell.is-performance .vision-damage::before,
 .game-shell.is-performance .vision-damage::after,
 .game-shell.is-performance .vision-damage b { filter:none; }
-.game-shell.is-performance .special-ending-spotlight::before { filter:none; }
 
 .arena {
   position: relative;
@@ -59,20 +58,34 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
     linear-gradient(#18130f 0 43%, #080909 43% 100%);
   box-shadow: 0 0 100px #000;
 }
-.venue-backdrop { position:absolute; z-index:0; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; pointer-events:none; }
-.arena.has-venue-art { background:#060706; }
-.arena.has-venue-art .ceiling-lights,.arena.has-venue-art .crowd,.arena.has-venue-art .ring-floor,.arena.has-venue-art .ropes,.arena.has-venue-art .ring-post { display:none; }
-.arena.has-venue-art .intro-overlay { background:linear-gradient(105deg,rgba(5,6,5,.94) 0 32%,rgba(17,10,8,.48) 58%,rgba(2,3,2,.8) 100%); }
+.arena.location-summit,
+.arena.location-blue-bridge,
+.arena.location-tulip-street,
+.arena.location-tulip-driveway,
+.arena.location-world-championship {
+  background-position:center;
+  background-repeat:no-repeat;
+  background-size:cover;
+}
+.arena.location-summit { background-image:linear-gradient(90deg,rgba(0,0,0,.38),transparent 24% 76%,rgba(0,0,0,.38)),url("/mohawkgame/arena-mountain-summit.webp"); }
+.arena.location-blue-bridge { background-image:linear-gradient(90deg,rgba(0,0,0,.28),transparent 24% 76%,rgba(0,0,0,.28)),url("/mohawkgame/arena-blue-bridge.webp"); }
+.arena.location-tulip-street { background-image:linear-gradient(90deg,rgba(0,0,0,.26),transparent 26% 74%,rgba(0,0,0,.26)),url("/mohawkgame/arena-tulip-street.webp"); }
+.arena.location-tulip-driveway { background-image:linear-gradient(90deg,rgba(0,0,0,.24),transparent 24% 76%,rgba(0,0,0,.24)),url("/mohawkgame/arena-tulip-driveway.webp"); }
+.arena.location-world-championship { background-image:linear-gradient(90deg,rgba(0,0,0,.24),transparent 24% 76%,rgba(0,0,0,.24)),url("/mohawkgame/arena-world-championship.webp"); }
+.arena:not(.location-arena) .ceiling-lights,
+.arena:not(.location-arena) .crowd,
+.arena:not(.location-arena) .ropes,
+.arena:not(.location-arena) .ring-post,
+.arena:not(.location-arena) .ring-floor { display:none; }
 
 .grain {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -100%;
   z-index: 50;
   pointer-events: none;
-  opacity: .045;
-  background-image:
-    repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),
-    repeating-linear-gradient(90deg,rgba(0,0,0,.035) 0 1px,transparent 1px 4px);
+  opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");
+  animation: grain .22s steps(2) infinite;
 }
 
 .ceiling-lights { position: absolute; inset: 0; pointer-events: none; }
@@ -136,7 +149,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .crowd i:nth-child(16) { left: 91%; transform: scale(1.06); animation-delay: -.5s; }
 .crowd i:nth-child(17) { left: 96%; transform: scale(.9); }
 .crowd i:nth-child(18) { left: -4%; transform: scale(1.1); }
-.ponch-cameo { position:absolute; z-index:1; top:27%; left:3%; width:min(22vw,310px); height:38%; pointer-events:none; transform-origin:center bottom; animation:ponchRiseAndSit 3.8s ease-in-out both; }
+.ponch-cameo { position:absolute; z-index:7; top:27%; left:3%; width:min(22vw,310px); height:38%; pointer-events:none; transform-origin:center bottom; animation:ponchRiseAndSit 3.8s ease-in-out both; }
 .ponch-cameo>img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 10px 13px #000) brightness(.82); }
 .ponch-shout { position:absolute; z-index:2; left:74%; top:-5%; width:max-content; max-width:min(32vw,430px); padding:.65rem .85rem .75rem; border:3px solid #17110b; border-radius:52% 48% 48% 44%; color:#17110b; background:#f7efe0; box-shadow:7px 8px 0 #0008; transform:rotate(-3deg); text-align:center; animation:ponchWords 3.8s ease-in-out both; }
 .ponch-shout::after { content:""; position:absolute; left:8%; bottom:-19px; border:13px solid transparent; border-top-color:#17110b; transform:rotate(24deg); }
@@ -330,12 +343,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .player-aura-effect i:last-child { right:12%; top:30%; animation-delay:-.7s; }
 .is-finisher .opponent-stage,.is-finisher .opponent-shadow,.is-finisher .first-person-body,.is-finisher .player-aura-effect,
 .is-mohawk-finisher .opponent-stage,.is-mohawk-finisher .opponent-shadow,.is-mohawk-finisher .first-person-body,.is-mohawk-finisher .player-aura-effect { opacity:0; }
-.is-mohawk-finisher.is-special-ending-intro .opponent-stage,.is-mohawk-finisher.is-special-ending-intro .opponent-shadow,.is-mohawk-finisher.is-special-ending-intro .first-person-body,.is-mohawk-finisher.is-special-ending-intro .player-aura-effect { opacity:1; }
-.is-special-ending-intro .mohawk-finisher-sequence { opacity:0; }
-.is-special-ending-intro .ceiling-lights { opacity:.08; transition:opacity .8s ease-out; }
-.special-ending-spotlight { position:absolute; z-index:5; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 52%,transparent 0 21%,rgba(0,0,0,.18) 35%,rgba(0,0,0,.9) 78%); animation:specialEndingDim 1.65s ease-out both; }
-.special-ending-spotlight::before { content:""; position:absolute; left:31%; right:31%; top:-14%; height:86%; clip-path:polygon(39% 0,61% 0,100% 100%,0 100%); background:linear-gradient(rgba(255,245,201,.28),rgba(255,225,130,.04) 70%,transparent); filter:blur(10px); }
-.special-ending-spotlight i { position:absolute; left:50%; bottom:5%; width:39%; height:18%; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse,rgba(255,225,145,.18),transparent 68%); }
 .finisher-sequence { position:absolute; z-index:48; inset:7% 0 0; display:grid; place-items:center; pointer-events:none; overflow:hidden; background:radial-gradient(circle at 50% 48%,rgba(118,12,6,.32),transparent 47%); }
 .finisher-sequence img { position:absolute; left:50%; bottom:0; width:min(76vw,880px); height:90%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 18px 22px rgba(0,0,0,.72)); }
 .finisher-sequence.frame-wobble img { bottom:0; transform:translateX(-50%); transform-origin:50% 100%; animation:none; }
@@ -353,17 +360,27 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:min(88vw,1100px); }
 .mohawk-finisher-sequence.frame-ground-strike img { width:min(94vw,1180px); animation:mohawkGroundStrike .55s cubic-bezier(.08,.8,.12,1) both; }
 .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:min(112vw,1450px); height:104%; bottom:-2%; animation:dragonLunge .48s cubic-bezier(.04,.88,.1,1) both; }
-.mohawk-finisher-sequence.frame-fatality-power img,.mohawk-finisher-sequence.frame-fatality-command img,.mohawk-finisher-sequence.frame-fatality-victory img { width:min(88vw,1100px); }
-.mohawk-finisher-sequence.frame-fatality-rush img { width:min(122vw,1520px); height:106%; bottom:-3%; animation:dragonLunge .48s cubic-bezier(.04,.88,.1,1) both; }
 .mohawk-finisher-sequence.frame-chair-slide img { width:min(76vw,900px); animation:chairSlide .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
 .mohawk-finisher-sequence.frame-chair-aftermath img { width:min(88vw,1080px); animation:chairAftermath .48s cubic-bezier(.12,.72,.2,1) both; }
-.mohawk-finisher-sequence.frame-brotality-enter img { width:min(78vw,900px); animation:none; }
+.mohawk-finisher-sequence.frame-brotality-enter img { width:min(78vw,900px); animation:chairSlide .5s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-brotality-run img { width:min(82vw,940px); animation:chairCharge .5s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-brotality-windup img { width:min(90vw,1060px); height:100%; animation:headbuttLoad .5s cubic-bezier(.1,.72,.18,1) both; }
 .mohawk-finisher-sequence.frame-brotality-impact img { width:100%; max-width:none; height:100%; bottom:0; object-fit:cover; object-position:center center; animation:headbuttImpact .3s cubic-bezier(.02,.9,.06,1) both; }
 .mohawk-finisher-sequence.frame-brotality-victory img { width:min(78vw,920px); height:94%; animation:mohawkFinisherEnter .46s cubic-bezier(.1,.78,.18,1) both; }
+.mohawk-finisher-sequence.is-dragon-fatality { inset:0; background:#030303; }
+.mohawk-finisher-sequence.is-dragon-fatality::after { z-index:2; background:radial-gradient(circle at 50% 48%,transparent 42%,rgba(0,0,0,.5) 100%); }
+.dragon-fatality-frame {
+  position:absolute;
+  z-index:1;
+  inset:0;
+  background-color:#030303;
+  background-repeat:no-repeat;
+  background-size:700% auto;
+  animation:dragonFatalityFrame .18s ease-out both;
+}
+.mohawk-finisher-sequence.frame-fatality-21 .dragon-fatality-frame { animation:dragonFatalityImpact .18s cubic-bezier(.02,.9,.05,1) both; }
 .finish-him-lockup { position:absolute; z-index:3; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:clamp(1rem,5vh,4rem); text-align:center; pointer-events:auto; }
 .finish-him-lockup strong { color:#f7c620; font:1000 clamp(3.2rem,10vw,9rem)/.86 "Arial Black",sans-serif; letter-spacing:-.06em; -webkit-text-stroke:clamp(2px,.35vw,6px) #1a0704; text-shadow:clamp(5px,.75vw,12px) clamp(7px,1vw,16px) 0 #c51810,0 0 26px rgba(255,44,16,.65); animation:finishHimPulse .42s ease-in-out infinite alternate; }
 .finish-him-lockup span { margin-top:.9rem; padding:.55rem 1rem; color:#fff5de; background:rgba(8,4,3,.8); border-left:4px solid #f0b927; font:900 clamp(.72rem,1.4vw,1.05rem)/1.15 system-ui,sans-serif; letter-spacing:.12em; }
@@ -486,12 +503,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .intro-versus-card .how-to { margin:.75rem 0; padding:.65rem 0; border-color:#423e36; }
 .intro-versus-card .how-to kbd { color:var(--gold); background:#10110f; border-color:#777064; }
 .intro-versus-card .how-to span { color:#bbb3a5; }
-.venue-picker { margin:-.1rem 0 .6rem; }
-.venue-picker>strong { display:block; margin-bottom:.35rem; color:#8f897e; font:900 clamp(.42rem,.58vw,.55rem)/1 Arial,sans-serif; letter-spacing:.16em; text-align:center; }
-.venue-picker>div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.3rem; }
-.venue-picker button { min-width:0; padding:.38rem .35rem; color:#9f998e; border:1px solid #4d4942; background:#090a09; font:900 clamp(.43rem,.58vw,.56rem)/1 Arial,sans-serif; letter-spacing:.07em; cursor:pointer; }
-.venue-picker button:hover { color:#fff; border-color:#a79b87; }
-.venue-picker button.is-selected { color:#17110a; border-color:#ffd071; background:var(--gold); box-shadow:inset 0 0 0 1px #8d4e0e; }
 .intro-fight-button { border:2px solid #ff9a35; box-shadow:0 6px 0 #72100b,0 0 18px rgba(225,40,30,.45); animation:startButtonPulse .85s ease-in-out infinite alternate; }
 .local-scores-button { width:100%; margin-top:.55rem; padding:.55rem; color:#f4c04c; border:1px solid #665c4c; background:#0b0c0b; font:900 clamp(.55rem,.8vw,.75rem)/1 Arial,sans-serif; letter-spacing:.18em; cursor:pointer; }
 .local-scores-button:hover { color:#fff; border-color:var(--gold); background:#211b13; }
@@ -502,10 +513,15 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .secret-code-form button { padding:.55rem .65rem; color:#111; border:1px solid #ffc34d; background:var(--gold); font:1000 .57rem/1 Arial,sans-serif; letter-spacing:.1em; cursor:pointer; }
 .secret-confirmation { margin-top:.45rem; color:#ffbd2e; font:1000 clamp(.55rem,.75vw,.7rem)/1 Arial,sans-serif; letter-spacing:.13em; text-align:center; text-shadow:0 0 10px rgba(255,76,22,.85); }
 .active-secrets { display:flex; justify-content:center; flex-wrap:wrap; gap:.35rem; margin-top:.45rem; }
-.active-secrets button { display:flex; align-items:center; gap:.3rem; padding:.3rem .32rem .3rem .45rem; color:#ffd359; border:1px solid #7d491e; background:#241006; font:900 clamp(.44rem,.58vw,.55rem)/1 Arial,sans-serif; letter-spacing:.08em; cursor:pointer; }
-.active-secrets button:hover { border-color:#e29337; background:#351708; }
-.active-secrets button span { pointer-events:none; }
-.active-secrets button b { display:grid; place-items:center; width:1.05rem; height:1.05rem; color:#f7d7b7; border-radius:50%; background:#6d2119; font:1000 .8rem/1 Arial,sans-serif; }
+.active-secrets button { padding:.3rem .45rem; color:#ffd359; border:1px solid #7d491e; background:#241006; font:900 clamp(.44rem,.58vw,.55rem)/1 Arial,sans-serif; letter-spacing:.08em; cursor:pointer; }
+.active-secrets button:hover { color:#fff; border-color:#e8a12a; }
+.active-secrets b { margin-left:.22rem; color:#ff8b68; font-size:1.2em; }
+.venue-select { margin:.35rem 0 .7rem; }
+.venue-select>strong { display:block; margin-bottom:.35rem; color:#9b958a; text-align:center; font:900 clamp(.46rem,.66vw,.62rem)/1 Arial,sans-serif; letter-spacing:.18em; }
+.venue-select>div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.3rem; }
+.venue-select button { min-height:2rem; padding:.35rem .28rem; color:#aaa397; border:1px solid #47433b; background:#0b0c0b; font:900 clamp(.4rem,.56vw,.53rem)/1.1 Arial,sans-serif; letter-spacing:.07em; cursor:pointer; }
+.venue-select button.is-selected { color:#17110b; border-color:#ffe396; background:var(--gold); }
+.venue-select button:disabled { color:#4d4b47; border-color:#292a28; cursor:not-allowed; }
 .intro-versus-card>small { display:block; margin-top:.7rem; color:#77736b; text-align:center; font:800 clamp(.44rem,.62vw,.58rem)/1 Arial,sans-serif; letter-spacing:.16em; }
 @keyframes introFighterBreathe { from{transform:translateY(0) scale(1)} to{transform:translateY(-.7%) scale(1.008)} }
 @keyframes startButtonPulse { to{background:#ff3d30;box-shadow:0 6px 0 #72100b,0 0 28px rgba(255,62,39,.72)} }
@@ -667,9 +683,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 
 @keyframes grain { 0%{transform:translate(0,0)}25%{transform:translate(3%,-2%)}50%{transform:translate(-2%,3%)}75%{transform:translate(2%,2%)}100%{transform:translate(-3%,-2%)} }
 @keyframes crowdBob { to{transform:translateY(-4%) scale(var(--s,1));} }
-@keyframes specialEndingDim { from{opacity:0} to{opacity:1} }
 @keyframes crowdChant { from{translate:0 5%;scale:var(--s,1)} to{translate:0 -9%;scale:var(--s,1)} }
 @keyframes crowdArms { from{transform:rotate(-42deg) translateY(6%)} to{transform:rotate(-12deg) translateY(-10%)} }
+@keyframes dragonFatalityFrame { from{opacity:.84;filter:brightness(.82)} to{opacity:1;filter:brightness(1)} }
+@keyframes dragonFatalityImpact { from{transform:scale(.94);filter:brightness(1.8)} to{transform:scale(1.08);filter:brightness(1)} }
 @keyframes ponchRiseAndSit { 0%{opacity:0;transform:translateY(62%) scale(.72)} 14%{opacity:1;transform:translateY(0) scale(1)} 69%{opacity:1;transform:translateY(0) scale(1)} 84%{opacity:.82;transform:translateY(30%) scale(.9)} 100%{opacity:0;transform:translateY(64%) scale(.72)} }
 @keyframes ponchWords { 0%,13%{opacity:0;transform:translateY(12px) rotate(-3deg) scale(.8)} 20%,66%{opacity:1;transform:translateY(0) rotate(-3deg) scale(1)} 78%,100%{opacity:0;transform:translateY(8px) rotate(-3deg) scale(.86)} }
 @keyframes chantMoReveal { 0%,10%{opacity:0;filter:brightness(1)} 11%,72%{opacity:1;filter:brightness(1.45)} 73%,100%{opacity:0} }
@@ -832,7 +849,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .is-slowmo-active .opponent-stage,.is-slowmo-active .first-person-body { filter:saturate(.45) contrast(1.18) brightness(.94); }
 .is-slowmo-active .arena { box-shadow:inset 0 0 0 4px rgba(88,220,255,.3),0 0 100px #000; }
 .is-arcade .opponent-pose-art,.is-arcade .player-pose-art,.is-arcade .enemy-fist-art,.is-arcade .player-fist-art { image-rendering:pixelated; filter:contrast(1.12) saturate(1.32); }
-.is-arcade .grain { display:block; opacity:.12; background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 1px,rgba(0,0,0,.18) 1px 3px); animation:arcadeScan .36s steps(2) infinite; }
+.is-arcade .grain { display:block; opacity:.12; background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 1px,rgba(0,0,0,.18) 1px 3px); animation:arcadeScan .18s steps(2) infinite; }
 .is-arcade .impact b { color:#fff36b; text-shadow:4px 4px #e2241c,-3px -3px #2196ff; }
 .is-hit-stop .opponent-stage,.is-hit-stop .first-person-body { animation-play-state:paused !important; filter:contrast(1.16) brightness(1.12); }
 .is-second-wind { filter:drop-shadow(0 0 24px rgba(255,43,20,.9)) brightness(1.18) saturate(1.25); animation:secondWindBurst .18s ease-in-out 5 alternate !important; }
@@ -939,8 +956,6 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .mohawk-finisher-sequence img,.mohawk-finisher-sequence.frame-walk img,.mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:128vw; max-width:none; height:88%; }
   .mohawk-finisher-sequence.frame-ground-strike img { width:138vw; max-width:none; height:92%; }
   .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:175vw; max-width:none; height:105%; }
-  .mohawk-finisher-sequence.frame-fatality-power img,.mohawk-finisher-sequence.frame-fatality-command img,.mohawk-finisher-sequence.frame-fatality-victory img { width:145vw; max-width:none; height:94%; }
-  .mohawk-finisher-sequence.frame-fatality-rush img { width:190vw; max-width:none; height:108%; }
   .mohawk-finisher-sequence.frame-chair-slide img,.mohawk-finisher-sequence.frame-chair-charge img,.mohawk-finisher-sequence.frame-chair-aftermath img { width:145vw; max-width:none; height:92%; }
   .mohawk-finisher-sequence.frame-chair-impact img { width:190vw; max-width:none; height:108%; }
   .mohawk-finisher-sequence.frame-brotality-enter img,.mohawk-finisher-sequence.frame-brotality-run img,.mohawk-finisher-sequence.frame-brotality-windup img,.mohawk-finisher-sequence.frame-brotality-victory img { width:145vw; max-width:none; height:92%; }

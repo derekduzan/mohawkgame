@@ -65,17 +65,14 @@ type PlayerPose =
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
+type ArenaLocation = "arena" | "summit" | "blue-bridge" | "tulip-street" | "tulip-driveway" | "world-championship";
+type DragonFatalityFrame = `fatality-${"01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09" | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21"}`;
 type MohawkFinisherFrame =
-  | "walk" | "emerge" | "turn" | "ground-strike" | "bite" | "elbow-bite"
-  | "fatality-power" | "fatality-command" | "fatality-rush" | "fatality-victory"
+  | DragonFatalityFrame
   | "chair-slide" | "chair-charge" | "chair-impact" | "chair-aftermath"
   | "brotality-enter" | "brotality-run" | "brotality-windup" | "brotality-impact" | "brotality-victory";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
-type Venue = "arena" | "warehouse" | "nightclub" | "space-prison";
-type SecretEffect =
-  | "flameon" | "ironjaw" | "timeless" | "aura" | "fatality"
-  | "brotality" | "slowmo" | "arcade" | "rumble" | "savage";
 type PunchStats = {
   jab: number;
   cross: number;
@@ -98,6 +95,15 @@ const ROUND_TIME = 90;
 const PLAYER_KNOCKDOWN_SCORE_PENALTY = 3000;
 const TIME_BONUS_PER_SECOND = 200;
 const LEADERBOARD_STORAGE_KEY = "fighttime-local-leaderboard-v1";
+const VENUE_STORAGE_KEY = "fighttime-unlocked-venues-v1";
+const VENUES: Array<{ id: ArenaLocation; name: string; code?: string }> = [
+  { id: "arena", name: "THE RING" },
+  { id: "summit", name: "MOUNTAIN SUMMIT", code: "SUMMIT" },
+  { id: "blue-bridge", name: "BLUE BRIDGE", code: "BLUEBRIDGE" },
+  { id: "tulip-street", name: "TULIP STREET", code: "WATERTOWER" },
+  { id: "tulip-driveway", name: "TULIP STREET DRIVEWAY", code: "TULIPST" },
+  { id: "world-championship", name: "WORLD CHAMPIONSHIP", code: "WORLDCHAMP" },
+];
 const EMPTY_PUNCH_STATS: PunchStats = {
   jab: 0,
   cross: 0,
@@ -118,19 +124,10 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.88.0";
+const GAME_VERSION = "0.86.4";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
-const VENUES: readonly { id: Venue; label: string; background?: string }[] = [
-  { id: "arena", label: "FIGHTTIME ARENA" },
-  { id: "warehouse", label: "WAREHOUSE", background: "/venue-warehouse.webp" },
-  { id: "nightclub", label: "NIGHTCLUB", background: "/venue-nightclub.webp" },
-  { id: "space-prison", label: "SPACE PRISON", background: "/venue-space-prison.webp" },
-];
 
-// Only assets required during normal combat block the loading screen. Result
-// scenes and secret finishers are loaded on demand so Chrome can reclaim their
-// decoded image memory instead of pinning the entire game at startup.
-const CORE_POSE_ASSETS = [
+const POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
   asset("/opponent-overhand-contact.webp"),
@@ -141,105 +138,28 @@ const CORE_POSE_ASSETS = [
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
   asset("/opponent-knee-breathing.webp"), asset("/opponent-knee-rising.webp"),
+  asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left-v2.webp"), asset("/player-guard-right-v2.webp"), asset("/player-jab-left-arm.webp"),
   asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
   asset("/player-haymaker-left-arm.webp"), asset("/player-haymaker-right-arm.webp"),
   asset("/player-left-uppercut-arm.webp"), asset("/player-right-hook-arm.webp"),
   asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"), asset("/player-special-uppercut-contact.webp"),
-  asset("/player-block.webp"), asset("/player-hit.webp"),
-  asset("/player-knockdown-arms.webp"),
-];
-
-const SAVAGE_ASSETS = [
-  asset("/savage-guard.webp"), asset("/savage-windup-left.webp"), asset("/savage-windup-right.webp"),
-  asset("/savage-punch-left.webp"), asset("/savage-punch-right.webp"), asset("/savage-body.webp"),
-  asset("/savage-heavy.webp"), asset("/savage-hit.webp"), asset("/savage-knee.webp"),
-  asset("/savage-special-uppercut-contact.webp"),
-];
-
-const FATALITY_ASSETS = [
-  asset("/mohawk-finisher-walk.png"),
-  asset("/mohawk-finisher-emerge.png"), asset("/mohawk-finisher-turn.png"),
-  asset("/mohawk-finisher-ground-strike.png"), asset("/mohawk-finisher-bite.png"),
-  asset("/mohawk-finisher-elbow-bite.png"),
-];
-
-const BROTALITY_ASSETS = [
+  asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"),
+  asset("/player-knockdown-arms.webp"), asset("/opponent-victory.webp"),
+  asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
+  asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
+  asset("/fighttime-logo.png"), asset("/finisher-wobble.png"),
+  asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
+  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"), asset("/finisher-groin-down.png"),
+  asset("/finisher-powerbomb-kick.png"), asset("/finisher-powerbomb-head-pull.png"),
+  asset("/finisher-powerbomb-lift.png"), asset("/finisher-powerbomb-impact.png"),
   asset("/mohawk-finisher-chair-slide.png"), asset("/mohawk-finisher-chair-charge.png"),
   asset("/mohawk-finisher-chair-impact.png"), asset("/mohawk-finisher-chair-aftermath.png"),
   asset("/mohawk-finisher-brotality-enter.webp"), asset("/mohawk-finisher-brotality-run.webp"),
   asset("/mohawk-finisher-brotality-windup.webp"), asset("/mohawk-finisher-brotality-impact.webp"),
   asset("/mohawk-finisher-brotality-victory.webp"),
+  asset("/ponch-crowd-shout.png"),
 ];
-
-const PLAYER_FINISHER_ASSETS = [
-  asset("/finisher-wobble.png"),
-  asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
-  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"), asset("/finisher-groin-down.png"),
-  asset("/finisher-powerbomb-kick.png"), asset("/finisher-powerbomb-head-pull.png"),
-  asset("/finisher-powerbomb-lift.png"), asset("/finisher-powerbomb-impact.png"),
-];
-
-const warmAssets = (sources: readonly string[]) => {
-  sources.forEach((src) => {
-    const image = new Image();
-    image.decoding = "async";
-    image.src = src;
-    void image.decode().catch(() => undefined);
-  });
-};
-
-function savageAssetForPose(pose: FighterPose) {
-  if (
-    pose === "windup-left" ||
-    pose === "windup-combo-left" ||
-    pose === "windup-heavy-left" ||
-    pose === "windup-haymaker-left"
-  ) return asset("/savage-windup-left.webp");
-  if (
-    pose === "windup-right" ||
-    pose === "windup-combo-right" ||
-    pose === "windup-heavy" ||
-    pose === "windup-haymaker-right" ||
-    pose === "windup-uppercut"
-  ) return asset("/savage-windup-right.webp");
-  if (
-    pose === "attack-left" ||
-    pose === "attack-combo-left" ||
-    pose === "attack-left-contact" ||
-    pose === "attack-heavy-left" ||
-    pose === "attack-heavy-left-contact" ||
-    pose === "attack-haymaker-left" ||
-    pose === "attack-haymaker-left-contact"
-  ) return asset("/savage-punch-left.webp");
-  if (
-    pose === "attack-right" ||
-    pose === "attack-combo-right" ||
-    pose === "attack-right-contact"
-  ) return asset("/savage-punch-right.webp");
-  if (pose === "windup-body" || pose === "attack-body" || pose === "attack-body-contact") {
-    return asset("/savage-body.webp");
-  }
-  if (
-    pose === "attack-heavy" ||
-    pose === "attack-heavy-contact" ||
-    pose === "attack-haymaker-right" ||
-    pose === "attack-haymaker-right-contact" ||
-    pose === "attack-uppercut" ||
-    pose === "attack-uppercut-contact"
-  ) return asset("/savage-heavy.webp");
-  if (
-    pose === "hit-left" ||
-    pose === "hit-right" ||
-    pose === "hit-body" ||
-    pose === "stumble-back" ||
-    pose === "knockout"
-  ) return asset("/savage-hit.webp");
-  if (pose === "knockdown-knee" || pose === "rising" || pose === "failed-rise") {
-    return asset("/savage-knee.webp");
-  }
-  return asset("/savage-guard.webp");
-}
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
@@ -314,20 +234,26 @@ export default function Home() {
   const [slowMo, setSlowMo] = useState(false);
   const [arcadeMode, setArcadeMode] = useState(false);
   const [rumble, setRumble] = useState(false);
-  const [savageSkin, setSavageSkin] = useState(false);
-  const [venue, setVenue] = useState<Venue>("arena");
   const [slowMoActive, setSlowMoActive] = useState(false);
-  const [specialEndingIntro, setSpecialEndingIntro] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
   const [secretConfirmation, setSecretConfirmation] = useState("");
+  const [arenaLocation, setArenaLocation] = useState<ArenaLocation>("arena");
+  const [unlockedLocations, setUnlockedLocations] = useState<ArenaLocation[]>(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(VENUE_STORAGE_KEY) || "[]") as ArenaLocation[];
+      return Array.from(new Set<ArenaLocation>(["arena", ...stored]));
+    } catch {
+      return ["arena"];
+    }
+  });
   const [finisherFrame, setFinisherFrame] = useState<
     "wobble" |
     "powerbomb-kick" | "powerbomb-head-pull" | "powerbomb-lift" | "powerbomb-impact" |
     "groin-kick" | "groin-recoil" | "groin-kneel" | "groin-knee" | "groin-down"
   >("wobble");
   const [finisherRunning, setFinisherRunning] = useState(false);
-  const [mohawkFinisherFrame, setMohawkFinisherFrame] = useState<MohawkFinisherFrame>("walk");
+  const [mohawkFinisherFrame, setMohawkFinisherFrame] = useState<MohawkFinisherFrame>("fatality-01");
   const [showPonchCameo, setShowPonchCameo] = useState(false);
 
   const matchRef = useRef(matchState);
@@ -369,6 +295,7 @@ export default function Home() {
   const enemyAttackActionRef = useRef(0);
   const enemyQueueAttackRef = useRef<() => void>(() => undefined);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const preloadStartedRef = useRef(false);
   const flamingHandsRef = useRef(false);
   const ironJawRef = useRef(false);
@@ -385,8 +312,6 @@ export default function Home() {
   const finisherRunningRef = useRef(false);
   const mohawkFinisherRunningRef = useRef(false);
   const ponchShownRef = useRef(false);
-  const expandedFatalityAvailableRef = useRef(false);
-  const expandedFatalityCheckedRef = useRef(false);
 
   useEffect(() => void (matchRef.current = matchState), [matchState]);
   useEffect(() => void (enemyHealthRef.current = enemyHealth), [enemyHealth]);
@@ -409,95 +334,75 @@ export default function Home() {
   useEffect(() => void (arcadeModeRef.current = arcadeMode), [arcadeMode]);
   useEffect(() => void (rumbleRef.current = rumble), [rumble]);
 
-  const checkExpandedFatalityAddon = useCallback(async () => {
-    if (expandedFatalityCheckedRef.current) return;
-    expandedFatalityCheckedRef.current = true;
-    try {
-      const response = await fetch(asset("/expanded-fatality/manifest.json"), { cache: "no-store" });
-      if (!response.ok) return;
-      const manifest = await response.json() as { files?: unknown };
-      if (!Array.isArray(manifest.files) || !manifest.files.every((file) => typeof file === "string")) return;
-      expandedFatalityAvailableRef.current = true;
-      warmAssets(manifest.files.map((file) => asset(`/expanded-fatality/${file}`)));
-    } catch {
-      // The expanded fatality is an optional separately uploaded add-on.
-      // Its absence must never prevent the standard fatality from running.
-    }
+  const unlockVenue = useCallback((location: ArenaLocation) => {
+    setUnlockedLocations((current) => {
+      const next = current.includes(location) ? current : [...current, location];
+      window.localStorage.setItem(VENUE_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+    setArenaLocation(location);
   }, []);
 
   const activateSecretCode = useCallback((rawCode: string) => {
     const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
     let confirmation = "";
-
-    // Every player-favorable secret belongs in this registry. ZUPERMAN
-    // activates the full registry, so future benefit codes only need to be
-    // added here to become part of the master code automatically.
-    const playerBenefitCodes = [
-      {
-        codes: ["FLAMEON"],
-        confirmation: "FLAMING HANDS ACTIVATED",
-        activate: () => {
-          flamingHandsRef.current = true;
-          setFlamingHands(true);
-        },
-      },
-      {
-        codes: ["IRONJAW"],
-        confirmation: "IRON JAW ACTIVATED",
-        activate: () => {
-          ironJawRef.current = true;
-          setIronJaw(true);
-        },
-      },
-      {
-        codes: ["TIMELESS", "ENDLESS"],
-        confirmation: "TIMELESS FIGHT ACTIVATED",
-        activate: () => {
-          endlessFightRef.current = true;
-          setEndlessFight(true);
-        },
-      },
-      {
-        codes: ["AURA"],
-        confirmation: "AURA ACTIVATED",
-        activate: () => {
-          auraRef.current = true;
-          setAura(true);
-          guardRef.current = 100;
-          setGuard(100);
-        },
-      },
-      {
-        codes: ["SLOWMO"],
-        confirmation: "SLOW-MO COUNTERS ACTIVATED",
-        activate: () => {
-          slowMoRef.current = true;
-          setSlowMo(true);
-        },
-      },
-    ] as const;
-    const matchedPlayerBenefit = playerBenefitCodes.find(({ codes }) =>
-      codes.some((benefitCode) => code.endsWith(benefitCode))
-    );
-
     if (code.endsWith("ZUPERMAN")) {
-      playerBenefitCodes.forEach(({ activate }) => activate());
-      confirmation = "ZUPERMAN POWERS ACTIVATED";
-    } else if (matchedPlayerBenefit) {
-      matchedPlayerBenefit.activate();
-      confirmation = matchedPlayerBenefit.confirmation;
+      flamingHandsRef.current = true;
+      ironJawRef.current = true;
+      endlessFightRef.current = true;
+      auraRef.current = true;
+      setFlamingHands(true);
+      setIronJaw(true);
+      setEndlessFight(true);
+      setAura(true);
+      guardRef.current = 100;
+      setGuard(100);
+      confirmation = "ALL PLAYER POWERS ACTIVATED";
+    } else if (code.endsWith("SUMMIT")) {
+      unlockVenue("summit");
+      confirmation = "MOUNTAIN SUMMIT UNLOCKED";
+    } else if (code.endsWith("BLUEBRIDGE")) {
+      unlockVenue("blue-bridge");
+      confirmation = "BLUE BRIDGE UNLOCKED";
+    } else if (code.endsWith("WATERTOWER")) {
+      unlockVenue("tulip-street");
+      confirmation = "TULIP STREET UNLOCKED";
+    } else if (code.endsWith("TULIPST")) {
+      unlockVenue("tulip-driveway");
+      confirmation = "TULIP STREET UNLOCKED";
+    } else if (code.endsWith("WORLDCHAMP")) {
+      unlockVenue("world-championship");
+      confirmation = "WORLD CHAMPIONSHIP UNLOCKED";
+    } else if (code.endsWith("FLAMEON")) {
+      flamingHandsRef.current = true;
+      setFlamingHands(true);
+      confirmation = "FLAMING HANDS ACTIVATED";
+    } else if (code.endsWith("IRONJAW")) {
+      ironJawRef.current = true;
+      setIronJaw(true);
+      confirmation = "IRON JAW ACTIVATED";
+    } else if (code.endsWith("TIMELESS") || code.endsWith("ENDLESS")) {
+      endlessFightRef.current = true;
+      setEndlessFight(true);
+      confirmation = "TIMELESS FIGHT ACTIVATED";
+    } else if (code.endsWith("AURA")) {
+      auraRef.current = true;
+      setAura(true);
+      guardRef.current = 100;
+      setGuard(100);
+      confirmation = "AURA ACTIVATED";
     } else if (code.endsWith("FATALITY")) {
       finisherEnabledRef.current = true;
       setFinisherEnabled(true);
-      warmAssets(FATALITY_ASSETS);
-      warmAssets(PLAYER_FINISHER_ASSETS);
-      void checkExpandedFatalityAddon();
       confirmation = "FATALITY MODE ACTIVATED";
     } else if (code.endsWith("BROTALITY")) {
       brotalityEnabledRef.current = true;
       setBrotalityEnabled(true);
-      warmAssets(BROTALITY_ASSETS);
       confirmation = "BROTALITY MODE ACTIVATED";
+    } else if (code.endsWith("SLOWMO")) {
+      slowMoRef.current = true;
+      setSlowMo(true);
+      confirmation = "SLOW-MO COUNTERS ACTIVATED";
     } else if (code.endsWith("ARCADE")) {
       arcadeModeRef.current = true;
       setArcadeMode(true);
@@ -506,10 +411,6 @@ export default function Home() {
       rumbleRef.current = true;
       setRumble(true);
       confirmation = "RUMBLE IMPACTS ACTIVATED";
-    } else if (code.endsWith("SAVAGE")) {
-      setSavageSkin(true);
-      warmAssets(SAVAGE_ASSETS);
-      confirmation = "SAVAGE SKIN ACTIVATED";
     }
     if (!confirmation) return false;
     setSecretCode("");
@@ -518,55 +419,18 @@ export default function Home() {
     window.clearTimeout(secretConfirmationTimerRef.current);
     secretConfirmationTimerRef.current = window.setTimeout(() => setSecretConfirmation(""), 2200);
     return true;
-  }, [checkExpandedFatalityAddon]);
+  }, [unlockVenue]);
 
-  const deactivateSecretCode = useCallback((effect: SecretEffect) => {
-    let label = "";
-    if (effect === "flameon") {
-      flamingHandsRef.current = false;
-      setFlamingHands(false);
-      label = "FLAMING HANDS";
-    } else if (effect === "ironjaw") {
-      ironJawRef.current = false;
-      setIronJaw(false);
-      label = "IRON JAW";
-    } else if (effect === "timeless") {
-      endlessFightRef.current = false;
-      setEndlessFight(false);
-      label = "TIMELESS";
-    } else if (effect === "aura") {
-      auraRef.current = false;
-      setAura(false);
-      label = "AURA";
-    } else if (effect === "fatality") {
-      finisherEnabledRef.current = false;
-      setFinisherEnabled(false);
-      label = "FATALITY";
-    } else if (effect === "brotality") {
-      brotalityEnabledRef.current = false;
-      setBrotalityEnabled(false);
-      label = "BROTALITY";
-    } else if (effect === "slowmo") {
-      slowMoRef.current = false;
-      setSlowMo(false);
-      setSlowMoActive(false);
-      window.clearTimeout(slowMoTimerRef.current);
-      label = "SLOWMO";
-    } else if (effect === "arcade") {
-      arcadeModeRef.current = false;
-      setArcadeMode(false);
-      label = "ARCADE";
-    } else if (effect === "rumble") {
-      rumbleRef.current = false;
-      setRumble(false);
-      label = "RUMBLE";
-    } else {
-      setSavageSkin(false);
-      label = "SAVAGE SKIN";
-    }
-    setSecretConfirmation(`${label} DEACTIVATED`);
-    window.clearTimeout(secretConfirmationTimerRef.current);
-    secretConfirmationTimerRef.current = window.setTimeout(() => setSecretConfirmation(""), 1600);
+  const deactivateSecret = useCallback((code: string) => {
+    if (code === "FLAMEON") { flamingHandsRef.current = false; setFlamingHands(false); }
+    if (code === "IRONJAW") { ironJawRef.current = false; setIronJaw(false); }
+    if (code === "TIMELESS") { endlessFightRef.current = false; setEndlessFight(false); }
+    if (code === "AURA") { auraRef.current = false; setAura(false); }
+    if (code === "FATALITY") { finisherEnabledRef.current = false; setFinisherEnabled(false); }
+    if (code === "BROTALITY") { brotalityEnabledRef.current = false; setBrotalityEnabled(false); }
+    if (code === "SLOWMO") { slowMoRef.current = false; setSlowMo(false); setSlowMoActive(false); }
+    if (code === "ARCADE") { arcadeModeRef.current = false; setArcadeMode(false); }
+    if (code === "RUMBLE") { rumbleRef.current = false; setRumble(false); }
   }, []);
 
   useEffect(() => {
@@ -680,11 +544,12 @@ export default function Home() {
     let nextAsset = 0;
     let completed = 0;
     const loadNext = async () => {
-      while (nextAsset < CORE_POSE_ASSETS.length) {
-        const src = CORE_POSE_ASSETS[nextAsset++];
+      while (nextAsset < POSE_ASSETS.length) {
+        const src = POSE_ASSETS[nextAsset++];
         const image = new Image();
         image.decoding = "async";
         image.src = src;
+        preloadedImagesRef.current.push(image);
         try {
           await image.decode();
         } catch {
@@ -780,7 +645,6 @@ export default function Home() {
 
   const finishMatch = useCallback((result: "won" | "lost", reason: ResultReason = "knockout") => {
     const resultActionId = ++playerActionRef.current;
-    setSpecialEndingIntro(false);
     if (result === "won") {
       const finalScore = Math.max(
         0,
@@ -938,28 +802,16 @@ export default function Home() {
       : null;
     const chairFinisher = brotalityKind === "chair";
     const headbuttFinisher = brotalityKind === "headbutt";
-    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : headbuttFinisher ? "brotality-enter" : "walk");
-    setPlayerPose("hit");
-    setEnemyPoseSafe("idle");
-    setSpecialEndingIntro(true);
-    setCallout("THE LIGHTS GO DOWN...");
+    setMohawkFinisherFrame(chairFinisher ? "chair-slide" : headbuttFinisher ? "brotality-enter" : "fatality-01");
+    setCallout(category === "fatality" ? "MOHAWK WINS!" : "WAIT—SOMEBODY'S IN THE RING!");
     playSound(reason === "time" ? "bell" : "hurt");
-    const revealDelay = 1650;
-    const scheduleFinisher = (delay: number, callback: () => void) =>
-      window.setTimeout(callback, revealDelay + delay);
-    window.setTimeout(() => {
-      if (matchRef.current !== "mohawk-finisher") return;
-      setSpecialEndingIntro(false);
-      setCallout(category === "fatality" ? "MOHAWK WINS!" : "WAIT—SOMEBODY'S IN THE RING!");
-    }, revealDelay);
-
     if (chairFinisher) {
-      scheduleFinisher(650, () => {
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setMohawkFinisherFrame("chair-charge");
         setCallout("WATCH THE CHAIR!");
-      });
-      scheduleFinisher(1350, () => {
+      }, 650);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setMohawkFinisherFrame("chair-impact");
         setCallout("STEEL CHAIR!");
@@ -967,33 +819,33 @@ export default function Home() {
         setScreenShake(true);
         triggerRumble(true);
         playSound("ko");
-      });
-      scheduleFinisher(2050, () => {
+      }, 1350);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setImpact(null);
         setScreenShake(false);
         setMohawkFinisherFrame("chair-aftermath");
         setCallout("MOHAWK WINS!");
-      });
-      scheduleFinisher(3300, () => {
+      }, 2050);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         mohawkFinisherRunningRef.current = false;
         finishMatch("lost", reason);
-      });
+      }, 3300);
       return;
     }
     if (headbuttFinisher) {
-      scheduleFinisher(600, () => {
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setMohawkFinisherFrame("brotality-run");
         setCallout("JOVAN'S CHARGING!");
-      });
-      scheduleFinisher(1150, () => {
+      }, 600);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setMohawkFinisherFrame("brotality-windup");
         setCallout("LOOK OUT!");
-      });
-      scheduleFinisher(1700, () => {
+      }, 1150);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setMohawkFinisherFrame("brotality-impact");
         setCallout("BROTALITY!");
@@ -1001,123 +853,64 @@ export default function Home() {
         setScreenShake(true);
         triggerRumble(true);
         playSound("ko");
-      });
-      scheduleFinisher(2350, () => {
+      }, 1700);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         setImpact(null);
         setScreenShake(false);
         setMohawkFinisherFrame("brotality-victory");
         setCallout("MOHAWK WINS!");
-      });
-      scheduleFinisher(3650, () => {
+      }, 2350);
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
         mohawkFinisherRunningRef.current = false;
         finishMatch("lost", reason);
-      });
+      }, 3650);
       return;
     }
-
-    if (expandedFatalityAvailableRef.current) {
-      scheduleFinisher(600, () => {
+    const dragonSequence: Array<{ frame: DragonFatalityFrame; at: number; callout?: string }> = [
+      { frame: "fatality-02", at: 240 },
+      { frame: "fatality-03", at: 480 },
+      { frame: "fatality-04", at: 720 },
+      { frame: "fatality-05", at: 980, callout: "THE DRAGON AWAKENS!" },
+      { frame: "fatality-06", at: 1260 },
+      { frame: "fatality-07", at: 1540 },
+      { frame: "fatality-08", at: 1820 },
+      { frame: "fatality-09", at: 2100 },
+      { frame: "fatality-10", at: 2340 },
+      { frame: "fatality-11", at: 2580, callout: "FACE THE DRAGON!" },
+      { frame: "fatality-12", at: 2820 },
+      { frame: "fatality-13", at: 3120 },
+      { frame: "fatality-14", at: 3420 },
+      { frame: "fatality-15", at: 3700, callout: "FATALITY!" },
+      { frame: "fatality-16", at: 3830 },
+      { frame: "fatality-17", at: 3960 },
+      { frame: "fatality-18", at: 4090 },
+      { frame: "fatality-19", at: 4200 },
+      { frame: "fatality-20", at: 4300 },
+      { frame: "fatality-21", at: 4390 },
+    ];
+    dragonSequence.forEach(({ frame, at, callout }) => {
+      window.setTimeout(() => {
         if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("emerge");
-        setCallout("THE DRAGON AWAKENS!");
-      });
-      scheduleFinisher(1200, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("fatality-power");
-        setCallout("DRAGON POWER!");
-      });
-      scheduleFinisher(1900, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("turn");
-        setCallout("FACE THE DRAGON!");
-      });
-      scheduleFinisher(2500, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("fatality-command");
-        setCallout("DEVOUR HIM!");
-      });
-      scheduleFinisher(3200, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("ground-strike");
-        setImpact("player");
-        setScreenShake(true);
-        playSound("hurt");
-      });
-      scheduleFinisher(3900, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("fatality-rush");
-        setImpact("player");
-        setScreenShake(true);
-        triggerRumble(true);
-        playSound("ko");
-      });
-      scheduleFinisher(4550, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setImpact(null);
-        setScreenShake(false);
-        setMohawkFinisherFrame("bite");
-      });
-      scheduleFinisher(5100, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setMohawkFinisherFrame("elbow-bite");
-        setImpact("player");
-        setScreenShake(true);
-      });
-      scheduleFinisher(5750, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        setImpact(null);
-        setScreenShake(false);
-        setMohawkFinisherFrame("fatality-victory");
-        setCallout("MOHAWK WINS!");
-      });
-      scheduleFinisher(6900, () => {
-        if (matchRef.current !== "mohawk-finisher") return;
-        mohawkFinisherRunningRef.current = false;
-        finishMatch("lost", reason);
-      });
-      return;
-    }
-
-    scheduleFinisher(700, () => {
-      if (matchRef.current !== "mohawk-finisher") return;
-      setMohawkFinisherFrame("emerge");
-      setCallout("THE DRAGON AWAKENS!");
+        setMohawkFinisherFrame(frame);
+        if (callout) setCallout(callout);
+        if (frame === "fatality-21") {
+          setImpact("player");
+          setScreenShake(true);
+          triggerRumble(true);
+          playSound("ko");
+        }
+      }, at);
     });
-    scheduleFinisher(1450, () => {
-      if (matchRef.current !== "mohawk-finisher") return;
-      setMohawkFinisherFrame("turn");
-      setCallout("FACE THE DRAGON!");
-    });
-    scheduleFinisher(2150, () => {
-      if (matchRef.current !== "mohawk-finisher") return;
-      setMohawkFinisherFrame("ground-strike");
-      setImpact("player");
-      setScreenShake(true);
-      playSound("hurt");
-    });
-    scheduleFinisher(2850, () => {
-      if (matchRef.current !== "mohawk-finisher") return;
-      setImpact(null);
-      setScreenShake(false);
-      setMohawkFinisherFrame("bite");
-    });
-    scheduleFinisher(3300, () => {
-      if (matchRef.current !== "mohawk-finisher") return;
-      setMohawkFinisherFrame("elbow-bite");
-      setImpact("player");
-      setScreenShake(true);
-      playSound("ko");
-    });
-    scheduleFinisher(4300, () => {
+    window.setTimeout(() => {
       if (matchRef.current !== "mohawk-finisher") return;
       setImpact(null);
       setScreenShake(false);
       mohawkFinisherRunningRef.current = false;
       finishMatch("lost", reason);
-    });
-  }, [finishMatch, playSound, setEnemyPoseSafe, triggerRumble]);
+    }, 5450);
+  }, [finishMatch, playSound, triggerRumble]);
 
   const startMatch = useCallback(() => {
     if (!assetsReady) return;
@@ -1184,8 +977,7 @@ export default function Home() {
     mohawkFinisherRunningRef.current = false;
     setFinisherRunning(false);
     setFinisherFrame("wobble");
-    setMohawkFinisherFrame("walk");
-    setSpecialEndingIntro(false);
+    setMohawkFinisherFrame("fatality-01");
     setShowPonchCameo(false);
     ponchShownRef.current = false;
     bufferedPunchRef.current = null;
@@ -1240,7 +1032,6 @@ export default function Home() {
     setHitStop(false);
     setScreenShake(false);
     setSlowMoActive(false);
-    setSpecialEndingIntro(false);
     window.clearTimeout(slowMoTimerRef.current);
     setCallout("");
     setShowLeaderboard(false);
@@ -1681,16 +1472,14 @@ export default function Home() {
                 (move === "right" && dodgeRef.current === "left"));
 
           if (dodged) {
-            const slowMoBonus = slowMoRef.current ? 1000 : 0;
+            const slowMoBonus = slowMoRef.current ? 650 : 0;
             counterReadyUntilRef.current = performance.now() + (powerShot ? 980 : 720) + slowMoBonus;
-            triggerSlowMo(powerShot ? 1400 : 1100);
+            triggerSlowMo(powerShot ? 820 : 650);
             setCallout(directionalHaymaker ? `${move === "right" ? "LEFT" : "RIGHT"} SLIP — HAYMAKER PUNISH!` : style === "heavy" ? "OVERHAND MISSED — PUNISH HIM!" : "PERFECT SLIP — COUNTER!");
-            // A slip is not a hit. Mohawk completes the missed punch and
-            // recovers his stance without playing a damage reaction.
-            setEnemyPoseSafe("returning");
+            setEnemyPoseSafe("stumble-back");
             playSound("dodge");
             later(() => {
-              if (matchRef.current === "fighting" && poseRef.current === "returning") {
+              if (matchRef.current === "fighting" && poseRef.current === "stumble-back") {
                 setEnemyPoseSafe("idle");
                 setCallout(enemyHealthRef.current <= 35 ? "MOHAWK IS RAGING" : "STAY SHARP");
               }
@@ -1892,26 +1681,8 @@ export default function Home() {
       }
       comboRef.current = nextCombo;
       setCombo(nextCombo);
-      const stumbleChance = kind === "uppercut"
-        ? 1
-        : slipCounter
-          ? .72
-          : isHaymaker
-            ? .62
-            : kind === "power-jab" || kind === "right-hook" || kind === "left-uppercut"
-              ? .28
-              : 0;
-      const lowHealthStumbleBonus = nextHealth <= 15 ? .16 : nextHealth <= 35 ? .08 : 0;
-      const triggersStumble = !enemyIsGuarding
-        && nextHealth > 0
-        && Math.random() < Math.min(1, stumbleChance + lowHealthStumbleBonus);
+      const triggersStumble = !enemyIsGuarding && nextHealth > 0 && nextHealth <= 35 && Math.random() < (nextHealth <= 15 ? .38 : .2);
       if (!enemyIsGuarding) {
-        if (kind === "uppercut") {
-          staminaRef.current = 100;
-          guardRef.current = 100;
-          setStamina(100);
-          setGuard(100);
-        }
         const specialGain = kind === "left" ? 3 : kind === "left-uppercut" ? 4 : kind === "power-jab" ? 6 : kind === "right" ? 4 : kind === "right-hook" ? 5 : kind === "body" ? 5 : isHaymaker ? 7 : 0;
         const nextSpecial = clamp(specialRef.current + specialGain + (slipCounter ? 4 : 0));
         specialRef.current = nextSpecial;
@@ -2299,8 +2070,7 @@ export default function Home() {
   const comboDamageDisplay = combo < 3 ? 1 : Math.min(1.25, 1.05 + (combo - 3) * .025);
   const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
-  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble || savageSkin;
-  const selectedVenue = VENUES.find(({ id }) => id === venue) ?? VENUES[0];
+  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
     ? "RAPID FIRE"
@@ -2310,7 +2080,7 @@ export default function Home() {
         ? "POWER HUNTER"
         : "UNPREDICTABLE";
   const visionClass = playerHealth <= 20 ? "vision-critical" : playerHealth <= 40 ? "vision-hurt" : "";
-  const loadingProgress = Math.round((loadedAssetCount / CORE_POSE_ASSETS.length) * 100);
+  const loadingProgress = Math.round((loadedAssetCount / POSE_ASSETS.length) * 100);
   const opponentAsset = enemyPose === "windup-left"
     ? asset("/opponent-windup-left.webp")
     : enemyPose === "windup-combo-left"
@@ -2372,7 +2142,6 @@ export default function Home() {
                             : enemyPose === "hit-body"
                               ? asset("/opponent-hit-body.webp")
               : asset("/opponent-guard.webp");
-  const displayedOpponentAsset = savageSkin ? savageAssetForPose(enemyPose) : opponentAsset;
   const guardLeftAsset = asset("/player-guard-left-v2.webp");
   const guardRightAsset = asset("/player-guard-right-v2.webp");
   const leftArmAsset = playerPose === "left-haymaker"
@@ -2391,16 +2160,22 @@ export default function Home() {
     : playerPose === "cross-right"
       ? asset("/player-cross-right-arm.webp")
     : guardRightAsset;
+  const dragonFrameNumber = mohawkFinisherFrame.startsWith("fatality-")
+    ? Number(mohawkFinisherFrame.slice(-2))
+    : null;
+  const dragonSheetStart = dragonFrameNumber === null ? 0 : dragonFrameNumber <= 7 ? 1 : dragonFrameNumber <= 14 ? 8 : 15;
+  const dragonSheet = dragonSheetStart === 1
+    ? "/mohawk-fatality-01-07.webp"
+    : dragonSheetStart === 8
+      ? "/mohawk-fatality-08-14.webp"
+      : "/mohawk-fatality-15-21.webp";
+  const dragonSheetPosition = dragonFrameNumber === null
+    ? 0
+    : ((dragonFrameNumber - dragonSheetStart) / 6) * 100;
 
   return (
-    <main className={`game-shell venue-${venue} ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${slowMoActive ? "is-slowmo-active" : ""} ${arcadeMode ? "is-arcade" : ""} ${rumble ? "is-rumble" : ""} ${savageSkin ? "is-savage" : ""} ${visionClass}`}>
-      <section
-        className={`arena ${selectedVenue.background ? "has-venue-art" : ""} ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""} ${matchState === "mohawk-finisher" ? "is-mohawk-finisher" : ""} ${specialEndingIntro ? "is-special-ending-intro" : ""}`}
-        aria-label={`${selectedVenue.label} fight location`}
-      >
-        {selectedVenue.background && (
-          <img className="venue-backdrop" src={asset(selectedVenue.background)} alt="" aria-hidden="true" draggable={false} />
-        )}
+    <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${slowMoActive ? "is-slowmo-active" : ""} ${arcadeMode ? "is-arcade" : ""} ${rumble ? "is-rumble" : ""} ${visionClass}`}>
+      <section className={`arena location-${arenaLocation} ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""} ${matchState === "mohawk-finisher" ? "is-mohawk-finisher" : ""}`} aria-label={VENUES.find((venue) => venue.id === arenaLocation)?.name || "Fight arena"}>
         <div className="grain" aria-hidden="true" />
         <div className="vision-damage" aria-hidden="true"><i /><b /></div>
         <div className="ceiling-lights" aria-hidden="true"><i /><i /><i /></div>
@@ -2425,7 +2200,6 @@ export default function Home() {
         <div className="ring-post post-right" aria-hidden="true" />
         <div className="ropes" aria-hidden="true"><i /><i /><i /></div>
         <div className="ring-floor" aria-hidden="true"><span>BARE KNUCKLE</span></div>
-        {specialEndingIntro && <div className="special-ending-spotlight" aria-hidden="true"><i /></div>}
 
         <header className="fight-hud">
           <div className="fighter-card player-card">
@@ -2463,7 +2237,7 @@ export default function Home() {
 
         <div className={`opponent-shadow ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `shadow-knee-${kneeDepth}` : ""}`} aria-hidden="true" />
         <div className={`opponent-stage pose-${enemyPose} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
-          <img className="opponent-pose-art" src={displayedOpponentAsset} alt={savageSkin ? "Mohawk in his green Savage skin" : "A muscular mohawk fighter in the ring"} draggable={false} />
+          <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
           <div className="damage-glow" aria-hidden="true" />
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>
@@ -2475,12 +2249,7 @@ export default function Home() {
         )}
         {impact === "player" && <div className="hurt-flash" aria-hidden="true" />}
         {playerPose === "special-uppercut" && matchState === "fighting" && (
-          <img
-            className="special-uppercut-contact"
-            src={savageSkin ? asset("/savage-special-uppercut-contact.webp") : asset("/player-special-uppercut-contact.webp")}
-            alt={`The player's right uppercut connecting beneath ${savageSkin ? "Savage Mohawk's" : "Mohawk's"} chin`}
-            draggable={false}
-          />
+          <img className="special-uppercut-contact" src={asset("/player-special-uppercut-contact.webp")} alt="The player's right uppercut connecting beneath Mohawk's chin" draggable={false} />
         )}
 
         {haymakerCharging && matchState === "fighting" && (
@@ -2586,16 +2355,23 @@ export default function Home() {
         )}
 
         {matchState === "mohawk-finisher" && (
-          <div className={`mohawk-finisher-sequence frame-${mohawkFinisherFrame}`} aria-live="assertive">
-            <img
-              src={
-                mohawkFinisherFrame.startsWith("fatality-")
-                  ? asset(`/expanded-fatality/${mohawkFinisherFrame.replace("fatality-", "")}.webp`)
-                  : asset(`/mohawk-finisher-${mohawkFinisherFrame}.${mohawkFinisherFrame.startsWith("brotality-") ? "webp" : "png"}`)
-              }
-              alt=""
-              draggable={false}
-            />
+          <div className={`mohawk-finisher-sequence ${dragonFrameNumber !== null ? "is-dragon-fatality" : ""} frame-${mohawkFinisherFrame}`} aria-live="assertive">
+            {dragonFrameNumber !== null ? (
+              <div
+                className="dragon-fatality-frame"
+                style={{
+                  backgroundImage: `url(${asset(dragonSheet)})`,
+                  backgroundPosition: `${dragonSheetPosition}% center`,
+                }}
+                aria-hidden="true"
+              />
+            ) : (
+              <img
+                src={asset(`/mohawk-finisher-${mohawkFinisherFrame}.${mohawkFinisherFrame.startsWith("brotality-") ? "webp" : "png"}`)}
+                alt=""
+                draggable={false}
+              />
+            )}
           </div>
         )}
 
@@ -2653,7 +2429,7 @@ export default function Home() {
 
         {matchState === "intro" && assetsReady && (
           <div className="overlay intro-overlay">
-            <img className="intro-mohawk" src={savageSkin ? asset("/savage-guard.webp") : asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
+            <img className="intro-mohawk" src={asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
             <div className="title-lockup">
               <img className="intro-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
               <span className="intro-version">VERSION {GAME_VERSION}</span>
@@ -2665,23 +2441,24 @@ export default function Home() {
                 <div><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><span>STRIKE</span></div>
                 <div><kbd>S</kbd><kbd>SPACE</kbd><span>BLOCK</span></div>
               </div>
-              <div className="venue-picker" aria-label="Choose fight location">
+              <div className="venue-select" aria-label="Fight location">
                 <strong>FIGHT LOCATION</strong>
                 <div>
-                  {VENUES.map((venueOption) => (
-                    <button
-                      type="button"
-                      className={venue === venueOption.id ? "is-selected" : ""}
-                      aria-pressed={venue === venueOption.id}
-                      onClick={() => {
-                        setVenue(venueOption.id);
-                        if (venueOption.background) warmAssets([asset(venueOption.background)]);
-                      }}
-                      key={venueOption.id}
-                    >
-                      {venueOption.label}
-                    </button>
-                  ))}
+                  {VENUES.map((venue) => {
+                    const unlocked = unlockedLocations.includes(venue.id);
+                    return (
+                      <button
+                        type="button"
+                        key={venue.id}
+                        className={arenaLocation === venue.id ? "is-selected" : ""}
+                        disabled={!unlocked}
+                        onClick={() => unlocked && setArenaLocation(venue.id)}
+                        title={unlocked ? venue.name : "Locked location"}
+                      >
+                        {unlocked ? venue.name : "??????"}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <button className="fight-button intro-fight-button" onClick={startMatch}>ENTER THE RING <i>›</i></button>
@@ -2710,18 +2487,17 @@ export default function Home() {
                 </form>
               )}
               {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
-              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble || savageSkin) && (
+              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble) && (
                 <div className="active-secrets" aria-label="Active secret powers">
-                  {flamingHands && <button type="button" onClick={() => deactivateSecretCode("flameon")} aria-label="Deactivate Flaming Hands"><span>🔥 FLAMING HANDS</span><b aria-hidden="true">×</b></button>}
-                  {ironJaw && <button type="button" onClick={() => deactivateSecretCode("ironjaw")} aria-label="Deactivate Iron Jaw"><span>◆ IRON JAW</span><b aria-hidden="true">×</b></button>}
-                  {endlessFight && <button type="button" onClick={() => deactivateSecretCode("timeless")} aria-label="Deactivate Timeless"><span>∞ TIMELESS</span><b aria-hidden="true">×</b></button>}
-                  {aura && <button type="button" onClick={() => deactivateSecretCode("aura")} aria-label="Deactivate Aura"><span>◉ AURA</span><b aria-hidden="true">×</b></button>}
-                  {finisherEnabled && <button type="button" onClick={() => deactivateSecretCode("fatality")} aria-label="Deactivate Fatality"><span>☠ FATALITY</span><b aria-hidden="true">×</b></button>}
-                  {brotalityEnabled && <button type="button" onClick={() => deactivateSecretCode("brotality")} aria-label="Deactivate Brotality"><span>★ BROTALITY</span><b aria-hidden="true">×</b></button>}
-                  {slowMo && <button type="button" onClick={() => deactivateSecretCode("slowmo")} aria-label="Deactivate Slowmo"><span>◷ SLOWMO</span><b aria-hidden="true">×</b></button>}
-                  {arcadeMode && <button type="button" onClick={() => deactivateSecretCode("arcade")} aria-label="Deactivate Arcade"><span>▦ ARCADE</span><b aria-hidden="true">×</b></button>}
-                  {rumble && <button type="button" onClick={() => deactivateSecretCode("rumble")} aria-label="Deactivate Rumble"><span>〰 RUMBLE</span><b aria-hidden="true">×</b></button>}
-                  {savageSkin && <button type="button" onClick={() => deactivateSecretCode("savage")} aria-label="Deactivate Savage Skin"><span>◆ SAVAGE SKIN</span><b aria-hidden="true">×</b></button>}
+                  {flamingHands && <button type="button" onClick={() => deactivateSecret("FLAMEON")}>🔥 FLAMING HANDS <b>×</b></button>}
+                  {ironJaw && <button type="button" onClick={() => deactivateSecret("IRONJAW")}>◆ IRON JAW <b>×</b></button>}
+                  {endlessFight && <button type="button" onClick={() => deactivateSecret("TIMELESS")}>∞ TIMELESS <b>×</b></button>}
+                  {aura && <button type="button" onClick={() => deactivateSecret("AURA")}>◉ AURA <b>×</b></button>}
+                  {finisherEnabled && <button type="button" onClick={() => deactivateSecret("FATALITY")}>☠ FATALITY <b>×</b></button>}
+                  {brotalityEnabled && <button type="button" onClick={() => deactivateSecret("BROTALITY")}>★ BROTALITY <b>×</b></button>}
+                  {slowMo && <button type="button" onClick={() => deactivateSecret("SLOWMO")}>◷ SLOWMO <b>×</b></button>}
+                  {arcadeMode && <button type="button" onClick={() => deactivateSecret("ARCADE")}>▦ ARCADE <b>×</b></button>}
+                  {rumble && <button type="button" onClick={() => deactivateSecret("RUMBLE")}>〰 RUMBLE <b>×</b></button>}
                 </div>
               )}
               <small>{endlessFight ? "1 ROUND · INFINITE TIME · FIGHT FOREVER" : "1 ROUND · 90 SECONDS · SURVIVE THE STORM"}</small>
@@ -2735,9 +2511,9 @@ export default function Home() {
               <>
                 <div className="defeat-scene" aria-hidden="true">
                   <div className="victory-mohawk-stage">
-                    <img className="victory-mohawk victory-both" src={savageSkin ? asset("/savage-heavy.webp") : asset("/opponent-victory.webp")} alt="" draggable={false} />
-                    <img className="victory-mohawk victory-left" src={savageSkin ? asset("/savage-guard.webp") : asset("/opponent-victory-left.webp")} alt="" draggable={false} />
-                    <img className="victory-mohawk victory-right" src={savageSkin ? asset("/savage-heavy.webp") : asset("/opponent-victory-right.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-both" src={asset("/opponent-victory.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-left" src={asset("/opponent-victory-left.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-right" src={asset("/opponent-victory-right.webp")} alt="" draggable={false} />
                   </div>
                   {resultReason === "knockout" && <img className="defeated-player" src={asset("/player-hit.webp")} alt="" draggable={false} />}
                 </div>
@@ -2772,7 +2548,7 @@ export default function Home() {
                   {Array.from({ length: 32 }).map((_, index) => <i key={index} />)}
                 </div>
                 <div className="sportsmanship-group">
-                  <img className="sportsmanship-mohawk" src={savageSkin ? asset("/savage-guard.webp") : asset("/opponent-sportsmanship.webp")} alt="Mohawk after a great fight" draggable={false} />
+                  <img className="sportsmanship-mohawk" src={asset("/opponent-sportsmanship.webp")} alt="Mohawk smiling after a great fight despite a black eye and cuts" draggable={false} />
                   <div className="mohawk-speech">
                     <strong>MOHAWK</strong>
                     <p>Great fight! I&apos;ll be back for a rematch soon.</p>
