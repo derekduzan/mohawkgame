@@ -113,7 +113,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.86.5";
+const GAME_VERSION = "0.86.6";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 // Only assets required during normal combat block the loading screen. Result
