@@ -113,7 +113,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.86.6";
+const GAME_VERSION = "0.87.0";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 // Only assets required during normal combat block the loading screen. Result
@@ -130,14 +130,19 @@ const CORE_POSE_ASSETS = [
   asset("/opponent-uppercut-windup.webp"), asset("/opponent-uppercut.webp"), asset("/opponent-taunt.webp"),
   asset("/opponent-hit-jab.webp"), asset("/opponent-hit-cross.webp"), asset("/opponent-hit-body.webp"),
   asset("/opponent-knee-breathing.webp"), asset("/opponent-knee-rising.webp"),
-  asset("/player-guard.webp"), asset("/player-jab-left.webp"), asset("/player-cross-right.webp"),
   asset("/player-guard-left-v2.webp"), asset("/player-guard-right-v2.webp"), asset("/player-jab-left-arm.webp"),
   asset("/player-cross-right-arm.webp"), asset("/player-body-left-arm.webp"),
   asset("/player-haymaker-left-arm.webp"), asset("/player-haymaker-right-arm.webp"),
   asset("/player-left-uppercut-arm.webp"), asset("/player-right-hook-arm.webp"),
   asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"), asset("/player-special-uppercut-contact.webp"),
-  asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"),
+  asset("/player-block.webp"), asset("/player-hit.webp"),
   asset("/player-knockdown-arms.webp"),
+];
+
+const SAVAGE_ASSETS = [
+  asset("/savage-guard.webp"), asset("/savage-windup-left.webp"), asset("/savage-windup-right.webp"),
+  asset("/savage-punch-left.webp"), asset("/savage-punch-right.webp"), asset("/savage-body.webp"),
+  asset("/savage-heavy.webp"), asset("/savage-hit.webp"), asset("/savage-knee.webp"),
 ];
 
 const FATALITY_ASSETS = [
@@ -171,6 +176,58 @@ const warmAssets = (sources: readonly string[]) => {
     void image.decode().catch(() => undefined);
   });
 };
+
+function savageAssetForPose(pose: FighterPose) {
+  if (
+    pose === "windup-left" ||
+    pose === "windup-combo-left" ||
+    pose === "windup-heavy-left" ||
+    pose === "windup-haymaker-left"
+  ) return asset("/savage-windup-left.webp");
+  if (
+    pose === "windup-right" ||
+    pose === "windup-combo-right" ||
+    pose === "windup-heavy" ||
+    pose === "windup-haymaker-right" ||
+    pose === "windup-uppercut"
+  ) return asset("/savage-windup-right.webp");
+  if (
+    pose === "attack-left" ||
+    pose === "attack-combo-left" ||
+    pose === "attack-left-contact" ||
+    pose === "attack-heavy-left" ||
+    pose === "attack-heavy-left-contact" ||
+    pose === "attack-haymaker-left" ||
+    pose === "attack-haymaker-left-contact"
+  ) return asset("/savage-punch-left.webp");
+  if (
+    pose === "attack-right" ||
+    pose === "attack-combo-right" ||
+    pose === "attack-right-contact"
+  ) return asset("/savage-punch-right.webp");
+  if (pose === "windup-body" || pose === "attack-body" || pose === "attack-body-contact") {
+    return asset("/savage-body.webp");
+  }
+  if (
+    pose === "attack-heavy" ||
+    pose === "attack-heavy-contact" ||
+    pose === "attack-haymaker-right" ||
+    pose === "attack-haymaker-right-contact" ||
+    pose === "attack-uppercut" ||
+    pose === "attack-uppercut-contact"
+  ) return asset("/savage-heavy.webp");
+  if (
+    pose === "hit-left" ||
+    pose === "hit-right" ||
+    pose === "hit-body" ||
+    pose === "stumble-back" ||
+    pose === "knockout"
+  ) return asset("/savage-hit.webp");
+  if (pose === "knockdown-knee" || pose === "rising" || pose === "failed-rise") {
+    return asset("/savage-knee.webp");
+  }
+  return asset("/savage-guard.webp");
+}
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
@@ -245,6 +302,7 @@ export default function Home() {
   const [slowMo, setSlowMo] = useState(false);
   const [arcadeMode, setArcadeMode] = useState(false);
   const [rumble, setRumble] = useState(false);
+  const [savageSkin, setSavageSkin] = useState(false);
   const [slowMoActive, setSlowMoActive] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [secretCode, setSecretCode] = useState("");
@@ -379,6 +437,10 @@ export default function Home() {
       rumbleRef.current = true;
       setRumble(true);
       confirmation = "RUMBLE IMPACTS ACTIVATED";
+    } else if (code.endsWith("SAVAGE")) {
+      setSavageSkin(true);
+      warmAssets(SAVAGE_ASSETS);
+      confirmation = "SAVAGE SKIN ACTIVATED";
     }
     if (!confirmation) return false;
     setSecretCode("");
@@ -2020,7 +2082,7 @@ export default function Home() {
   const comboDamageDisplay = combo < 3 ? 1 : Math.min(1.25, 1.05 + (combo - 3) * .025);
   const timeBonus = matchState === "won" ? Math.max(0, timer) * TIME_BONUS_PER_SECOND : 0;
   const knockdownPenalty = playerKnockdowns * PLAYER_KNOCKDOWN_SCORE_PENALTY;
-  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble;
+  const codesActive = flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble || savageSkin;
   const rage = enemyHealth <= 35 && enemyHealth > 0;
   const opponentStyle = enemyKnockdowns === 0
     ? "RAPID FIRE"
@@ -2092,6 +2154,7 @@ export default function Home() {
                             : enemyPose === "hit-body"
                               ? asset("/opponent-hit-body.webp")
               : asset("/opponent-guard.webp");
+  const displayedOpponentAsset = savageSkin ? savageAssetForPose(enemyPose) : opponentAsset;
   const guardLeftAsset = asset("/player-guard-left-v2.webp");
   const guardRightAsset = asset("/player-guard-right-v2.webp");
   const leftArmAsset = playerPose === "left-haymaker"
@@ -2112,7 +2175,7 @@ export default function Home() {
     : guardRightAsset;
 
   return (
-    <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${slowMoActive ? "is-slowmo-active" : ""} ${arcadeMode ? "is-arcade" : ""} ${rumble ? "is-rumble" : ""} ${visionClass}`}>
+    <main className={`game-shell ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${slowMoActive ? "is-slowmo-active" : ""} ${arcadeMode ? "is-arcade" : ""} ${rumble ? "is-rumble" : ""} ${savageSkin ? "is-savage" : ""} ${visionClass}`}>
       <section className={`arena ${matchState === "fighting" ? "is-live" : ""} ${matchState === "finisher" ? "is-finisher" : ""} ${matchState === "mohawk-finisher" ? "is-mohawk-finisher" : ""}`} aria-label="Bare knuckle boxing ring">
         <div className="grain" aria-hidden="true" />
         <div className="vision-damage" aria-hidden="true"><i /><b /></div>
@@ -2175,7 +2238,7 @@ export default function Home() {
 
         <div className={`opponent-shadow ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `shadow-knee-${kneeDepth}` : ""}`} aria-hidden="true" />
         <div className={`opponent-stage pose-${enemyPose} ${enemyPose === "knockdown-knee" || enemyPose === "rising" || enemyPose === "failed-rise" ? `knee-${kneeDepth}` : ""} ${playerPose === "special-uppercut" ? "is-special-contact-hidden" : ""} ${rage ? "is-raging" : ""} ${secondWind && matchState !== "enemy-down" ? "is-second-wind" : ""}`}>
-          <img className="opponent-pose-art" src={opponentAsset} alt="A muscular mohawk fighter in the ring" draggable={false} />
+          <img className="opponent-pose-art" src={displayedOpponentAsset} alt={savageSkin ? "Mohawk in his green Savage skin" : "A muscular mohawk fighter in the ring"} draggable={false} />
           <div className="damage-glow" aria-hidden="true" />
           {rage && <div className="rage-aura" aria-hidden="true" />}
         </div>
@@ -2356,7 +2419,7 @@ export default function Home() {
 
         {matchState === "intro" && assetsReady && (
           <div className="overlay intro-overlay">
-            <img className="intro-mohawk" src={asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
+            <img className="intro-mohawk" src={savageSkin ? asset("/savage-guard.webp") : asset("/opponent-guard.webp")} alt="The Mohawk waiting in the ring" draggable={false} />
             <div className="title-lockup">
               <img className="intro-logo" src={asset("/fighttime-logo.png")} alt="FightTime" draggable={false} />
               <span className="intro-version">VERSION {GAME_VERSION}</span>
@@ -2394,7 +2457,7 @@ export default function Home() {
                 </form>
               )}
               {secretConfirmation && <div className="secret-confirmation" role="status">{secretConfirmation}</div>}
-              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble) && (
+              {(flamingHands || ironJaw || endlessFight || aura || finisherEnabled || brotalityEnabled || slowMo || arcadeMode || rumble || savageSkin) && (
                 <div className="active-secrets" aria-label="Active secret powers">
                   {flamingHands && <span>🔥 FLAMING HANDS</span>}
                   {ironJaw && <span>◆ IRON JAW</span>}
@@ -2405,6 +2468,7 @@ export default function Home() {
                   {slowMo && <span>◷ SLOWMO</span>}
                   {arcadeMode && <span>▦ ARCADE</span>}
                   {rumble && <span>〰 RUMBLE</span>}
+                  {savageSkin && <span>◆ SAVAGE SKIN</span>}
                 </div>
               )}
               <small>{endlessFight ? "1 ROUND · INFINITE TIME · FIGHT FOREVER" : "1 ROUND · 90 SECONDS · SURVIVE THE STORM"}</small>
@@ -2418,9 +2482,9 @@ export default function Home() {
               <>
                 <div className="defeat-scene" aria-hidden="true">
                   <div className="victory-mohawk-stage">
-                    <img className="victory-mohawk victory-both" src={asset("/opponent-victory.webp")} alt="" draggable={false} />
-                    <img className="victory-mohawk victory-left" src={asset("/opponent-victory-left.webp")} alt="" draggable={false} />
-                    <img className="victory-mohawk victory-right" src={asset("/opponent-victory-right.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-both" src={savageSkin ? asset("/savage-heavy.webp") : asset("/opponent-victory.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-left" src={savageSkin ? asset("/savage-guard.webp") : asset("/opponent-victory-left.webp")} alt="" draggable={false} />
+                    <img className="victory-mohawk victory-right" src={savageSkin ? asset("/savage-heavy.webp") : asset("/opponent-victory-right.webp")} alt="" draggable={false} />
                   </div>
                   {resultReason === "knockout" && <img className="defeated-player" src={asset("/player-hit.webp")} alt="" draggable={false} />}
                 </div>
@@ -2455,7 +2519,7 @@ export default function Home() {
                   {Array.from({ length: 32 }).map((_, index) => <i key={index} />)}
                 </div>
                 <div className="sportsmanship-group">
-                  <img className="sportsmanship-mohawk" src={asset("/opponent-sportsmanship.webp")} alt="Mohawk smiling after a great fight despite a black eye and cuts" draggable={false} />
+                  <img className="sportsmanship-mohawk" src={savageSkin ? asset("/savage-guard.webp") : asset("/opponent-sportsmanship.webp")} alt="Mohawk after a great fight" draggable={false} />
                   <div className="mohawk-speech">
                     <strong>MOHAWK</strong>
                     <p>Great fight! I&apos;ll be back for a rematch soon.</p>
