@@ -113,10 +113,13 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.86.1";
+const GAME_VERSION = "0.86.5";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
-const POSE_ASSETS = [
+// Only assets required during normal combat block the loading screen. Result
+// scenes and secret finishers are loaded on demand so Chrome can reclaim their
+// decoded image memory instead of pinning the entire game at startup.
+const CORE_POSE_ASSETS = [
   asset("/opponent-guard.webp"), asset("/opponent-windup-left.webp"), asset("/opponent-punch-left.webp"),
   asset("/opponent-windup-right.webp"), asset("/opponent-punch-right.webp"),
   asset("/opponent-overhand-contact.webp"),
@@ -134,25 +137,40 @@ const POSE_ASSETS = [
   asset("/player-left-uppercut-arm.webp"), asset("/player-right-hook-arm.webp"),
   asset("/player-power-jab.webp"), asset("/player-special-uppercut.webp"), asset("/player-special-uppercut-contact.webp"),
   asset("/player-body-hook.webp"), asset("/player-block.webp"), asset("/player-hit.webp"),
-  asset("/player-knockdown-arms.webp"), asset("/opponent-victory.webp"),
-  asset("/opponent-victory-left.webp"), asset("/opponent-victory-right.webp"),
-  asset("/championship-belt.webp"), asset("/opponent-sportsmanship.webp"), asset("/player-holds-belt.webp"),
-  asset("/fighttime-logo.png"), asset("/finisher-wobble.png"),
-  asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
-  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"), asset("/finisher-groin-down.png"),
-  asset("/finisher-powerbomb-kick.png"), asset("/finisher-powerbomb-head-pull.png"),
-  asset("/finisher-powerbomb-lift.png"), asset("/finisher-powerbomb-impact.png"),
+  asset("/player-knockdown-arms.webp"),
+];
+
+const FATALITY_ASSETS = [
   asset("/mohawk-finisher-walk.png"),
   asset("/mohawk-finisher-emerge.png"), asset("/mohawk-finisher-turn.png"),
   asset("/mohawk-finisher-ground-strike.png"), asset("/mohawk-finisher-bite.png"),
   asset("/mohawk-finisher-elbow-bite.png"),
+];
+
+const BROTALITY_ASSETS = [
   asset("/mohawk-finisher-chair-slide.png"), asset("/mohawk-finisher-chair-charge.png"),
   asset("/mohawk-finisher-chair-impact.png"), asset("/mohawk-finisher-chair-aftermath.png"),
   asset("/mohawk-finisher-brotality-enter.webp"), asset("/mohawk-finisher-brotality-run.webp"),
   asset("/mohawk-finisher-brotality-windup.webp"), asset("/mohawk-finisher-brotality-impact.webp"),
   asset("/mohawk-finisher-brotality-victory.webp"),
-  asset("/ponch-crowd-shout.png"),
 ];
+
+const PLAYER_FINISHER_ASSETS = [
+  asset("/finisher-wobble.png"),
+  asset("/finisher-groin-kick.png"), asset("/finisher-groin-recoil.png"),
+  asset("/finisher-groin-kneel.png"), asset("/finisher-groin-knee.png"), asset("/finisher-groin-down.png"),
+  asset("/finisher-powerbomb-kick.png"), asset("/finisher-powerbomb-head-pull.png"),
+  asset("/finisher-powerbomb-lift.png"), asset("/finisher-powerbomb-impact.png"),
+];
+
+const warmAssets = (sources: readonly string[]) => {
+  sources.forEach((src) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = src;
+    void image.decode().catch(() => undefined);
+  });
+};
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
@@ -279,7 +297,6 @@ export default function Home() {
   const enemyAttackActionRef = useRef(0);
   const enemyQueueAttackRef = useRef<() => void>(() => undefined);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const preloadStartedRef = useRef(false);
   const flamingHandsRef = useRef(false);
   const ironJawRef = useRef(false);
@@ -342,10 +359,13 @@ export default function Home() {
     } else if (code.endsWith("FATALITY")) {
       finisherEnabledRef.current = true;
       setFinisherEnabled(true);
+      warmAssets(FATALITY_ASSETS);
+      warmAssets(PLAYER_FINISHER_ASSETS);
       confirmation = "FATALITY MODE ACTIVATED";
     } else if (code.endsWith("BROTALITY")) {
       brotalityEnabledRef.current = true;
       setBrotalityEnabled(true);
+      warmAssets(BROTALITY_ASSETS);
       confirmation = "BROTALITY MODE ACTIVATED";
     } else if (code.endsWith("SLOWMO")) {
       slowMoRef.current = true;
@@ -480,12 +500,11 @@ export default function Home() {
     let nextAsset = 0;
     let completed = 0;
     const loadNext = async () => {
-      while (nextAsset < POSE_ASSETS.length) {
-        const src = POSE_ASSETS[nextAsset++];
+      while (nextAsset < CORE_POSE_ASSETS.length) {
+        const src = CORE_POSE_ASSETS[nextAsset++];
         const image = new Image();
         image.decoding = "async";
         image.src = src;
-        preloadedImagesRef.current.push(image);
         try {
           await image.decode();
         } catch {
@@ -2011,7 +2030,7 @@ export default function Home() {
         ? "POWER HUNTER"
         : "UNPREDICTABLE";
   const visionClass = playerHealth <= 20 ? "vision-critical" : playerHealth <= 40 ? "vision-hurt" : "";
-  const loadingProgress = Math.round((loadedAssetCount / POSE_ASSETS.length) * 100);
+  const loadingProgress = Math.round((loadedAssetCount / CORE_POSE_ASSETS.length) * 100);
   const opponentAsset = enemyPose === "windup-left"
     ? asset("/opponent-windup-left.webp")
     : enemyPose === "windup-combo-left"

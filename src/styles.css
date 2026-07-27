@@ -60,13 +60,14 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 }
 
 .grain {
-  position: fixed;
-  inset: -100%;
+  position: absolute;
+  inset: 0;
   z-index: 50;
   pointer-events: none;
-  opacity: .07;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");
-  animation: grain .22s steps(2) infinite;
+  opacity: .045;
+  background-image:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.035) 0 1px,transparent 1px 4px);
 }
 
 .ceiling-lights { position: absolute; inset: 0; pointer-events: none; }
@@ -345,7 +346,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
 .mohawk-finisher-sequence.frame-chair-aftermath img { width:min(88vw,1080px); animation:chairAftermath .48s cubic-bezier(.12,.72,.2,1) both; }
-.mohawk-finisher-sequence.frame-brotality-enter img { width:min(78vw,900px); animation:chairSlide .5s cubic-bezier(.08,.82,.16,1) both; }
+.mohawk-finisher-sequence.frame-brotality-enter img { width:min(78vw,900px); animation:none; }
 .mohawk-finisher-sequence.frame-brotality-run img { width:min(82vw,940px); animation:chairCharge .5s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-brotality-windup img { width:min(90vw,1060px); height:100%; animation:headbuttLoad .5s cubic-bezier(.1,.72,.18,1) both; }
 .mohawk-finisher-sequence.frame-brotality-impact img { width:100%; max-width:none; height:100%; bottom:0; object-fit:cover; object-position:center center; animation:headbuttImpact .3s cubic-bezier(.02,.9,.06,1) both; }
@@ -808,7 +809,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .is-slowmo-active .opponent-stage,.is-slowmo-active .first-person-body { filter:saturate(.45) contrast(1.18) brightness(.94); }
 .is-slowmo-active .arena { box-shadow:inset 0 0 0 4px rgba(88,220,255,.3),0 0 100px #000; }
 .is-arcade .opponent-pose-art,.is-arcade .player-pose-art,.is-arcade .enemy-fist-art,.is-arcade .player-fist-art { image-rendering:pixelated; filter:contrast(1.12) saturate(1.32); }
-.is-arcade .grain { display:block; opacity:.12; background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 1px,rgba(0,0,0,.18) 1px 3px); animation:arcadeScan .18s steps(2) infinite; }
+.is-arcade .grain { display:block; opacity:.12; background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 1px,rgba(0,0,0,.18) 1px 3px); animation:arcadeScan .36s steps(2) infinite; }
 .is-arcade .impact b { color:#fff36b; text-shadow:4px 4px #e2241c,-3px -3px #2196ff; }
 .is-hit-stop .opponent-stage,.is-hit-stop .first-person-body { animation-play-state:paused !important; filter:contrast(1.16) brightness(1.12); }
 .is-second-wind { filter:drop-shadow(0 0 24px rgba(255,43,20,.9)) brightness(1.18) saturate(1.25); animation:secondWindBurst .18s ease-in-out 5 alternate !important; }
