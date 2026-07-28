@@ -351,13 +351,12 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence img { position:absolute; z-index:1; left:50%; bottom:0; width:min(86vw,1080px); height:94%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 20px 26px rgba(0,0,0,.8)); animation:mohawkFinisherEnter .42s cubic-bezier(.1,.78,.18,1) both; }
 .mohawk-finisher-sequence.is-dragon-fatality { inset:0; background:#030303; }
 .mohawk-finisher-sequence.is-dragon-fatality::after { z-index:2; background:radial-gradient(circle at 50% 48%,transparent 42%,rgba(0,0,0,.5) 100%); }
-.dragon-fatality-frame { position:absolute; z-index:1; inset:0; background-color:#030303; background-repeat:no-repeat; background-size:700% auto; animation:dragonFatalityFrame .55s ease-out both; }
-.mohawk-finisher-sequence.frame-fatality-02 .dragon-fatality-frame { animation:dragonFatalityWalk .65s ease-in-out both; }
-.mohawk-finisher-sequence.frame-fatality-03 .dragon-fatality-frame { animation:dragonFatalityEmerge .9s ease-out both; }
-.mohawk-finisher-sequence.frame-fatality-04 .dragon-fatality-frame { animation:dragonFatalityTurn .8s ease-in-out both; }
-.mohawk-finisher-sequence.frame-fatality-05 .dragon-fatality-frame { animation:dragonFatalityLoad .55s cubic-bezier(.2,.72,.2,1) both; }
-.mohawk-finisher-sequence.frame-fatality-06 .dragon-fatality-frame { animation:dragonFatalityLunge .55s cubic-bezier(.05,.78,.08,1) both; }
-.mohawk-finisher-sequence.frame-fatality-07 .dragon-fatality-frame { animation:dragonFatalityImpact .22s cubic-bezier(.02,.9,.05,1) both; }
+.mohawk-finisher-sequence .dragon-fatality-frame { position:absolute; z-index:1; inset:0; width:100%; height:100%; max-width:none; object-fit:contain; object-position:center; background:#030303; filter:none; transform:none; animation:dragonFatalityFrame .55s ease-out both; }
+.mohawk-finisher-sequence.frame-fatality-01 .dragon-fatality-frame { animation:dragonFatalityPowerUp .78s ease-out both; }
+.mohawk-finisher-sequence.frame-fatality-02 .dragon-fatality-frame { animation:dragonFatalityReveal .7s ease-out both; }
+.mohawk-finisher-sequence.frame-fatality-03 .dragon-fatality-frame { animation:dragonFatalityLaunch .5s cubic-bezier(.08,.76,.12,1) both; }
+.mohawk-finisher-sequence.frame-fatality-04 .dragon-fatality-frame { animation:dragonFatalityApproach .4s cubic-bezier(.05,.82,.08,1) both; }
+.mohawk-finisher-sequence.frame-fatality-05 .dragon-fatality-frame { object-fit:cover; animation:dragonFatalityImpact .2s cubic-bezier(.02,.9,.05,1) both; }
 .mohawk-finisher-sequence.frame-chair-slide img { width:min(76vw,900px); animation:chairSlide .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
@@ -819,12 +818,11 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes mohawkGroundStrike { 0%{transform:translateX(-50%) translateY(-8%) scale(.96)} 62%{transform:translateX(-50%) translateY(1%) scale(1.03);filter:brightness(1.7)} 100%{transform:translateX(-50%) translateY(0) scale(1)} }
 @keyframes dragonLunge { 0%{transform:translateX(-50%) scale(.68);opacity:.25;filter:brightness(2.2) blur(2px)} 58%{transform:translateX(-50%) scale(1.08);opacity:1;filter:brightness(1.65)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
 @keyframes dragonFatalityFrame { from{opacity:.84;filter:brightness(.82)} to{opacity:1;filter:brightness(1)} }
-@keyframes dragonFatalityWalk { from{transform:scale(1.04) translateY(1%);filter:brightness(.86)} to{transform:scale(1);filter:brightness(1)} }
-@keyframes dragonFatalityEmerge { from{transform:scale(.94);filter:brightness(.55) saturate(.7)} to{transform:scale(1.03);filter:brightness(1.08) saturate(1.15)} }
-@keyframes dragonFatalityTurn { from{transform:scale(1.05) translateX(1.5%)} to{transform:scale(1) translateX(0)} }
-@keyframes dragonFatalityLoad { from{transform:scale(1.04) translateY(-1%)} to{transform:scale(.98) translateY(1.5%)} }
-@keyframes dragonFatalityLunge { from{transform:scale(.92);filter:blur(1px) brightness(.9)} to{transform:scale(1.1);filter:blur(0) brightness(1.12)} }
-@keyframes dragonFatalityImpact { from{transform:scale(.94);filter:brightness(1.8)} to{transform:scale(1.08);filter:brightness(1)} }
+@keyframes dragonFatalityPowerUp { from{transform:scale(.97);filter:brightness(.72) saturate(.8)} to{transform:scale(1.025);filter:brightness(1.08) saturate(1.12)} }
+@keyframes dragonFatalityReveal { from{transform:scale(1.035);filter:brightness(1.16)} to{transform:scale(1);filter:brightness(1)} }
+@keyframes dragonFatalityLaunch { from{transform:scale(.88) translateY(4%);filter:blur(1.2px) brightness(.9)} to{transform:scale(1.07) translateY(-1%);filter:blur(0) brightness(1.08)} }
+@keyframes dragonFatalityApproach { from{transform:scale(.91);filter:blur(1px) brightness(.92)} to{transform:scale(1.13);filter:blur(0) brightness(1.1)} }
+@keyframes dragonFatalityImpact { 0%{transform:scale(.94);filter:brightness(2.2) blur(1px)} 38%{transform:scale(1.13);filter:brightness(1.45)} 100%{transform:scale(1.06);filter:brightness(.92)} }
 @keyframes chairSlide { 0%{transform:translateX(-95%) translateY(22%) rotate(-8deg) scale(.72);opacity:.2} 72%{transform:translateX(-47%) translateY(0) rotate(2deg) scale(1.03);opacity:1} 100%{transform:translateX(-50%) scale(1);opacity:1} }
 @keyframes chairCharge { 0%{transform:translateX(-50%) translateY(5%) scale(.76);opacity:.3;filter:blur(2px)} 72%{transform:translateX(-50%) translateY(-1%) scale(1.08);opacity:1;filter:blur(0)} 100%{transform:translateX(-50%) scale(1);opacity:1} }
 @keyframes chairImpact { 0%{transform:translateX(-50%) scale(.64);opacity:.25;filter:brightness(2.2) blur(3px)} 55%{transform:translateX(-50%) scale(1.13);opacity:1;filter:brightness(1.8)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }

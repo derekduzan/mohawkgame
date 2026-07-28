@@ -65,7 +65,7 @@ type PlayerPose =
   | "hit";
 type DodgeDirection = "left" | "right" | null;
 type ResultReason = "knockout" | "time";
-type DragonFatalityFrame = `fatality-${"01" | "02" | "03" | "04" | "05" | "06" | "07"}`;
+type DragonFatalityFrame = `fatality-${"01" | "02" | "03" | "04" | "05"}`;
 type MohawkFinisherFrame =
   | DragonFatalityFrame
   | "chair-slide" | "chair-charge" | "chair-impact" | "chair-aftermath"
@@ -120,7 +120,7 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.88.3";
+const GAME_VERSION = "0.88.4";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 const VENUES: readonly { id: Venue; label: string; background?: string; achievement?: string }[] = [
   { id: "arena", label: "FIGHTTIME ARENA" },
@@ -165,7 +165,11 @@ const SAVAGE_ASSETS = [
 ];
 
 const FATALITY_ASSETS = [
-  asset("/mohawk-fatality-simple.webp"),
+  asset("/mohawk-fatality-01.webp"),
+  asset("/mohawk-fatality-02.webp"),
+  asset("/mohawk-fatality-03.webp"),
+  asset("/mohawk-fatality-04.webp"),
+  asset("/mohawk-fatality-05.webp"),
 ];
 
 const BROTALITY_ASSETS = [
@@ -1071,19 +1075,17 @@ export default function Home() {
     }
 
     const dragonSequence: Array<{ frame: DragonFatalityFrame; at: number; callout?: string }> = [
-      { frame: "fatality-02", at: 600 },
-      { frame: "fatality-03", at: 1250, callout: "THE DRAGON AWAKENS!" },
-      { frame: "fatality-04", at: 2150, callout: "FACE THE DRAGON!" },
-      { frame: "fatality-05", at: 2950 },
-      { frame: "fatality-06", at: 3500, callout: "FATALITY!" },
-      { frame: "fatality-07", at: 4050 },
+      { frame: "fatality-02", at: 780, callout: "THE DRAGON AWAKENS!" },
+      { frame: "fatality-03", at: 1480, callout: "MOHAWK LAUNCHES!" },
+      { frame: "fatality-04", at: 1980 },
+      { frame: "fatality-05", at: 2380, callout: "FATALITY!" },
     ];
     dragonSequence.forEach(({ frame, at, callout }) => {
       scheduleFinisher(at, () => {
         if (matchRef.current !== "mohawk-finisher") return;
         setMohawkFinisherFrame(frame);
         if (callout) setCallout(callout);
-        if (frame === "fatality-07") {
+        if (frame === "fatality-05") {
           setImpact("player");
           setScreenShake(true);
           triggerRumble(true);
@@ -1091,7 +1093,7 @@ export default function Home() {
         }
       });
     });
-    scheduleFinisher(5250, () => {
+    scheduleFinisher(3650, () => {
       if (matchRef.current !== "mohawk-finisher") return;
       setImpact(null);
       setScreenShake(false);
@@ -2379,10 +2381,6 @@ export default function Home() {
   const dragonFrameNumber = mohawkFinisherFrame.startsWith("fatality-")
     ? Number(mohawkFinisherFrame.slice(-2))
     : null;
-  const dragonSheetPosition = dragonFrameNumber === null
-    ? 0
-    : ((dragonFrameNumber - 1) / 6) * 100;
-
   return (
     <main className={`game-shell venue-${venue} ${performanceMode ? "is-performance" : ""} ${screenShake ? "is-shaking" : ""} ${hitStop ? "is-hit-stop" : ""} ${slowMoActive ? "is-slowmo-active" : ""} ${arcadeMode ? "is-arcade" : ""} ${rumble ? "is-rumble" : ""} ${savageSkin ? "is-savage" : ""} ${visionClass}`}>
       <section
@@ -2579,13 +2577,11 @@ export default function Home() {
         {matchState === "mohawk-finisher" && (
           <div className={`mohawk-finisher-sequence ${dragonFrameNumber !== null ? "is-dragon-fatality" : ""} frame-${mohawkFinisherFrame}`} aria-live="assertive">
             {dragonFrameNumber !== null ? (
-              <div
+              <img
                 className="dragon-fatality-frame"
-                style={{
-                  backgroundImage: `url(${asset("/mohawk-fatality-simple.webp")})`,
-                  backgroundPosition: `${dragonSheetPosition}% center`,
-                }}
-                aria-hidden="true"
+                src={asset(`/mohawk-fatality-${String(dragonFrameNumber).padStart(2, "0")}.webp`)}
+                alt=""
+                draggable={false}
               />
             ) : (
               <img
