@@ -72,7 +72,8 @@ type MohawkFinisherFrame =
   | "brotality-enter" | "brotality-run" | "brotality-windup" | "brotality-impact" | "brotality-victory";
 type PunchKind = "left" | "power-jab" | "right" | "body" | "haymaker" | "left-haymaker" | "right-haymaker" | "left-uppercut" | "right-hook" | "uppercut";
 type KneeDepth = "near" | "far";
-type Venue = "arena" | "warehouse" | "nightclub" | "space-prison";
+type Venue = "arena" | "tulip-street" | "blue-bridge" | "madison-square-garden";
+type UnlockableVenue = Exclude<Venue, "arena">;
 type SecretEffect =
   | "flameon" | "ironjaw" | "timeless" | "aura" | "fatality"
   | "brotality" | "slowmo" | "arcade" | "rumble" | "savage";
@@ -98,6 +99,8 @@ const ROUND_TIME = 90;
 const PLAYER_KNOCKDOWN_SCORE_PENALTY = 3000;
 const TIME_BONUS_PER_SECOND = 200;
 const LEADERBOARD_STORAGE_KEY = "fighttime-local-leaderboard-v1";
+const VENUE_UNLOCKS_STORAGE_KEY = "fighttime-venue-unlocks-v1";
+const CAREER_WINS_STORAGE_KEY = "fighttime-code-free-wins-v1";
 const EMPTY_PUNCH_STATS: PunchStats = {
   jab: 0,
   cross: 0,
@@ -118,14 +121,19 @@ const PUNCH_POINTS: Record<keyof PunchStats, number> = {
   haymaker: 400,
   specialUppercut: 750,
 };
-const GAME_VERSION = "0.88.1";
+const GAME_VERSION = "0.88.2";
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
-const VENUES: readonly { id: Venue; label: string; background?: string }[] = [
+const VENUES: readonly { id: Venue; label: string; background?: string; achievement?: string }[] = [
   { id: "arena", label: "FIGHTTIME ARENA" },
-  { id: "warehouse", label: "WAREHOUSE", background: "/venue-warehouse.webp" },
-  { id: "nightclub", label: "NIGHTCLUB", background: "/venue-nightclub.webp" },
-  { id: "space-prison", label: "SPACE PRISON", background: "/venue-space-prison.webp" },
+  { id: "tulip-street", label: "TULIP STREET", background: "/venue-tulip-street.webp", achievement: "WIN A CODE-FREE FIGHT" },
+  { id: "blue-bridge", label: "BLUE BRIDGE", background: "/venue-blue-bridge.webp", achievement: "WIN WITHOUT A KNOCKDOWN" },
+  { id: "madison-square-garden", label: "MADISON SQUARE GARDEN", background: "/venue-madison-square-garden.webp", achievement: "WIN 3 CODE-FREE FIGHTS" },
 ];
+const EMPTY_VENUE_UNLOCKS: Record<UnlockableVenue, boolean> = {
+  "tulip-street": false,
+  "blue-bridge": false,
+  "madison-square-garden": false,
+};
 
 // Only assets required during normal combat block the loading screen. Result
 // scenes and secret finishers are loaded on demand so Chrome can reclaim their
@@ -316,6 +324,8 @@ export default function Home() {
   const [rumble, setRumble] = useState(false);
   const [savageSkin, setSavageSkin] = useState(false);
   const [venue, setVenue] = useState<Venue>("arena");
+  const [venueUnlocks, setVenueUnlocks] = useState<Record<UnlockableVenue, boolean>>(EMPTY_VENUE_UNLOCKS);
+  const [achievementNotice, setAchievementNotice] = useState("");
   const [slowMoActive, setSlowMoActive] = useState(false);
   const [specialEndingIntro, setSpecialEndingIntro] = useState(false);
   const [showCodeEntry, setShowCodeEntry] = useState(false);
@@ -380,6 +390,8 @@ export default function Home() {
   const arcadeModeRef = useRef(false);
   const rumbleRef = useRef(false);
   const savageSkinRef = useRef(false);
+  const venueUnlocksRef = useRef<Record<UnlockableVenue, boolean>>(EMPTY_VENUE_UNLOCKS);
+  const careerWinsRef = useRef(0);
   const slowMoTimerRef = useRef(0);
   const secretBufferRef = useRef("");
   const secretConfirmationTimerRef = useRef(0);
@@ -409,6 +421,40 @@ export default function Home() {
   useEffect(() => void (slowMoRef.current = slowMo), [slowMo]);
   useEffect(() => void (arcadeModeRef.current = arcadeMode), [arcadeMode]);
   useEffect(() => void (rumbleRef.current = rumble), [rumble]);
+  useEffect(() => {
+    try {
+      const storedUnlocks = JSON.parse(
+        window.localStorage.getItem(VENUE_UNLOCKS_STORAGE_KEY) || "{}",
+      ) as Partial<Record<UnlockableVenue, boolean>>;
+      const nextUnlocks = {
+        "tulip-street": storedUnlocks["tulip-street"] === true,
+        "blue-bridge": storedUnlocks["blue-bridge"] === true,
+        "madison-square-garden": storedUnlocks["madison-square-garden"] === true,
+      };
+      venueUnlocksRef.current = nextUnlocks;
+      setVenueUnlocks(nextUnlocks);
+      const storedWins = Number(window.localStorage.getItem(CAREER_WINS_STORAGE_KEY) || "0");
+      careerWinsRef.current = Number.isFinite(storedWins) ? Math.max(0, Math.floor(storedWins)) : 0;
+    } catch {
+      venueUnlocksRef.current = { ...EMPTY_VENUE_UNLOCKS };
+      careerWinsRef.current = 0;
+    }
+  }, []);
+
+  const unlockVenue = useCallback((venueId: UnlockableVenue) => {
+    if (venueUnlocksRef.current[venueId]) return false;
+    const nextUnlocks = { ...venueUnlocksRef.current, [venueId]: true };
+    venueUnlocksRef.current = nextUnlocks;
+    setVenueUnlocks(nextUnlocks);
+    try {
+      window.localStorage.setItem(VENUE_UNLOCKS_STORAGE_KEY, JSON.stringify(nextUnlocks));
+    } catch {
+      // The venue remains unlocked for this session when storage is unavailable.
+    }
+    const unlockedVenue = VENUES.find(({ id }) => id === venueId);
+    if (unlockedVenue?.background) warmAssets([asset(unlockedVenue.background)]);
+    return true;
+  }, []);
 
   const checkExpandedFatalityAddon = useCallback(async () => {
     if (expandedFatalityCheckedRef.current) return;
@@ -481,7 +527,16 @@ export default function Home() {
       codes.some((benefitCode) => code.endsWith(benefitCode))
     );
 
-    if (code.endsWith("ZUPERMAN")) {
+    if (code.endsWith("TULIPST")) {
+      unlockVenue("tulip-street");
+      confirmation = "TULIP STREET UNLOCKED";
+    } else if (code.endsWith("BLUEBRIDGE")) {
+      unlockVenue("blue-bridge");
+      confirmation = "BLUE BRIDGE UNLOCKED";
+    } else if (code.endsWith("MSG") || code.endsWith("WORLDCHAMP")) {
+      unlockVenue("madison-square-garden");
+      confirmation = "MADISON SQUARE GARDEN UNLOCKED";
+    } else if (code.endsWith("ZUPERMAN")) {
       playerBenefitCodes.forEach(({ activate }) => activate());
       confirmation = "ZUPERMAN POWERS ACTIVATED";
     } else if (matchedPlayerBenefit) {
@@ -520,7 +575,7 @@ export default function Home() {
     window.clearTimeout(secretConfirmationTimerRef.current);
     secretConfirmationTimerRef.current = window.setTimeout(() => setSecretConfirmation(""), 2200);
     return true;
-  }, [checkExpandedFatalityAddon]);
+  }, [checkExpandedFatalityAddon, unlockVenue]);
 
   const deactivateSecretCode = useCallback((effect: SecretEffect) => {
     let label = "";
@@ -795,22 +850,48 @@ export default function Home() {
       scoreRef.current = finalScore;
       setScore(finalScore);
       const currentBoard = leaderboardRef.current;
-      const leaderboardEligible = !(
+      const codesWereActive = (
         flamingHandsRef.current
         || ironJawRef.current
         || endlessFightRef.current
         || auraRef.current
         || finisherEnabledRef.current
         || brotalityEnabledRef.current
+        || slowMoRef.current
+        || arcadeModeRef.current
+        || rumbleRef.current
+        || savageSkinRef.current
       );
+      const leaderboardEligible = !codesWereActive;
       const qualifies = leaderboardEligible
         && (currentBoard.length < 10 || finalScore > currentBoard[currentBoard.length - 1].score);
       setAwaitingInitials(qualifies);
       setLeaderboardSubmitted(false);
       setInitials("");
+      if (!codesWereActive) {
+        const nextCareerWins = careerWinsRef.current + 1;
+        careerWinsRef.current = nextCareerWins;
+        try {
+          window.localStorage.setItem(CAREER_WINS_STORAGE_KEY, String(nextCareerWins));
+        } catch {
+          // Career progress still applies for this session.
+        }
+        const newlyUnlocked: string[] = [];
+        if (unlockVenue("tulip-street")) newlyUnlocked.push("HOMETOWN HERO · TULIP STREET");
+        if (playerKnockdownsRef.current === 0 && unlockVenue("blue-bridge")) {
+          newlyUnlocked.push("STAY STANDING · BLUE BRIDGE");
+        }
+        if (nextCareerWins >= 3 && unlockVenue("madison-square-garden")) {
+          newlyUnlocked.push("MAIN EVENT · MADISON SQUARE GARDEN");
+        }
+        setAchievementNotice(newlyUnlocked.join("  •  "));
+      } else {
+        setAchievementNotice("");
+      }
     } else {
       setAwaitingInitials(false);
       setLeaderboardSubmitted(false);
+      setAchievementNotice("");
     }
     setResultReason(reason);
     matchRef.current = result;
@@ -841,7 +922,7 @@ export default function Home() {
         setShowRematch(true);
       }
     }, result === "won" ? 2400 : 3000);
-  }, [playSound, setEnemyPoseSafe]);
+  }, [playSound, setEnemyPoseSafe, unlockVenue]);
 
   const executeFinisher = useCallback(() => {
     if (matchRef.current !== "finisher" || finisherRunningRef.current) return;
@@ -1164,6 +1245,7 @@ export default function Home() {
     setAwaitingInitials(false);
     setLeaderboardSubmitted(false);
     setShowLeaderboard(false);
+    setAchievementNotice("");
     setImpact(null);
     setHitStop(false);
     setSecondWind(false);
@@ -2672,20 +2754,28 @@ export default function Home() {
               <div className="venue-picker" aria-label="Choose fight location">
                 <strong>FIGHT LOCATION</strong>
                 <div>
-                  {VENUES.map((venueOption) => (
-                    <button
-                      type="button"
-                      className={venue === venueOption.id ? "is-selected" : ""}
-                      aria-pressed={venue === venueOption.id}
-                      onClick={() => {
-                        setVenue(venueOption.id);
-                        if (venueOption.background) warmAssets([asset(venueOption.background)]);
-                      }}
-                      key={venueOption.id}
-                    >
-                      {venueOption.label}
-                    </button>
-                  ))}
+                  {VENUES.map((venueOption) => {
+                    const unlocked = venueOption.id === "arena"
+                      || venueUnlocks[venueOption.id as UnlockableVenue];
+                    return (
+                      <button
+                        type="button"
+                        className={`${venue === venueOption.id ? "is-selected" : ""} ${unlocked ? "" : "is-locked"}`.trim()}
+                        aria-pressed={unlocked && venue === venueOption.id}
+                        aria-label={unlocked ? venueOption.label : `Locked venue. ${venueOption.achievement}`}
+                        disabled={!unlocked}
+                        onClick={() => {
+                          if (!unlocked) return;
+                          setVenue(venueOption.id);
+                          if (venueOption.background) warmAssets([asset(venueOption.background)]);
+                        }}
+                        key={venueOption.id}
+                      >
+                        <span>{unlocked ? venueOption.label : "🔒 ???"}</span>
+                        {!unlocked && <small>{venueOption.achievement}</small>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <button className="fight-button intro-fight-button" onClick={startMatch}>ENTER THE RING <i>›</i></button>
@@ -2795,6 +2885,12 @@ export default function Home() {
                       <span><em>KNOCKDOWNS</em><strong className="score-penalty">{knockdownPenalty === 0 ? "0" : `−${knockdownPenalty.toLocaleString()}`}</strong></span>
                     </div>
                     <div className="scorecard-total"><em>FINAL SCORE</em><strong>{score.toLocaleString()}</strong></div>
+                    {achievementNotice && (
+                      <div className="achievement-unlocked">
+                        <strong>VENUE UNLOCKED</strong>
+                        <span>{achievementNotice}</span>
+                      </div>
+                    )}
                     {showRematch && awaitingInitials && (
                       <form className="initials-entry" onSubmit={(event) => { event.preventDefault(); submitLocalScore(); }}>
                         <label htmlFor="arcade-initials">NEW LOCAL HIGH SCORE — ENTER INITIALS</label>

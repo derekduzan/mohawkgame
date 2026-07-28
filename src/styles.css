@@ -492,6 +492,10 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .venue-picker button { min-width:0; padding:.38rem .35rem; color:#9f998e; border:1px solid #4d4942; background:#090a09; font:900 clamp(.43rem,.58vw,.56rem)/1 Arial,sans-serif; letter-spacing:.07em; cursor:pointer; }
 .venue-picker button:hover { color:#fff; border-color:#a79b87; }
 .venue-picker button.is-selected { color:#17110a; border-color:#ffd071; background:var(--gold); box-shadow:inset 0 0 0 1px #8d4e0e; }
+.venue-picker button span { display:block; }
+.venue-picker button small { display:block; margin-top:.25rem; color:#6f6a61; font:800 clamp(.34rem,.46vw,.43rem)/1.15 Arial,sans-serif; letter-spacing:.05em; }
+.venue-picker button.is-locked { color:#777168; border-color:#34332f; background:#060706; cursor:not-allowed; opacity:.72; }
+.venue-picker button.is-locked:hover { color:#777168; border-color:#34332f; }
 .intro-fight-button { border:2px solid #ff9a35; box-shadow:0 6px 0 #72100b,0 0 18px rgba(225,40,30,.45); animation:startButtonPulse .85s ease-in-out infinite alternate; }
 .local-scores-button { width:100%; margin-top:.55rem; padding:.55rem; color:#f4c04c; border:1px solid #665c4c; background:#0b0c0b; font:900 clamp(.55rem,.8vw,.75rem)/1 Arial,sans-serif; letter-spacing:.18em; cursor:pointer; }
 .local-scores-button:hover { color:#fff; border-color:var(--gold); background:#211b13; }
@@ -585,6 +589,9 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .scorecard-grid .score-bonus { color:#baff39; }
 .scorecard-grid .score-penalty { color:#ff6257; }
 .score-ineligible { margin:.45rem 0 0; padding:.42rem .55rem; color:#ffcf58; border:1px solid #8a5a22; background:#211407; font:900 clamp(.5rem,.72vw,.68rem)/1.15 Arial,sans-serif; letter-spacing:.1em; }
+.achievement-unlocked { display:grid; gap:.25rem; margin:.45rem 0 0; padding:.5rem .6rem; color:#ffd86a; border:1px solid #bd7a1f; background:linear-gradient(135deg,#2a1906,#120b03); font-family:Arial,sans-serif; text-align:center; }
+.achievement-unlocked strong { font:1000 clamp(.55rem,.76vw,.72rem)/1 Arial,sans-serif; letter-spacing:.15em; }
+.achievement-unlocked span { color:#fff1c0; font:800 clamp(.46rem,.64vw,.6rem)/1.25 Arial,sans-serif; letter-spacing:.07em; }
 .scorecard-total { margin-top:.5rem; padding:.45rem .55rem; color:#111; background:var(--gold); }
 .scorecard-total em { color:#2b2110; }
 .scorecard-total strong { font:1000 clamp(1rem,1.45vw,1.45rem)/1 Arial,sans-serif; }

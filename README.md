@@ -29,8 +29,20 @@ Open **ENTER CODE** on the start menu and enter:
 - `RUMBLE` — stronger impacts and supported-device vibration
 - `FATALITY` — fatality endings
 - `BROTALITY` — brotality endings
+- `TULIPST` — unlocks Tulip Street
+- `BLUEBRIDGE` — unlocks the Blue Bridge
+- `MSG` or `WORLDCHAMP` — unlocks Madison Square Garden
 
 Active codes can be turned off with their **×** buttons on the start menu.
+
+## Venue achievements
+
+- Win one code-free fight to unlock Tulip Street.
+- Win a code-free fight without being knocked down to unlock the Blue Bridge.
+- Win three code-free fights to unlock Madison Square Garden.
+
+Locked venue names remain hidden until they are unlocked. Venue progress is
+saved locally in the browser.
 
 ## Run locally
 
