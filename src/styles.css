@@ -349,12 +349,15 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 .mohawk-finisher-sequence { position:absolute; z-index:49; inset:5% 0 0; overflow:hidden; pointer-events:none; background:radial-gradient(circle at 50% 48%,rgba(255,205,44,.2),rgba(53,17,0,.2) 44%,transparent 72%); }
 .mohawk-finisher-sequence::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 48%,transparent 28%,rgba(0,0,0,.48) 88%); pointer-events:none; }
 .mohawk-finisher-sequence img { position:absolute; z-index:1; left:50%; bottom:0; width:min(86vw,1080px); height:94%; object-fit:contain; object-position:center bottom; transform:translateX(-50%); filter:drop-shadow(0 20px 26px rgba(0,0,0,.8)); animation:mohawkFinisherEnter .42s cubic-bezier(.1,.78,.18,1) both; }
-.mohawk-finisher-sequence.frame-walk img { width:min(70vw,820px); }
-.mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:min(88vw,1100px); }
-.mohawk-finisher-sequence.frame-ground-strike img { width:min(94vw,1180px); animation:mohawkGroundStrike .55s cubic-bezier(.08,.8,.12,1) both; }
-.mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:min(112vw,1450px); height:104%; bottom:-2%; animation:dragonLunge .48s cubic-bezier(.04,.88,.1,1) both; }
-.mohawk-finisher-sequence.frame-fatality-power img,.mohawk-finisher-sequence.frame-fatality-command img,.mohawk-finisher-sequence.frame-fatality-victory img { width:min(88vw,1100px); }
-.mohawk-finisher-sequence.frame-fatality-rush img { width:min(122vw,1520px); height:106%; bottom:-3%; animation:dragonLunge .48s cubic-bezier(.04,.88,.1,1) both; }
+.mohawk-finisher-sequence.is-dragon-fatality { inset:0; background:#030303; }
+.mohawk-finisher-sequence.is-dragon-fatality::after { z-index:2; background:radial-gradient(circle at 50% 48%,transparent 42%,rgba(0,0,0,.5) 100%); }
+.dragon-fatality-frame { position:absolute; z-index:1; inset:0; background-color:#030303; background-repeat:no-repeat; background-size:700% auto; animation:dragonFatalityFrame .55s ease-out both; }
+.mohawk-finisher-sequence.frame-fatality-02 .dragon-fatality-frame { animation:dragonFatalityWalk .65s ease-in-out both; }
+.mohawk-finisher-sequence.frame-fatality-03 .dragon-fatality-frame { animation:dragonFatalityEmerge .9s ease-out both; }
+.mohawk-finisher-sequence.frame-fatality-04 .dragon-fatality-frame { animation:dragonFatalityTurn .8s ease-in-out both; }
+.mohawk-finisher-sequence.frame-fatality-05 .dragon-fatality-frame { animation:dragonFatalityLoad .55s cubic-bezier(.2,.72,.2,1) both; }
+.mohawk-finisher-sequence.frame-fatality-06 .dragon-fatality-frame { animation:dragonFatalityLunge .55s cubic-bezier(.05,.78,.08,1) both; }
+.mohawk-finisher-sequence.frame-fatality-07 .dragon-fatality-frame { animation:dragonFatalityImpact .22s cubic-bezier(.02,.9,.05,1) both; }
 .mohawk-finisher-sequence.frame-chair-slide img { width:min(76vw,900px); animation:chairSlide .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-charge img { width:min(82vw,980px); animation:chairCharge .58s cubic-bezier(.08,.82,.16,1) both; }
 .mohawk-finisher-sequence.frame-chair-impact img { width:min(118vw,1480px); height:106%; bottom:-3%; animation:chairImpact .38s cubic-bezier(.03,.88,.08,1) both; }
@@ -815,6 +818,13 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
 @keyframes mohawkFinisherEnter { from{transform:translateX(-50%) scale(.92);opacity:.2;filter:brightness(1.8) blur(2px)} to{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
 @keyframes mohawkGroundStrike { 0%{transform:translateX(-50%) translateY(-8%) scale(.96)} 62%{transform:translateX(-50%) translateY(1%) scale(1.03);filter:brightness(1.7)} 100%{transform:translateX(-50%) translateY(0) scale(1)} }
 @keyframes dragonLunge { 0%{transform:translateX(-50%) scale(.68);opacity:.25;filter:brightness(2.2) blur(2px)} 58%{transform:translateX(-50%) scale(1.08);opacity:1;filter:brightness(1.65)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
+@keyframes dragonFatalityFrame { from{opacity:.84;filter:brightness(.82)} to{opacity:1;filter:brightness(1)} }
+@keyframes dragonFatalityWalk { from{transform:scale(1.04) translateY(1%);filter:brightness(.86)} to{transform:scale(1);filter:brightness(1)} }
+@keyframes dragonFatalityEmerge { from{transform:scale(.94);filter:brightness(.55) saturate(.7)} to{transform:scale(1.03);filter:brightness(1.08) saturate(1.15)} }
+@keyframes dragonFatalityTurn { from{transform:scale(1.05) translateX(1.5%)} to{transform:scale(1) translateX(0)} }
+@keyframes dragonFatalityLoad { from{transform:scale(1.04) translateY(-1%)} to{transform:scale(.98) translateY(1.5%)} }
+@keyframes dragonFatalityLunge { from{transform:scale(.92);filter:blur(1px) brightness(.9)} to{transform:scale(1.1);filter:blur(0) brightness(1.12)} }
+@keyframes dragonFatalityImpact { from{transform:scale(.94);filter:brightness(1.8)} to{transform:scale(1.08);filter:brightness(1)} }
 @keyframes chairSlide { 0%{transform:translateX(-95%) translateY(22%) rotate(-8deg) scale(.72);opacity:.2} 72%{transform:translateX(-47%) translateY(0) rotate(2deg) scale(1.03);opacity:1} 100%{transform:translateX(-50%) scale(1);opacity:1} }
 @keyframes chairCharge { 0%{transform:translateX(-50%) translateY(5%) scale(.76);opacity:.3;filter:blur(2px)} 72%{transform:translateX(-50%) translateY(-1%) scale(1.08);opacity:1;filter:blur(0)} 100%{transform:translateX(-50%) scale(1);opacity:1} }
 @keyframes chairImpact { 0%{transform:translateX(-50%) scale(.64);opacity:.25;filter:brightness(2.2) blur(3px)} 55%{transform:translateX(-50%) scale(1.13);opacity:1;filter:brightness(1.8)} 100%{transform:translateX(-50%) scale(1);opacity:1;filter:brightness(1)} }
@@ -943,11 +953,7 @@ button { font: inherit; touch-action:manipulation; -webkit-user-select:none; use
   .finisher-sequence { inset:11% 0 0; }
   .finisher-sequence img,.finisher-sequence.frame-powerbomb-kick img,.finisher-sequence.frame-powerbomb-head-pull img,.finisher-sequence.frame-powerbomb-lift img,.finisher-sequence.frame-powerbomb-impact img { width:138vw; max-width:none; height:84%; }
   .mohawk-finisher-sequence { inset:10% 0 0; }
-  .mohawk-finisher-sequence img,.mohawk-finisher-sequence.frame-walk img,.mohawk-finisher-sequence.frame-emerge img,.mohawk-finisher-sequence.frame-turn img { width:128vw; max-width:none; height:88%; }
-  .mohawk-finisher-sequence.frame-ground-strike img { width:138vw; max-width:none; height:92%; }
-  .mohawk-finisher-sequence.frame-bite img,.mohawk-finisher-sequence.frame-elbow-bite img { width:175vw; max-width:none; height:105%; }
-  .mohawk-finisher-sequence.frame-fatality-power img,.mohawk-finisher-sequence.frame-fatality-command img,.mohawk-finisher-sequence.frame-fatality-victory img { width:145vw; max-width:none; height:94%; }
-  .mohawk-finisher-sequence.frame-fatality-rush img { width:190vw; max-width:none; height:108%; }
+  .mohawk-finisher-sequence img { width:128vw; max-width:none; height:88%; }
   .mohawk-finisher-sequence.frame-chair-slide img,.mohawk-finisher-sequence.frame-chair-charge img,.mohawk-finisher-sequence.frame-chair-aftermath img { width:145vw; max-width:none; height:92%; }
   .mohawk-finisher-sequence.frame-chair-impact img { width:190vw; max-width:none; height:108%; }
   .mohawk-finisher-sequence.frame-brotality-enter img,.mohawk-finisher-sequence.frame-brotality-run img,.mohawk-finisher-sequence.frame-brotality-windup img,.mohawk-finisher-sequence.frame-brotality-victory img { width:145vw; max-width:none; height:92%; }

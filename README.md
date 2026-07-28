@@ -29,17 +29,19 @@ Open **ENTER CODE** on the start menu and enter:
 - `RUMBLE` — stronger impacts and supported-device vibration
 - `FATALITY` — fatality endings
 - `BROTALITY` — brotality endings
-- `TULIPST` — unlocks Tulip Street
-- `BLUEBRIDGE` — unlocks the Blue Bridge
-- `MSG` or `WORLDCHAMP` — unlocks Madison Square Garden
+- `GRAND` — unlocks Tulip Street
+- `AZUL` — unlocks the Blue Bridge
+- `BIGTIME` — unlocks Madison Square Garden
 
 Active codes can be turned off with their **×** buttons on the start menu.
 
+The `FATALITY` ending uses the approved seven-frame golden-dragon sequence.
+
 ## Venue achievements
 
-- Win one code-free fight to unlock Tulip Street.
-- Win a code-free fight without being knocked down to unlock the Blue Bridge.
-- Win three code-free fights to unlock Madison Square Garden.
+- Win a code-free fight after being knocked down no more than three times to unlock Tulip Street and learn `GRAND`.
+- Win one code-free fight to unlock the Blue Bridge and learn `AZUL`.
+- Win a code-free fight by delivering the final knockdown with the special uppercut to unlock Madison Square Garden and learn `BIGTIME`.
 
 Locked venue names remain hidden until they are unlocked. Venue progress is
 saved locally in the browser.
