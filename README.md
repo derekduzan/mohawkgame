@@ -14,6 +14,24 @@ A first-person arcade bare-knuckle boxing game built for desktop and mobile brow
 
 Every later commit to `main` automatically republishes the game.
 
+## Secret codes
+
+Open **ENTER CODE** on the start menu and enter:
+
+- `SAVAGE` — Savage green Mohawk skin
+- `ZUPERMAN` — enables every player-benefit code
+- `FLAMEON` — flaming hands
+- `IRONJAW` — stronger defense
+- `TIMELESS` — unlimited fight clock
+- `AURA` — aura and restored guard
+- `SLOWMO` — extended slow-motion counter windows
+- `ARCADE` — arcade visual effects
+- `RUMBLE` — stronger impacts and supported-device vibration
+- `FATALITY` — fatality endings
+- `BROTALITY` — brotality endings
+
+Active codes can be turned off with their **×** buttons on the start menu.
+
 ## Run locally
 
 Install Node.js 22, then run:
